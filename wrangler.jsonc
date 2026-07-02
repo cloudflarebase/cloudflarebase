@@ -4,13 +4,10 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "cloudflarebase",
+	"name": "cloudflarebase-com",
 	"main": ".svelte-kit/cloudflare/_worker.js",
 	"compatibility_date": "2026-07-01",
-	"compatibility_flags": [
-		"nodejs_compat",
-		"nodejs_als"
-	],
+	"compatibility_flags": ["nodejs_compat", "nodejs_als"],
 	"assets": {
 		"binding": "ASSETS",
 		"directory": ".svelte-kit/cloudflare"
