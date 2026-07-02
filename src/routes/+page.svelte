@@ -1,311 +1,588 @@
 <script lang="ts">
-	import { buttonVariants } from '$lib/components/ui/button/index.js';
-	import { Badge } from '$lib/components/ui/badge/index.js';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import { cn } from '$lib/utils.js';
+	import { onMount } from 'svelte';
+	import { Button } from '$lib/components/ui/button';
+	import { Database, KeyRound, HardDrive, Zap, Radio, Clock, Check } from '@lucide/svelte';
 
-	const features = [
+	const primitives = [
 		{
-			title: 'Cloudflare-native backend',
-			description: 'Build on Workers, D1, R2, Queues, and Durable Objects from day one.'
+			icon: Database,
+			name: 'Database',
+			tag: 'cloudflarebase.db',
+			desc: 'A document store backed by Durable Objects — strongly consistent, colocated with the code that reads it.'
 		},
 		{
-			title: 'Firebase-style DX',
-			description: 'Auth, database, storage, and functions with a simple developer experience.'
+			icon: KeyRound,
+			name: 'Auth',
+			tag: '.auth',
+			desc: "Email, OAuth, and passkeys with sessions validated at the edge — no origin hop just to check who's signed in."
 		},
 		{
-			title: 'Fast at the edge',
-			description: 'Ship globally distributed apps without managing servers or regions.'
+			icon: HardDrive,
+			name: 'Storage',
+			tag: 'cloudflarebase.storage',
+			desc: "Object storage on R2 — zero egress fees, so serving files to a global audience doesn't get more expensive as you grow."
+		},
+		{
+			icon: Zap,
+			name: 'Functions',
+			tag: 'cloudflarebase.fn',
+			desc: "Deploy server logic as Workers. Cold starts measured in microseconds, not seconds, because there's no server to start."
+		},
+		{
+			icon: Radio,
+			name: 'Realtime',
+			tag: 'cloudflarebase.live',
+			desc: 'WebSocket channels backed by Durable Objects, so live cursors and presence feel instant on any continent.'
+		},
+		{
+			icon: Clock,
+			name: 'Cron & Queues',
+			tag: 'cloudflarebase.queue',
+			desc: 'Schedule jobs and process background work without a job runner to babysit or scale.'
 		}
 	];
 
-	const stats = [
-		['0ms', 'cold start goal'],
-		['300+', 'edge cities'],
-		['1 CLI', 'to deploy']
+	const migration = [
+		{
+			cap: 'Data locality',
+			firebase: 'Single region per project',
+			cloudflarebase: '300+ edge locations'
+		},
+		{
+			cap: 'Egress cost on storage',
+			firebase: 'Billed per GB out',
+			cloudflarebase: '$0 — no egress fees'
+		},
+		{
+			cap: 'Cold start on functions',
+			firebase: '~200–800ms',
+			cloudflarebase: '<5ms (V8 isolates)'
+		},
+		{
+			cap: 'Realtime transport',
+			firebase: 'Long-polling fallback',
+			cloudflarebase: 'Native WebSockets at the edge'
+		}
 	];
+
+	const plans = [
+		{
+			name: 'Hobby',
+			desc: 'For side projects and prototypes.',
+			price: '$0',
+			features: [
+				'100K database reads/mo',
+				'1GB object storage',
+				'100K function invocations',
+				'Community support'
+			],
+			cta: 'Get started',
+			featured: false
+		},
+		{
+			name: 'Pro',
+			desc: 'For apps in production.',
+			price: '$25',
+			features: [
+				'10M database reads/mo',
+				'100GB object storage',
+				'10M function invocations',
+				'Realtime channels included',
+				'Priority support'
+			],
+			cta: 'Start free trial',
+			featured: true
+		},
+		{
+			name: 'Scale',
+			desc: 'For high-traffic, multi-region products.',
+			price: 'Custom',
+			features: [
+				'Usage-based, volume pricing',
+				'Dedicated Durable Object limits',
+				'99.99% uptime SLA',
+				'SSO & audit logs'
+			],
+			cta: 'Talk to us',
+			featured: false
+		}
+	];
+
+	// Edge-race visual: dot-grid "world" + two animated paths
+	const mapW = 320;
+	const mapH = 190;
+	const dots: { x: number; y: number }[] = [];
+	for (let x = 8; x < mapW; x += 16) {
+		for (let y = 8; y < mapH; y += 16) {
+			if (Math.sin(x * 0.045) * Math.cos(y * 0.07) > -0.15) dots.push({ x, y });
+		}
+	}
+	const user = { x: 60, y: 70 };
+	const originTarget = { x: 290, y: 40 };
+	const edgeTarget = { x: 95, y: 88 };
+
+	let originMs = 0;
+	let edgeMs = 0;
+
+	onMount(() => {
+		const start = performance.now();
+		const duration = 1400;
+		function step(ts: number) {
+			const p = Math.min((ts - start) / duration, 1);
+			const eased = 1 - Math.pow(1 - p, 3);
+			originMs = Math.round(340 * eased);
+			edgeMs = Math.round(38 * eased);
+			if (p < 1) requestAnimationFrame(step);
+		}
+		requestAnimationFrame(step);
+	});
 </script>
 
 <svelte:head>
-	<title>Cloudflarebase — Firebase alternative on Cloudflare</title>
+	<title>Cloudflarebase — Backend infrastructure on the edge</title>
 	<meta
 		name="description"
-		content="Cloudflarebase is a Firebase alternative built on Cloudflare."
+		content="Database, auth, storage, and functions deployed to Cloudflare's edge. The Firebase alternative built for global latency, not one region."
 	/>
 </svelte:head>
 
-<main class="relative min-h-screen overflow-hidden bg-background text-foreground">
-	<div class="pointer-events-none absolute inset-0 -z-20 bg-background"></div>
-	<div class="grid-bg pointer-events-none absolute inset-0 -z-10"></div>
-
-	<div
-		class="pointer-events-none absolute top-[-18rem] left-1/2 -z-10 size-[42rem] -translate-x-1/2 rounded-full bg-primary/20 blur-3xl"
-	></div>
-	<div
-		class="pointer-events-none absolute top-32 right-[-16rem] -z-10 size-[32rem] rounded-full bg-orange-500/15 blur-3xl"
-	></div>
-	<div
-		class="pointer-events-none absolute bottom-[-18rem] left-[-12rem] -z-10 size-[34rem] rounded-full bg-sky-500/15 blur-3xl"
-	></div>
-
-	<nav class="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
-		<a href="/" class="group flex items-center gap-3 font-semibold tracking-tight">
-			<span
-				class="relative flex size-9 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/25"
-			>
-				C
-				<span
-					class="absolute inset-0 rounded-2xl bg-primary opacity-40 blur-md transition group-hover:opacity-70"
-				></span>
-			</span>
-			Cloudflarebase
-		</a>
-
-		<div
-			class="hidden items-center gap-6 rounded-full border bg-background/60 px-5 py-2 text-sm text-muted-foreground shadow-sm backdrop-blur-xl md:flex"
-		>
-			<a href="#features" class="transition hover:text-foreground">Features</a>
-			<a href="#pricing" class="transition hover:text-foreground">Pricing</a>
-			<a href="#docs" class="transition hover:text-foreground">Docs</a>
+<div class="min-h-screen bg-background text-foreground">
+	<!-- NAV -->
+	<nav class="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
+		<div class="mx-auto flex h-16 max-w-6xl items-center justify-between px-8">
+			<a href="/" class="flex items-center gap-2 text-lg font-bold tracking-tight">
+				<svg viewBox="0 0 24 24" fill="none" class="h-5 w-5 text-primary">
+					<path
+						d="M12 2L3 7V17L12 22L21 17V7L12 2Z"
+						stroke="currentColor"
+						stroke-width="1.6"
+						stroke-linejoin="round"
+					/>
+				</svg>
+				Cloudflarebase
+			</a>
+			<div class="hidden items-center gap-8 text-sm text-muted-foreground md:flex">
+				<a href="#primitives" class="hover:text-foreground">Primitives</a>
+				<a href="#code" class="hover:text-foreground">Docs</a>
+				<a href="#migrate" class="hover:text-foreground">Migrate from Firebase</a>
+				<a href="#pricing" class="hover:text-foreground">Pricing</a>
+			</div>
+			<div class="flex items-center gap-3">
+				<Button variant="ghost" size="sm">Sign in</Button>
+				<Button size="sm">Start building</Button>
+			</div>
 		</div>
-
-		<a
-			href="#waitlist"
-			class={cn(buttonVariants({ size: 'sm' }), 'rounded-full shadow-lg shadow-primary/20')}
-		>
-			Join waitlist
-		</a>
 	</nav>
 
-	<section
-		class="mx-auto grid max-w-6xl items-center gap-14 px-6 py-20 md:grid-cols-[1.05fr_0.95fr] md:py-28"
-	>
-		<div>
-			<Badge
-				variant="outline"
-				class="mb-5 rounded-full border-primary/30 bg-background/70 px-4 py-1.5 backdrop-blur-xl"
+	<!-- HERO -->
+	<section class="px-8 pt-24 pb-10">
+		<div class="mx-auto max-w-3xl text-center">
+			<span
+				class="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-medium tracking-wide text-primary uppercase"
 			>
-				<span
-					class="mr-2 inline-flex size-2 rounded-full bg-primary shadow-[0_0_18px_hsl(var(--primary))]"
-				></span>
-				Firebase alternative built on Cloudflare
-			</Badge>
-
-			<h1
-				class="max-w-3xl text-5xl font-semibold tracking-tight text-balance sm:text-6xl md:text-7xl"
-			>
-				Build full-stack apps on the
-				<span class="gradient-text"> edge.</span>
+				<span class="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
+				Running on Cloudflare's network
+			</span>
+			<h1 class="mt-6 text-5xl leading-[1.05] font-bold tracking-tight md:text-6xl">
+				Ship a backend that lives everywhere your users
+				<span class="text-primary">already are.</span>
 			</h1>
-
-			<p class="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground">
-				Cloudflarebase gives you auth, data, storage, and serverless functions with the simplicity
-				of Firebase and the speed of Cloudflare.
+			<p class="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-muted-foreground">
+				Database, auth, storage, and functions — deployed to 300+ Cloudflare locations instead of
+				one AWS region. Same developer experience you're used to, none of the round trips.
 			</p>
+			<div class="mt-8 flex flex-wrap justify-center gap-3">
+				<Button size="lg">Start building free</Button>
+				<Button size="lg" variant="outline" href="#code">Read the docs</Button>
+			</div>
+			<p class="mt-4 font-mono text-xs text-muted-foreground/70">
+				npx create-cloudflarebase-app@latest · no credit card required
+			</p>
+		</div>
 
-			<div class="mt-8 flex flex-col gap-3 sm:flex-row">
-				<a
-					href="#waitlist"
-					class={cn(
-						buttonVariants({ size: 'lg' }),
-						'rounded-full px-7 shadow-2xl shadow-primary/25 transition hover:scale-[1.02]'
-					)}
-				>
-					Start building
-				</a>
-
-				<a
-					href="#features"
-					class={cn(
-						buttonVariants({ variant: 'outline', size: 'lg' }),
-						'rounded-full border-border/70 bg-background/60 px-7 backdrop-blur-xl transition hover:scale-[1.02]'
-					)}
-				>
-					Explore features
-				</a>
+		<!-- Signature visual: edge race -->
+		<div class="mx-auto mt-14 max-w-5xl overflow-hidden rounded-2xl border border-border bg-card">
+			<div
+				class="flex items-center justify-between border-b border-border px-5 py-3.5 font-mono text-xs text-muted-foreground"
+			>
+				<span class="flex items-center gap-2.5">
+					<span class="flex gap-1.5">
+						<span class="h-2 w-2 rounded-full bg-border" />
+						<span class="h-2 w-2 rounded-full bg-border" />
+						<span class="h-2 w-2 rounded-full bg-border" />
+					</span>
+					request-simulator.cloudflarebase.dev
+				</span>
+				<span>Toronto → nearest endpoint</span>
 			</div>
 
-			<div class="mt-10 grid max-w-xl grid-cols-3 gap-4">
-				{#each stats as stat}
-					<div class="rounded-2xl border bg-background/60 p-4 shadow-sm backdrop-blur-xl">
-						<p class="text-2xl font-semibold">{stat[0]}</p>
-						<p class="mt-1 text-sm text-muted-foreground">{stat[1]}</p>
+			<div class="grid grid-cols-1 md:grid-cols-2">
+				<!-- Origin (single region) -->
+				<div class="border-b border-border p-6 md:border-r md:border-b-0">
+					<div class="font-mono text-[11px] tracking-wide text-muted-foreground/70 uppercase">
+						Traditional backend
+					</div>
+					<div class="mt-1 mb-4 text-sm font-semibold text-muted-foreground">
+						Single region (us-east-1)
+					</div>
+
+					<svg viewBox="0 0 {mapW} {mapH}" class="h-[190px] w-full">
+						{#each dots as d}
+							<circle cx={d.x} cy={d.y} r="1.1" class="fill-muted-foreground/20" />
+						{/each}
+						<line
+							x1={user.x}
+							y1={user.y}
+							x2={originTarget.x}
+							y2={originTarget.y}
+							class="stroke-muted-foreground"
+							stroke-width="1.2"
+							stroke-dasharray="3 3"
+							opacity="0.5"
+						/>
+						<circle cx={user.x} cy={user.y} r="4" class="fill-foreground" />
+						<circle cx={originTarget.x} cy={originTarget.y} r="5" class="fill-muted-foreground" />
+						<circle r="3" class="fill-muted-foreground">
+							<animateMotion
+								dur="2.6s"
+								repeatCount="indefinite"
+								path="M{user.x},{user.y} L{originTarget.x},{originTarget.y}"
+							/>
+						</circle>
+					</svg>
+
+					<div class="mt-3 flex items-baseline gap-2 font-mono">
+						<span class="text-3xl font-semibold text-muted-foreground">{originMs || '—'}</span>
+						<span class="text-xs text-muted-foreground/70">ms round trip</span>
+					</div>
+					<p class="mt-1.5 text-xs text-muted-foreground/70">
+						Every request travels to one data center, no matter where the user is.
+					</p>
+				</div>
+
+				<!-- Edge (Cloudflarebase) -->
+				<div class="p-6">
+					<div class="font-mono text-[11px] tracking-wide text-muted-foreground/70 uppercase">
+						Cloudflarebase on Cloudflare
+					</div>
+					<div class="mt-1 mb-4 text-sm font-semibold text-accent-foreground">
+						Nearest of 300+ edge nodes
+					</div>
+
+					<svg viewBox="0 0 {mapW} {mapH}" class="h-[190px] w-full">
+						{#each dots as d}
+							<circle cx={d.x} cy={d.y} r="1.1" class="fill-muted-foreground/20" />
+						{/each}
+						<line
+							x1={user.x}
+							y1={user.y}
+							x2={edgeTarget.x}
+							y2={edgeTarget.y}
+							class="stroke-primary"
+							stroke-width="1.2"
+							stroke-dasharray="3 3"
+							opacity="0.5"
+						/>
+						<circle cx={user.x} cy={user.y} r="4" class="fill-foreground" />
+						<circle cx={edgeTarget.x} cy={edgeTarget.y} r="5" class="fill-primary" />
+						<circle r="3" class="fill-primary">
+							<animateMotion
+								dur="0.5s"
+								repeatCount="indefinite"
+								path="M{user.x},{user.y} L{edgeTarget.x},{edgeTarget.y}"
+							/>
+						</circle>
+					</svg>
+
+					<div class="mt-3 flex items-baseline gap-2 font-mono">
+						<span class="text-3xl font-semibold text-primary">{edgeMs || '—'}</span>
+						<span class="text-xs text-muted-foreground/70">ms round trip</span>
+					</div>
+					<p class="mt-1.5 text-xs text-muted-foreground/70">
+						Reads and writes resolve at the point of presence closest to the request.
+					</p>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- STATS -->
+	<div class="border-y border-border bg-card">
+		<div class="mx-auto grid max-w-6xl grid-cols-2 px-8 md:grid-cols-4">
+			{#each [['300+', 'Edge locations'], ['<50ms', 'Median global latency'], ['99.99%', 'Uptime SLA'], ['0', 'Servers you manage']] as [num, label], i}
+				<div class="border-border px-5 py-9 text-center {i < 3 ? 'border-r' : ''}">
+					<div class="text-3xl font-bold text-primary">{num}</div>
+					<div class="mt-1.5 text-sm text-muted-foreground">{label}</div>
+				</div>
+			{/each}
+		</div>
+	</div>
+
+	<!-- PRIMITIVES -->
+	<section id="primitives" class="px-8 py-24">
+		<div class="mx-auto max-w-6xl">
+			<div class="mb-14 max-w-xl">
+				<span
+					class="inline-flex items-center rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-medium tracking-wide text-primary uppercase"
+					>Primitives</span
+				>
+				<h2 class="mt-4 text-3xl font-bold md:text-4xl">Five building blocks. One network.</h2>
+				<p class="mt-3 text-muted-foreground">
+					Each primitive is a thin, familiar API in front of Cloudflare's own storage layer — no
+					infrastructure to provision, no region to pick.
+				</p>
+			</div>
+			<div
+				class="grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-border bg-border md:grid-cols-3"
+			>
+				{#each primitives as p}
+					<div class="bg-card p-7 transition-colors hover:bg-accent/40">
+						<div
+							class="mb-4 flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary"
+						>
+							<svelte:component this={p.icon} class="h-[18px] w-[18px]" strokeWidth={1.8} />
+						</div>
+						<h3 class="mb-1.5 font-semibold">{p.name}</h3>
+						<p class="text-sm leading-relaxed text-muted-foreground">{p.desc}</p>
+						<span
+							class="mt-3 inline-block rounded border border-border px-2 py-0.5 font-mono text-[11px] text-muted-foreground/70"
+							>{p.tag}</span
+						>
 					</div>
 				{/each}
 			</div>
 		</div>
-
-		<div class="relative mx-auto w-full max-w-xl">
-			<div class="absolute -inset-6 animate-pulse rounded-[2rem] bg-primary/15 blur-3xl"></div>
-
-			<Card.Root
-				class="relative overflow-hidden border-border/60 bg-background/75 shadow-2xl backdrop-blur-2xl"
-			>
-				<div
-					class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/80 to-transparent"
-				></div>
-
-				<Card.Header class="border-b border-border/60">
-					<div class="flex items-start justify-between gap-4">
-						<div>
-							<Card.Title>Deploy an app backend</Card.Title>
-							<Card.Description>
-								Auth, database, storage, and functions in one Cloudflare-native stack.
-							</Card.Description>
-						</div>
-
-						<Badge class="rounded-full bg-emerald-500/15 text-emerald-500 hover:bg-emerald-500/15">
-							Live
-						</Badge>
-					</div>
-				</Card.Header>
-
-				<Card.Content class="space-y-5 p-5">
-					<div class="rounded-2xl border bg-muted/40 p-4 font-mono text-sm shadow-inner">
-						<div class="text-muted-foreground">$ npx cloudflarebase init</div>
-						<div class="mt-4 space-y-2">
-							<div class="flex items-center justify-between rounded-xl bg-background/70 px-3 py-2">
-								<span>✓ Auth configured</span>
-								<span class="text-primary">ready</span>
-							</div>
-							<div class="flex items-center justify-between rounded-xl bg-background/70 px-3 py-2">
-								<span>✓ D1 database created</span>
-								<span class="text-primary">ready</span>
-							</div>
-							<div class="flex items-center justify-between rounded-xl bg-background/70 px-3 py-2">
-								<span>✓ R2 bucket connected</span>
-								<span class="text-primary">ready</span>
-							</div>
-							<div class="flex items-center justify-between rounded-xl bg-background/70 px-3 py-2">
-								<span>✓ Worker deployed globally</span>
-								<span class="text-primary">ready</span>
-							</div>
-						</div>
-					</div>
-
-					<div class="grid gap-3 sm:grid-cols-2">
-						<div class="rounded-2xl border bg-background/70 p-4 shadow-sm">
-							<p class="font-medium">Users</p>
-							<p class="mt-1 text-sm text-muted-foreground">Email, OAuth, sessions, roles.</p>
-						</div>
-
-						<div class="rounded-2xl border bg-background/70 p-4 shadow-sm">
-							<p class="font-medium">Data</p>
-							<p class="mt-1 text-sm text-muted-foreground">SQL, KV, files, queues.</p>
-						</div>
-					</div>
-				</Card.Content>
-			</Card.Root>
-		</div>
 	</section>
 
-	<section id="features" class="mx-auto max-w-6xl px-6 py-20">
-		<div class="max-w-2xl">
-			<Badge variant="secondary" class="mb-4 rounded-full">Everything you need</Badge>
-			<h2 class="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-				Firebase simplicity. Cloudflare infrastructure.
-			</h2>
-			<p class="mt-4 text-muted-foreground">
-				Stop wiring together ten services. Cloudflarebase gives your app a clean backend foundation
-				that scales from prototype to production.
-			</p>
-		</div>
-
-		<div class="mt-10 grid gap-5 md:grid-cols-3">
-			{#each features as feature}
-				<Card.Root
-					class="group relative overflow-hidden border-border/70 bg-background/60 backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:shadow-2xl"
+	<!-- CODE SHOWCASE -->
+	<section id="code" class="px-8 py-24">
+		<div class="mx-auto grid max-w-6xl grid-cols-1 items-center gap-14 md:grid-cols-2">
+			<div>
+				<span
+					class="inline-flex items-center rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-medium tracking-wide text-primary uppercase"
+					>Developer experience</span
 				>
-					<div
-						class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent opacity-0 transition group-hover:opacity-100"
-					></div>
-					<div
-						class="absolute -top-20 -right-20 size-40 rounded-full bg-primary/10 blur-3xl transition group-hover:bg-primary/20"
-					></div>
-
-					<Card.Header>
-						<div
-							class="mb-3 flex size-10 items-center justify-center rounded-xl border bg-muted/50 text-primary shadow-sm"
+				<h2 class="mt-4 text-3xl leading-tight font-bold md:text-4xl">
+					An API that feels like Firebase. Infrastructure that doesn't.
+				</h2>
+				<p class="mt-4 text-muted-foreground">
+					If you've shipped with Firestore, you already know the shape of this SDK. Swap the import,
+					keep the mental model, lose the single point of failure.
+				</p>
+				<ul class="mt-6 space-y-3 text-sm">
+					<li class="flex gap-2.5">
+						<Check class="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
+						Type-safe client generated from your schema
+					</li>
+					<li class="flex gap-2.5">
+						<Check class="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
+						Realtime subscriptions with the same <code class="font-mono">.onSnapshot()</code> pattern
+					</li>
+					<li class="flex gap-2.5">
+						<Check class="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
+						Deploys with <code class="font-mono">git push</code> — no console clicking
+					</li>
+				</ul>
+			</div>
+			<div class="overflow-hidden rounded-xl border border-border bg-card shadow-2xl">
+				<div class="flex items-center gap-1.5 border-b border-border px-4 py-3">
+					<span class="h-2.5 w-2.5 rounded-full bg-border" />
+					<span class="h-2.5 w-2.5 rounded-full bg-border" />
+					<span class="h-2.5 w-2.5 rounded-full bg-border" />
+				</div>
+				<pre class="overflow-x-auto p-5 font-mono text-[13px] leading-relaxed"><code
+						>import {'{'} cloudflarebase } from <span class="text-primary"
+							>'@cloudflarebase/sdk'</span
 						>
-							✦
-						</div>
-						<Card.Title>{feature.title}</Card.Title>
-						<Card.Description class="leading-7">
-							{feature.description}
-						</Card.Description>
-					</Card.Header>
-				</Card.Root>
-			{/each}
+
+<span class="text-muted-foreground">// same shape you already know</span>
+const db = cloudflarebase.db.collection(<span class="text-primary">'todos'</span>)
+
+await db.insert({'{'}
+  title: <span class="text-primary">'Migrate off Firebase'</span>,
+  done: false
+})
+
+<span class="text-muted-foreground">// runs on the nearest edge node,</span>
+<span class="text-muted-foreground">// not a single AWS region</span>
+db.onSnapshot(todos =&gt; {'{'}
+  render(todos)
+})</code
+					></pre>
+			</div>
 		</div>
 	</section>
 
-	<section id="pricing" class="mx-auto max-w-6xl px-6 pb-20">
-		<Card.Root
-			class="relative overflow-hidden border-primary/20 bg-primary text-primary-foreground shadow-2xl shadow-primary/25"
-		>
-			<div
-				class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.35),transparent_35%)]"
-			></div>
+	<!-- MIGRATION -->
+	<section id="migrate" class="border-y border-border bg-card px-8 py-24">
+		<div class="mx-auto max-w-6xl">
+			<div class="mb-14 max-w-xl">
+				<span
+					class="inline-flex items-center rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-medium tracking-wide text-primary uppercase"
+					>Migration</span
+				>
+				<h2 class="mt-4 text-3xl font-bold md:text-4xl">
+					Leaving Firebase takes an afternoon, not a rewrite.
+				</h2>
+				<p class="mt-3 text-muted-foreground">
+					Cloudflarebase mirrors the primitives you already reach for. Most teams port their data
+					model with a script we generate for you.
+				</p>
+			</div>
+			<div class="overflow-hidden rounded-xl border border-border">
+				<div
+					class="grid grid-cols-3 border-b border-border bg-accent/40 font-mono text-[11px] tracking-wide text-muted-foreground uppercase"
+				>
+					<div class="px-6 py-4">Capability</div>
+					<div class="px-6 py-4">Firebase</div>
+					<div class="px-6 py-4">Cloudflarebase</div>
+				</div>
+				{#each migration as row}
+					<div class="grid grid-cols-3 border-b border-border text-sm last:border-b-0">
+						<div class="px-6 py-4 font-medium">{row.cap}</div>
+						<div class="px-6 py-4 text-muted-foreground">{row.firebase}</div>
+						<div class="px-6 py-4 text-primary">{row.cloudflarebase}</div>
+					</div>
+				{/each}
+			</div>
+		</div>
+	</section>
 
-			<Card.Content class="relative grid gap-8 p-8 md:grid-cols-[1fr_auto] md:items-center">
+	<!-- PRICING -->
+	<section id="pricing" class="px-8 py-24">
+		<div class="mx-auto max-w-6xl">
+			<div class="mx-auto mb-14 max-w-xl text-center">
+				<span
+					class="inline-flex items-center rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-medium tracking-wide text-primary uppercase"
+					>Pricing</span
+				>
+				<h2 class="mt-4 text-3xl font-bold md:text-4xl">Start free. Pay for what you outgrow.</h2>
+				<p class="mt-3 text-muted-foreground">
+					No surprise egress bills — that's the one line item that doesn't scale against you.
+				</p>
+			</div>
+			<div class="grid grid-cols-1 gap-5 md:grid-cols-3">
+				{#each plans as plan}
+					<div
+						class="relative rounded-2xl border p-7 {plan.featured
+							? 'border-primary bg-gradient-to-b from-primary/[0.06] to-card'
+							: 'border-border bg-card'}"
+					>
+						{#if plan.featured}
+							<span
+								class="absolute -top-3 right-6 rounded-full bg-primary px-2.5 py-1 text-[11px] font-semibold text-primary-foreground"
+								>Most teams</span
+							>
+						{/if}
+						<h3 class="font-semibold">{plan.name}</h3>
+						<p class="mt-1.5 min-h-[36px] text-sm text-muted-foreground">{plan.desc}</p>
+						<div class="mt-3 text-4xl font-bold">
+							{plan.price}{#if plan.price !== 'Custom'}<span
+									class="ml-1 text-sm font-normal text-muted-foreground/70">/month</span
+								>{/if}
+						</div>
+						<ul class="my-6 space-y-2.5">
+							{#each plan.features as f}
+								<li class="flex gap-2 text-sm text-muted-foreground">
+									<Check class="mt-0.5 h-[15px] w-[15px] flex-shrink-0 text-primary" />
+									{f}
+								</li>
+							{/each}
+						</ul>
+						<Button class="w-full" variant={plan.featured ? 'default' : 'outline'}>
+							{plan.cta}
+						</Button>
+					</div>
+				{/each}
+			</div>
+		</div>
+	</section>
+
+	<!-- CTA BAND -->
+	<section class="px-8 py-28 text-center">
+		<span
+			class="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-medium tracking-wide text-primary uppercase"
+		>
+			<span class="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
+			Deploys in minutes
+		</span>
+		<h2 class="mx-auto mt-5 max-w-2xl text-4xl font-bold md:text-5xl">
+			Your next backend doesn't need a region.
+		</h2>
+		<p class="mt-4 text-muted-foreground">
+			Free tier, no credit card. Bring your schema or start from a template.
+		</p>
+		<div class="mt-8 flex flex-wrap justify-center gap-3">
+			<Button size="lg">Start building free</Button>
+			<Button size="lg" variant="outline">Book a demo</Button>
+		</div>
+	</section>
+
+	<!-- FOOTER -->
+	<footer class="border-t border-border px-8 pt-12 pb-8">
+		<div class="mx-auto max-w-6xl">
+			<div class="mb-11 flex flex-wrap justify-between gap-10">
 				<div>
-					<h2 class="text-3xl font-semibold tracking-tight">
-						Launch your backend without leaving Cloudflare.
-					</h2>
-					<p class="mt-3 max-w-2xl text-primary-foreground/80">
-						Join the early access list and help shape the Firebase alternative built for modern edge
-						apps.
+					<div class="flex items-center gap-2 text-lg font-bold">
+						<svg viewBox="0 0 24 24" fill="none" class="h-5 w-5 text-primary">
+							<path
+								d="M12 2L3 7V17L12 22L21 17V7L12 2Z"
+								stroke="currentColor"
+								stroke-width="1.6"
+								stroke-linejoin="round"
+							/>
+						</svg>
+						Cloudflarebase
+					</div>
+					<p class="mt-2.5 max-w-[240px] text-sm text-muted-foreground/70">
+						Backend infrastructure for Cloudflare's edge. Built for teams who don't want to think
+						about regions.
 					</p>
 				</div>
-
-				<a
-					id="waitlist"
-					href="mailto:hello@cloudflarebase.com"
-					class={cn(
-						buttonVariants({ variant: 'secondary', size: 'lg' }),
-						'rounded-full px-7 shadow-xl transition hover:scale-[1.02]'
-					)}
-				>
-					Join early access
-				</a>
-			</Card.Content>
-		</Card.Root>
-	</section>
-</main>
-
-<style>
-	.grid-bg {
-		background-image:
-			linear-gradient(to right, hsl(var(--border) / 0.45) 1px, transparent 1px),
-			linear-gradient(to bottom, hsl(var(--border) / 0.45) 1px, transparent 1px);
-		background-size: 72px 72px;
-		mask-image: radial-gradient(circle at top, black, transparent 72%);
-	}
-
-	.gradient-text {
-		background: linear-gradient(90deg, hsl(var(--primary)), rgb(249 115 22), rgb(56 189 248));
-		-webkit-background-clip: text;
-		background-clip: text;
-		color: transparent;
-	}
-
-	.floating {
-		animation: float 5s ease-in-out infinite;
-	}
-
-	.floating-delayed {
-		animation: float 5s ease-in-out infinite;
-		animation-delay: 1.3s;
-	}
-
-	@keyframes float {
-		0%,
-		100% {
-			transform: translateY(0);
-		}
-
-		50% {
-			transform: translateY(-12px);
-		}
-	}
-</style>
+				<div class="flex flex-wrap gap-16">
+					<div>
+						<h4 class="mb-3.5 font-mono text-xs tracking-wide text-muted-foreground/70 uppercase">
+							Product
+						</h4>
+						<a
+							href="#primitives"
+							class="mb-2.5 block text-sm text-muted-foreground hover:text-foreground">Primitives</a
+						>
+						<a
+							href="#pricing"
+							class="mb-2.5 block text-sm text-muted-foreground hover:text-foreground">Pricing</a
+						>
+						<a href="#code" class="mb-2.5 block text-sm text-muted-foreground hover:text-foreground"
+							>Docs</a
+						>
+					</div>
+					<div>
+						<h4 class="mb-3.5 font-mono text-xs tracking-wide text-muted-foreground/70 uppercase">
+							Resources
+						</h4>
+						<a
+							href="#migrate"
+							class="mb-2.5 block text-sm text-muted-foreground hover:text-foreground"
+							>Migrate from Firebase</a
+						>
+						<a href="#" class="mb-2.5 block text-sm text-muted-foreground hover:text-foreground"
+							>Status</a
+						>
+						<a
+							href="#"
+							class="mb-2.5 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+						>
+							GitHub
+						</a>
+					</div>
+				</div>
+			</div>
+			<div
+				class="flex items-center justify-between border-t border-border pt-6 text-xs text-muted-foreground/70"
+			>
+				<span>© 2026 Cloudflarebase, Inc.</span>
+				<span>Built on Cloudflare</span>
+			</div>
+		</div>
+	</footer>
+</div>
