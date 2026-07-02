@@ -1,8 +1,37 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { scrollY } from 'svelte/reactivity/window';
 	import { Button } from '$lib/components/ui/button';
-	import { Database, KeyRound, HardDrive, Zap, Radio, Clock, Check } from '@lucide/svelte';
+	import { cn } from '$lib/utils';
+	import {
+		Menu,
+		X,
+		ArrowRight,
+		Database,
+		KeyRound,
+		HardDrive,
+		Zap,
+		Radio,
+		Clock,
+		Check
+	} from '@lucide/svelte';
 
+	// --- hero-one block state (from sv-blocks.vercel.app/hero) ---
+	type MenuItem = { name: string; href: string };
+	let menuItems: MenuItem[] = [
+		{ name: 'Primitives', href: '#primitives' },
+		{ name: 'Docs', href: '#code' },
+		{ name: 'Migrate', href: '#migrate' },
+		{ name: 'Pricing', href: '#pricing' }
+	];
+
+	let menuState = $state(false);
+	let isScrolled = $derived.by(() => {
+		if (scrollY.current !== undefined && scrollY.current > 50) return true;
+		return false;
+	});
+
+	// --- rest of the page content ---
 	const primitives = [
 		{
 			icon: Database,
@@ -13,7 +42,7 @@
 		{
 			icon: KeyRound,
 			name: 'Auth',
-			tag: '.auth',
+			tag: 'cloudflarebase.auth',
 			desc: "Email, OAuth, and passkeys with sessions validated at the edge — no origin hop just to check who's signed in."
 		},
 		{
@@ -108,7 +137,9 @@
 		}
 	];
 
-	// Edge-race visual: dot-grid "world" + two animated paths
+	const runtime = ['Workers', 'Durable Objects', 'D1', 'R2', 'KV', 'Queues'];
+
+	// Edge-race visual (replaces the block's static "app screen" image)
 	const mapW = 320;
 	const mapH = 190;
 	const dots: { x: number; y: number }[] = [];
@@ -121,8 +152,8 @@
 	const originTarget = { x: 290, y: 40 };
 	const edgeTarget = { x: 95, y: 88 };
 
-	let originMs = 0;
-	let edgeMs = 0;
+	let originMs = $state(0);
+	let edgeMs = $state(0);
 
 	onMount(() => {
 		const start = performance.now();
@@ -146,165 +177,207 @@
 	/>
 </svelte:head>
 
-<div class="min-h-screen bg-background text-foreground">
-	<!-- NAV -->
-	<nav class="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
-		<div class="mx-auto flex h-16 max-w-6xl items-center justify-between px-8">
-			<a href="/" class="flex items-center gap-2 text-lg font-bold tracking-tight">
-				<svg viewBox="0 0 24 24" fill="none" class="h-5 w-5 text-primary">
-					<path
-						d="M12 2L3 7V17L12 22L21 17V7L12 2Z"
-						stroke="currentColor"
-						stroke-width="1.6"
-						stroke-linejoin="round"
-					/>
-				</svg>
-				Cloudflarebase
-			</a>
-			<div class="hidden items-center gap-8 text-sm text-muted-foreground md:flex">
-				<a href="#primitives" class="hover:text-foreground">Primitives</a>
-				<a href="#code" class="hover:text-foreground">Docs</a>
-				<a href="#migrate" class="hover:text-foreground">Migrate from Firebase</a>
-				<a href="#pricing" class="hover:text-foreground">Pricing</a>
-			</div>
-			<div class="flex items-center gap-3">
-				<Button variant="ghost" size="sm">Sign in</Button>
-				<Button size="sm">Start building</Button>
-			</div>
-		</div>
-	</nav>
+<div class="bg-background text-foreground">
+	{@render heroheader()}
 
-	<!-- HERO -->
-	<section class="px-8 pt-24 pb-10">
-		<div class="mx-auto max-w-3xl text-center">
-			<span
-				class="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-medium tracking-wide text-primary uppercase"
-			>
-				<span class="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
-				Running on Cloudflare's network
-			</span>
-			<h1 class="mt-6 text-5xl leading-[1.05] font-bold tracking-tight md:text-6xl">
-				Ship a backend that lives everywhere your users
-				<span class="text-primary">already are.</span>
-			</h1>
-			<p class="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-muted-foreground">
-				Database, auth, storage, and functions — deployed to 300+ Cloudflare locations instead of
-				one AWS region. Same developer experience you're used to, none of the round trips.
-			</p>
-			<div class="mt-8 flex flex-wrap justify-center gap-3">
-				<Button size="lg">Start building free</Button>
-				<Button size="lg" variant="outline" href="#code">Read the docs</Button>
-			</div>
-			<p class="mt-4 font-mono text-xs text-muted-foreground/70">
-				npx create-cloudflarebase-app@latest · no credit card required
-			</p>
-		</div>
-
-		<!-- Signature visual: edge race -->
-		<div class="mx-auto mt-14 max-w-5xl overflow-hidden rounded-2xl border border-border bg-card">
+	<main class="overflow-hidden">
+		<div class="absolute inset-0 isolate hidden opacity-65 contain-strict lg:block">
 			<div
-				class="flex items-center justify-between border-b border-border px-5 py-3.5 font-mono text-xs text-muted-foreground"
-			>
-				<span class="flex items-center gap-2.5">
-					<span class="flex gap-1.5">
-						<span class="h-2 w-2 rounded-full bg-border" />
-						<span class="h-2 w-2 rounded-full bg-border" />
-						<span class="h-2 w-2 rounded-full bg-border" />
-					</span>
-					request-simulator.cloudflarebase.dev
-				</span>
-				<span>Toronto → nearest endpoint</span>
-			</div>
-
-			<div class="grid grid-cols-1 md:grid-cols-2">
-				<!-- Origin (single region) -->
-				<div class="border-b border-border p-6 md:border-r md:border-b-0">
-					<div class="font-mono text-[11px] tracking-wide text-muted-foreground/70 uppercase">
-						Traditional backend
-					</div>
-					<div class="mt-1 mb-4 text-sm font-semibold text-muted-foreground">
-						Single region (us-east-1)
-					</div>
-
-					<svg viewBox="0 0 {mapW} {mapH}" class="h-[190px] w-full">
-						{#each dots as d}
-							<circle cx={d.x} cy={d.y} r="1.1" class="fill-muted-foreground/20" />
-						{/each}
-						<line
-							x1={user.x}
-							y1={user.y}
-							x2={originTarget.x}
-							y2={originTarget.y}
-							class="stroke-muted-foreground"
-							stroke-width="1.2"
-							stroke-dasharray="3 3"
-							opacity="0.5"
-						/>
-						<circle cx={user.x} cy={user.y} r="4" class="fill-foreground" />
-						<circle cx={originTarget.x} cy={originTarget.y} r="5" class="fill-muted-foreground" />
-						<circle r="3" class="fill-muted-foreground">
-							<animateMotion
-								dur="2.6s"
-								repeatCount="indefinite"
-								path="M{user.x},{user.y} L{originTarget.x},{originTarget.y}"
-							/>
-						</circle>
-					</svg>
-
-					<div class="mt-3 flex items-baseline gap-2 font-mono">
-						<span class="text-3xl font-semibold text-muted-foreground">{originMs || '—'}</span>
-						<span class="text-xs text-muted-foreground/70">ms round trip</span>
-					</div>
-					<p class="mt-1.5 text-xs text-muted-foreground/70">
-						Every request travels to one data center, no matter where the user is.
-					</p>
-				</div>
-
-				<!-- Edge (Cloudflarebase) -->
-				<div class="p-6">
-					<div class="font-mono text-[11px] tracking-wide text-muted-foreground/70 uppercase">
-						Cloudflarebase on Cloudflare
-					</div>
-					<div class="mt-1 mb-4 text-sm font-semibold text-accent-foreground">
-						Nearest of 300+ edge nodes
-					</div>
-
-					<svg viewBox="0 0 {mapW} {mapH}" class="h-[190px] w-full">
-						{#each dots as d}
-							<circle cx={d.x} cy={d.y} r="1.1" class="fill-muted-foreground/20" />
-						{/each}
-						<line
-							x1={user.x}
-							y1={user.y}
-							x2={edgeTarget.x}
-							y2={edgeTarget.y}
-							class="stroke-primary"
-							stroke-width="1.2"
-							stroke-dasharray="3 3"
-							opacity="0.5"
-						/>
-						<circle cx={user.x} cy={user.y} r="4" class="fill-foreground" />
-						<circle cx={edgeTarget.x} cy={edgeTarget.y} r="5" class="fill-primary" />
-						<circle r="3" class="fill-primary">
-							<animateMotion
-								dur="0.5s"
-								repeatCount="indefinite"
-								path="M{user.x},{user.y} L{edgeTarget.x},{edgeTarget.y}"
-							/>
-						</circle>
-					</svg>
-
-					<div class="mt-3 flex items-baseline gap-2 font-mono">
-						<span class="text-3xl font-semibold text-primary">{edgeMs || '—'}</span>
-						<span class="text-xs text-muted-foreground/70">ms round trip</span>
-					</div>
-					<p class="mt-1.5 text-xs text-muted-foreground/70">
-						Reads and writes resolve at the point of presence closest to the request.
-					</p>
-				</div>
-			</div>
+				class="absolute top-0 left-0 h-320 w-140 -translate-y-87.5 -rotate-45 rounded-full bg-[radial-gradient(68.54%_68.72%_at_55.02%_31.46%,hsla(0,0%,85%,.08)_0,hsla(0,0%,55%,.02)_50%,hsla(0,0%,45%,0)_80%)]"
+			></div>
+			<div
+				class="absolute top-0 left-0 h-320 w-60 [translate:5%_-50%] -rotate-45 rounded-full bg-[radial-gradient(50%_50%_at_50%_50%,hsla(0,0%,85%,.06)_0,hsla(0,0%,45%,.02)_80%,transparent_100%)]"
+			></div>
+			<div
+				class="absolute top-0 left-0 h-320 w-60 -translate-y-87.5 -rotate-45 bg-[radial-gradient(50%_50%_at_50%_50%,hsla(0,0%,85%,.04)_0,hsla(0,0%,45%,.02)_80%,transparent_100%)]"
+			></div>
 		</div>
-	</section>
+
+		<!-- HERO (sv-blocks hero-one, adapted content) -->
+		<section>
+			<div class="relative pt-24 md:pt-36">
+				<div
+					class="absolute inset-0 -z-10 size-full [background:radial-gradient(125%_125%_at_50%_100%,transparent_0%,var(--color-background)_75%)]"
+				></div>
+				<div class="mx-auto max-w-7xl px-6">
+					<div class="text-center sm:mx-auto lg:mt-0 lg:mr-auto">
+						<div>
+							<a
+								href="#code"
+								class="group mx-auto flex w-fit items-center gap-4 rounded-full border bg-muted p-1 pl-4 shadow-md shadow-zinc-950/5 transition-colors duration-300 hover:bg-background dark:border-t-white/5 dark:shadow-zinc-950 dark:hover:border-t-border"
+							>
+								<span class="text-sm text-foreground">Running on Cloudflare's network</span>
+								<span
+									class="block h-4 w-0.5 border-l bg-white dark:border-background dark:bg-zinc-700"
+								></span>
+								<div
+									class="size-6 overflow-hidden rounded-full bg-background duration-500 group-hover:bg-muted"
+								>
+									<div
+										class="flex w-12 -translate-x-1/2 duration-500 ease-in-out group-hover:translate-x-0"
+									>
+										<span class="flex size-6"><ArrowRight class="m-auto size-3" /></span>
+										<span class="flex size-6"><ArrowRight class="m-auto size-3" /></span>
+									</div>
+								</div>
+							</a>
+						</div>
+
+						<h1 class="mt-8 text-6xl text-balance md:text-7xl lg:mt-16 xl:text-[5.25rem]">
+							Ship a backend that lives everywhere your users already are.
+						</h1>
+						<p class="mx-auto mt-8 max-w-2xl text-lg text-balance text-muted-foreground">
+							Database, auth, storage, and functions — deployed to 300+ Cloudflare locations instead
+							of one AWS region. Same developer experience you're used to, none of the round trips.
+						</p>
+
+						<div class="mt-12 flex flex-col items-center justify-center gap-2 md:flex-row">
+							<div
+								class="border bg-foreground/10 p-0.5"
+								style="border-radius: calc(0.5rem + 0.125rem + 4px);"
+							>
+								<Button size="lg" class="rounded-xl px-5 text-base">Start building free</Button>
+							</div>
+							<Button href="#code" size="lg" variant="ghost" class="rounded-xl px-5"
+								>Read the docs</Button
+							>
+						</div>
+						<p class="mt-4 font-mono text-xs text-muted-foreground/70">
+							npx create-cloudflarebase-app@latest · no credit card required
+						</p>
+					</div>
+				</div>
+
+				<!-- Signature visual in place of the block's static app screenshot -->
+				<div class="relative mt-8 -mr-56 overflow-hidden px-2 sm:mt-12 sm:mr-0 md:mt-20">
+					<div
+						class="absolute inset-0 z-10 bg-linear-to-b from-transparent from-35% to-background"
+					></div>
+					<div
+						class="relative mx-auto max-w-6xl overflow-hidden rounded-2xl border bg-background p-4 shadow-lg inset-shadow-2xs shadow-zinc-950/15 ring-background dark:inset-shadow-white/20"
+					>
+						<div class="overflow-hidden rounded-xl border border-border bg-card">
+							<div
+								class="flex items-center justify-between border-b border-border px-5 py-3.5 font-mono text-xs text-muted-foreground"
+							>
+								<span class="flex items-center gap-2.5">
+									<span class="flex gap-1.5">
+										<span class="h-2 w-2 rounded-full bg-border"></span>
+										<span class="h-2 w-2 rounded-full bg-border"></span>
+										<span class="h-2 w-2 rounded-full bg-border"></span>
+									</span>
+									request-simulator.cloudflarebase.dev
+								</span>
+								<span>Toronto → nearest endpoint</span>
+							</div>
+							<div class="grid grid-cols-1 md:grid-cols-2">
+								<div class="border-b border-border p-6 md:border-r md:border-b-0">
+									<div
+										class="font-mono text-[11px] tracking-wide text-muted-foreground/70 uppercase"
+									>
+										Traditional backend
+									</div>
+									<div class="mt-1 mb-4 text-sm font-semibold text-muted-foreground">
+										Single region (us-east-1)
+									</div>
+									<svg viewBox="0 0 {mapW} {mapH}" class="h-[190px] w-full">
+										{#each dots as d}
+											<circle cx={d.x} cy={d.y} r="1.1" class="fill-muted-foreground/20" />
+										{/each}
+										<line
+											x1={user.x}
+											y1={user.y}
+											x2={originTarget.x}
+											y2={originTarget.y}
+											class="stroke-muted-foreground"
+											stroke-width="1.2"
+											stroke-dasharray="3 3"
+											opacity="0.5"
+										/>
+										<circle cx={user.x} cy={user.y} r="4" class="fill-foreground" />
+										<circle
+											cx={originTarget.x}
+											cy={originTarget.y}
+											r="5"
+											class="fill-muted-foreground"
+										/>
+										<circle r="3" class="fill-muted-foreground">
+											<animateMotion
+												dur="2.6s"
+												repeatCount="indefinite"
+												path="M{user.x},{user.y} L{originTarget.x},{originTarget.y}"
+											/>
+										</circle>
+									</svg>
+									<div class="mt-3 flex items-baseline gap-2 font-mono">
+										<span class="text-3xl font-semibold text-muted-foreground"
+											>{originMs || '—'}</span
+										>
+										<span class="text-xs text-muted-foreground/70">ms round trip</span>
+									</div>
+								</div>
+								<div class="p-6">
+									<div
+										class="font-mono text-[11px] tracking-wide text-muted-foreground/70 uppercase"
+									>
+										on Cloudflare
+									</div>
+									<div class="mt-1 mb-4 text-sm font-semibold text-accent-foreground">
+										Nearest of 300+ edge nodes
+									</div>
+									<svg viewBox="0 0 {mapW} {mapH}" class="h-[190px] w-full">
+										{#each dots as d}
+											<circle cx={d.x} cy={d.y} r="1.1" class="fill-muted-foreground/20" />
+										{/each}
+										<line
+											x1={user.x}
+											y1={user.y}
+											x2={edgeTarget.x}
+											y2={edgeTarget.y}
+											class="stroke-primary"
+											stroke-width="1.2"
+											stroke-dasharray="3 3"
+											opacity="0.5"
+										/>
+										<circle cx={user.x} cy={user.y} r="4" class="fill-foreground" />
+										<circle cx={edgeTarget.x} cy={edgeTarget.y} r="5" class="fill-primary" />
+										<circle r="3" class="fill-primary">
+											<animateMotion
+												dur="0.5s"
+												repeatCount="indefinite"
+												path="M{user.x},{user.y} L{edgeTarget.x},{edgeTarget.y}"
+											/>
+										</circle>
+									</svg>
+									<div class="mt-3 flex items-baseline gap-2 font-mono">
+										<span class="text-3xl font-semibold text-primary">{edgeMs || '—'}</span>
+										<span class="text-xs text-muted-foreground/70">ms round trip</span>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- Runtime strip (block's logo-cloud slot, repurposed as "built on" instead of external logo SVGs) -->
+		<section class="bg-background pt-16 pb-16 md:pb-32">
+			<div class="group relative m-auto max-w-5xl px-6">
+				<p class="text-center text-sm text-muted-foreground">
+					Built directly on Cloudflare's primitives
+				</p>
+				<div class="mx-auto mt-8 flex max-w-3xl flex-wrap items-center justify-center gap-3">
+					{#each runtime as name}
+						<span
+							class="rounded-full border border-border px-4 py-1.5 font-mono text-xs text-muted-foreground"
+							>{name}</span
+						>
+					{/each}
+				</div>
+			</div>
+		</section>
+	</main>
 
 	<!-- STATS -->
 	<div class="border-y border-border bg-card">
@@ -340,7 +413,7 @@
 						<div
 							class="mb-4 flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary"
 						>
-							<svelte:component this={p.icon} class="h-[18px] w-[18px]" strokeWidth={1.8} />
+							<p.icon class="h-[18px] w-[18px]" strokeWidth={1.8} />
 						</div>
 						<h3 class="mb-1.5 font-semibold">{p.name}</h3>
 						<p class="text-sm leading-relaxed text-muted-foreground">{p.desc}</p>
@@ -386,9 +459,9 @@
 			</div>
 			<div class="overflow-hidden rounded-xl border border-border bg-card shadow-2xl">
 				<div class="flex items-center gap-1.5 border-b border-border px-4 py-3">
-					<span class="h-2.5 w-2.5 rounded-full bg-border" />
-					<span class="h-2.5 w-2.5 rounded-full bg-border" />
-					<span class="h-2.5 w-2.5 rounded-full bg-border" />
+					<span class="h-2.5 w-2.5 rounded-full bg-border"></span>
+					<span class="h-2.5 w-2.5 rounded-full bg-border"></span>
+					<span class="h-2.5 w-2.5 rounded-full bg-border"></span>
 				</div>
 				<pre class="overflow-x-auto p-5 font-mono text-[13px] leading-relaxed"><code
 						>import {'{'} cloudflarebase } from <span class="text-primary"
@@ -503,7 +576,7 @@ db.onSnapshot(todos =&gt; {'{'}
 		<span
 			class="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-medium tracking-wide text-primary uppercase"
 		>
-			<span class="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
+			<span class="h-1.5 w-1.5 animate-pulse rounded-full bg-primary"></span>
 			Deploys in minutes
 		</span>
 		<h2 class="mx-auto mt-5 max-w-2xl text-4xl font-bold md:text-5xl">
@@ -586,3 +659,96 @@ db.onSnapshot(todos =&gt; {'{'}
 		</div>
 	</footer>
 </div>
+
+{#snippet heroheader()}
+	<header>
+		<nav class="fixed z-20 w-full px-2">
+			<div
+				class={[
+					'mx-auto mt-2 max-w-6xl rounded-2xl px-6 transition-all duration-300 lg:px-12',
+					isScrolled && 'max-w-4xl rounded-2xl border bg-background/50 backdrop-blur-lg lg:px-5'
+				]}
+			>
+				<div
+					class="relative flex flex-wrap items-center justify-between gap-6 py-3 lg:gap-0 lg:py-4"
+				>
+					<div class="flex w-full justify-between lg:w-auto">
+						<a href="/" aria-label="home" class="flex items-center gap-2 text-lg font-bold">
+							<svg viewBox="0 0 24 24" fill="none" class="h-[22px] w-[22px] text-primary">
+								<path
+									d="M12 2L3 7V17L12 22L21 17V7L12 2Z"
+									stroke="currentColor"
+									stroke-width="1.6"
+									stroke-linejoin="round"
+								/>
+							</svg>
+							Cloudflarebase
+						</a>
+
+						<button
+							onclick={() => (menuState = !menuState)}
+							aria-label={menuState == true ? 'Close Menu' : 'Open Menu'}
+							class="relative z-20 -m-2.5 -mr-4 block cursor-pointer p-2.5 lg:hidden"
+						>
+							<Menu
+								class={['m-auto size-6 duration-200', menuState && 'scale-0 rotate-180 opacity-0']}
+							/>
+							<X
+								class={[
+									'absolute inset-0 m-auto size-6 scale-0 -rotate-180 opacity-0 duration-200',
+									menuState && 'scale-100 rotate-0 opacity-100'
+								]}
+							/>
+						</button>
+					</div>
+
+					<div class="absolute inset-0 m-auto hidden size-fit lg:block">
+						<ul class="flex gap-8 text-sm">
+							{#each menuItems as item}
+								<li>
+									<a
+										href={item.href}
+										class="block text-muted-foreground duration-150 hover:text-accent-foreground"
+									>
+										<span>{item.name}</span>
+									</a>
+								</li>
+							{/each}
+						</ul>
+					</div>
+
+					<div
+						class={[
+							'mb-6 w-full flex-wrap items-center justify-end space-y-8 rounded-3xl border bg-background p-6 shadow-2xl shadow-zinc-300/20 md:flex-nowrap lg:m-0 lg:flex lg:w-fit lg:gap-6 lg:space-y-0 lg:border-transparent lg:bg-transparent lg:p-0 lg:shadow-none dark:shadow-none dark:lg:bg-transparent',
+							menuState ? 'block lg:flex' : 'hidden lg:flex'
+						]}
+					>
+						<div class="lg:hidden">
+							<ul class="space-y-6 text-base">
+								{#each menuItems as item}
+									<li>
+										<a
+											href={item.href}
+											class="block text-muted-foreground duration-150 hover:text-accent-foreground"
+										>
+											<span>{item.name}</span>
+										</a>
+									</li>
+								{/each}
+							</ul>
+						</div>
+						<div class="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit">
+							<Button variant="outline" size="sm" class={cn(isScrolled && 'lg:hidden')}
+								>Sign in</Button
+							>
+							<Button size="sm" class={cn(isScrolled && 'lg:hidden')}>Start building</Button>
+							<Button size="sm" class={cn(isScrolled ? 'lg:inline-flex' : 'hidden')}
+								>Start building</Button
+							>
+						</div>
+					</div>
+				</div>
+			</div>
+		</nav>
+	</header>
+{/snippet}
