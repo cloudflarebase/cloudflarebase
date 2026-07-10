@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "vite dev",
+    "dev": "node scripts/dev.js",
     "build": "vite build",
     "preview": "npm run build && wrangler dev",
     "prepare": "svelte-kit sync || echo ''",
@@ -13,7 +13,8 @@
     "lint": "prettier --check . && eslint .",
     "format": "prettier --write .",
     "deploy": "npm run build && wrangler deploy",
-    "cf-typegen": "wrangler types ./src/worker-configuration.d.ts"
+    "cf-typegen": "wrangler types ./src/worker-configuration.d.ts",
+    "postinstall": "cross-env POSTINSTALL=true node scripts/dev.js"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -56,6 +57,9 @@
     "typescript-eslint": "^8.58.1",
     "vaul-svelte": "^1.0.0-next.7",
     "vite": "^8.0.7",
-    "wrangler": "^4.106.0"
+    "wrangler": "^4.110.0",
+    "wait-on": "^9.0.3",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0"
   }
 }

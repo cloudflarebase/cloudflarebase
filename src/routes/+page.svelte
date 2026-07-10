@@ -13,25 +13,54 @@
 		Zap,
 		Radio,
 		Clock,
-		Check
+		Check,
+		Globe,
+		ShieldCheck,
+		Gauge,
+		Terminal,
+		FileCode2,
+		Rocket,
+		ChevronDown
 	} from '@lucide/svelte';
 
-	// --- hero-one block state (from sv-blocks.vercel.app/hero) ---
 	type MenuItem = { name: string; href: string };
 	let menuItems: MenuItem[] = [
 		{ name: 'Primitives', href: '#primitives' },
+		{ name: 'How it works', href: '#how-it-works' },
 		{ name: 'Docs', href: '#code' },
-		{ name: 'Migrate', href: '#migrate' },
-		{ name: 'Pricing', href: '#pricing' }
+		{ name: 'Pricing', href: '#pricing' },
+		{ name: 'FAQ', href: '#faq' }
 	];
 
 	let menuState = $state(false);
-	let isScrolled = $derived.by(() => {
-		if (scrollY.current !== undefined && scrollY.current > 50) return true;
-		return false;
-	});
+	let isScrolled = $derived.by(() => (scrollY.current ?? 0) > 50);
 
-	// --- rest of the page content ---
+	const runtime = ['Workers', 'Durable Objects', 'D1', 'R2', 'KV', 'Queues', 'Agents'];
+
+	// Benefits — "why Cloudflarebase" numbered section
+	const benefits = [
+		{
+			icon: Globe,
+			title: 'No region to pick',
+			desc: 'Every primitive deploys to 300+ Cloudflare locations at once. There is no us-east-1 to accidentally build your whole product around.'
+		},
+		{
+			icon: ShieldCheck,
+			title: 'Auth that syncs where the user is',
+			desc: 'Auth runs as a Cloudflare Agent on top of Better Auth, with session and identity state synced in real time through Durable Objects — so a login in Tokyo and a check in São Paulo both resolve locally, not against one origin.'
+		},
+		{
+			icon: Gauge,
+			title: 'Cold starts you can round to zero',
+			desc: 'Functions run as V8 isolates, not containers. No 300ms wake-up tax before your first response byte.'
+		},
+		{
+			icon: HardDrive,
+			title: 'Storage that stays cheap at scale',
+			desc: 'R2 under the hood means zero egress fees — the bill that usually grows fastest is the one line item that stays flat.'
+		}
+	];
+
 	const primitives = [
 		{
 			icon: Database,
@@ -43,7 +72,7 @@
 			icon: KeyRound,
 			name: 'Auth',
 			tag: 'cloudflarebase.auth',
-			desc: "Email, OAuth, and passkeys with sessions validated at the edge — no origin hop just to check who's signed in."
+			desc: 'A Cloudflare Agent built on Better Auth. Sessions, tokens, and identity state sync in real time across Durable Objects, so auth checks never leave the edge.'
 		},
 		{
 			icon: HardDrive,
@@ -71,26 +100,38 @@
 		}
 	];
 
+	// How it works — 3 step sequence
+	const steps = [
+		{
+			icon: Terminal,
+			title: 'Install the SDK',
+			desc: 'npx create-cloudflarebase-app@latest scaffolds a project wired to your Cloudflare account — no dashboard clicking.'
+		},
+		{
+			icon: FileCode2,
+			title: 'Define your schema',
+			desc: 'Describe collections, auth providers, and storage buckets in one config file. Cloudflarebase generates a type-safe client from it.'
+		},
+		{
+			icon: Rocket,
+			title: 'git push to deploy',
+			desc: 'Every push ships to all 300+ locations at once. No region selector, no manual promotion step.'
+		}
+	];
+
 	const migration = [
-		{
-			cap: 'Data locality',
-			firebase: 'Single region per project',
-			cloudflarebase: '300+ edge locations'
-		},
-		{
-			cap: 'Egress cost on storage',
-			firebase: 'Billed per GB out',
-			cloudflarebase: '$0 — no egress fees'
-		},
-		{
-			cap: 'Cold start on functions',
-			firebase: '~200–800ms',
-			cloudflarebase: '<5ms (V8 isolates)'
-		},
+		{ cap: 'Data locality', firebase: 'Single region per project', cfbase: '300+ edge locations' },
+		{ cap: 'Egress cost on storage', firebase: 'Billed per GB out', cfbase: '$0 — no egress fees' },
+		{ cap: 'Cold start on functions', firebase: '~200–800ms', cfbase: '<5ms (V8 isolates)' },
 		{
 			cap: 'Realtime transport',
 			firebase: 'Long-polling fallback',
-			cloudflarebase: 'Native WebSockets at the edge'
+			cfbase: 'Native WebSockets at the edge'
+		},
+		{
+			cap: 'Auth session sync',
+			firebase: 'Single-region session store',
+			cfbase: 'Durable Objects, synced globally in real time'
 		}
 	];
 
@@ -137,9 +178,28 @@
 		}
 	];
 
-	const runtime = ['Workers', 'Durable Objects', 'D1', 'R2', 'KV', 'Queues'];
+	const faqs = [
+		{
+			q: 'How is the Auth primitive actually built?',
+			a: 'cloudflarebase.auth runs as a Cloudflare Agent on top of Better Auth. Session and identity state is stored in Durable Objects and kept in sync in real time, so an auth check in one region reflects a login that just happened in another — without a round trip to a single origin.'
+		},
+		{
+			q: 'Do I need to know Cloudflare Workers to use Cloudflarebase?',
+			a: 'No. The SDK reads the same way as most document-database clients. Cloudflarebase handles the Workers/Durable Objects/R2 wiring underneath; you write application code.'
+		},
+		{
+			q: "What's the actual migration path from Firebase?",
+			a: 'We generate an export script for Firestore collections, Firebase Auth users, and Storage buckets, and map them onto Cloudflarebase equivalents. Most teams finish in an afternoon.'
+		},
+		{
+			q: 'What happens if Cloudflare has a regional outage?',
+			a: "Durable Objects and Workers already run across Cloudflare's network rather than a single data center, so a regional issue on Cloudflare's side affects a slice of edge locations, not the whole product."
+		}
+	];
 
-	// Edge-race visual (replaces the block's static "app screen" image)
+	let openFaq = $state<number | null>(0);
+
+	// Edge-race visual
 	const mapW = 320;
 	const mapH = 190;
 	const dots: { x: number; y: number }[] = [];
@@ -193,7 +253,7 @@
 			></div>
 		</div>
 
-		<!-- HERO (sv-blocks hero-one, adapted content) -->
+		<!-- HERO -->
 		<section>
 			<div class="relative pt-24 md:pt-36">
 				<div
@@ -248,7 +308,7 @@
 					</div>
 				</div>
 
-				<!-- Signature visual in place of the block's static app screenshot -->
+				<!-- Signature visual -->
 				<div class="relative mt-8 -mr-56 overflow-hidden px-2 sm:mt-12 sm:mr-0 md:mt-20">
 					<div
 						class="absolute inset-0 z-10 bg-linear-to-b from-transparent from-35% to-background"
@@ -320,7 +380,7 @@
 									<div
 										class="font-mono text-[11px] tracking-wide text-muted-foreground/70 uppercase"
 									>
-										on Cloudflare
+										Cloudflarebase on Cloudflare
 									</div>
 									<div class="mt-1 mb-4 text-sm font-semibold text-accent-foreground">
 										Nearest of 300+ edge nodes
@@ -361,8 +421,8 @@
 			</div>
 		</section>
 
-		<!-- Runtime strip (block's logo-cloud slot, repurposed as "built on" instead of external logo SVGs) -->
-		<section class="bg-background pt-16 pb-16 md:pb-32">
+		<!-- Runtime strip -->
+		<section class="bg-background pt-16 pb-16 md:pb-28">
 			<div class="group relative m-auto max-w-5xl px-6">
 				<p class="text-center text-sm text-muted-foreground">
 					Built directly on Cloudflare's primitives
@@ -379,17 +439,35 @@
 		</section>
 	</main>
 
-	<!-- STATS -->
-	<div class="border-y border-border bg-card">
-		<div class="mx-auto grid max-w-6xl grid-cols-2 px-8 md:grid-cols-4">
-			{#each [['300+', 'Edge locations'], ['<50ms', 'Median global latency'], ['99.99%', 'Uptime SLA'], ['0', 'Servers you manage']] as [num, label], i}
-				<div class="border-border px-5 py-9 text-center {i < 3 ? 'border-r' : ''}">
-					<div class="text-3xl font-bold text-primary">{num}</div>
-					<div class="mt-1.5 text-sm text-muted-foreground">{label}</div>
-				</div>
-			{/each}
+	<!-- BENEFITS -->
+	<section class="border-y border-border bg-card px-8 py-24">
+		<div class="mx-auto max-w-6xl">
+			<div class="mb-14 max-w-xl">
+				<span
+					class="inline-flex items-center rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-medium tracking-wide text-primary uppercase"
+					>Why Cloudflarebase</span
+				>
+				<h2 class="mt-4 text-3xl font-bold md:text-4xl">
+					The parts of Firebase that scale badly, rebuilt on the edge.
+				</h2>
+			</div>
+			<div class="grid grid-cols-1 gap-8 md:grid-cols-2">
+				{#each benefits as b, i}
+					<div class="flex gap-5">
+						<div
+							class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl border border-border bg-background text-primary"
+						>
+							<b.icon class="h-5 w-5" strokeWidth={1.8} />
+						</div>
+						<div>
+							<h3 class="font-semibold">{b.title}</h3>
+							<p class="mt-1.5 text-sm leading-relaxed text-muted-foreground">{b.desc}</p>
+						</div>
+					</div>
+				{/each}
+			</div>
 		</div>
-	</div>
+	</section>
 
 	<!-- PRIMITIVES -->
 	<section id="primitives" class="px-8 py-24">
@@ -399,10 +477,10 @@
 					class="inline-flex items-center rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-medium tracking-wide text-primary uppercase"
 					>Primitives</span
 				>
-				<h2 class="mt-4 text-3xl font-bold md:text-4xl">Five building blocks. One network.</h2>
+				<h2 class="mt-4 text-3xl font-bold md:text-4xl">Six building blocks. One network.</h2>
 				<p class="mt-3 text-muted-foreground">
-					Each primitive is a thin, familiar API in front of Cloudflare's own storage layer — no
-					infrastructure to provision, no region to pick.
+					Each primitive is a thin, familiar API in front of Cloudflare's own storage and compute
+					layer — no infrastructure to provision, no region to pick.
 				</p>
 			</div>
 			<div
@@ -421,6 +499,33 @@
 							class="mt-3 inline-block rounded border border-border px-2 py-0.5 font-mono text-[11px] text-muted-foreground/70"
 							>{p.tag}</span
 						>
+					</div>
+				{/each}
+			</div>
+		</div>
+	</section>
+
+	<!-- HOW IT WORKS -->
+	<section id="how-it-works" class="border-y border-border bg-card px-8 py-24">
+		<div class="mx-auto max-w-6xl">
+			<div class="mb-14 max-w-xl">
+				<span
+					class="inline-flex items-center rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-medium tracking-wide text-primary uppercase"
+					>How it works</span
+				>
+				<h2 class="mt-4 text-3xl font-bold md:text-4xl">From zero to deployed in three steps.</h2>
+			</div>
+			<div class="grid grid-cols-1 gap-8 md:grid-cols-3">
+				{#each steps as s, i}
+					<div class="relative rounded-2xl border border-border bg-background p-7">
+						<span class="font-mono text-xs text-muted-foreground/60">0{i + 1}</span>
+						<div
+							class="mt-4 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary"
+						>
+							<s.icon class="h-5 w-5" strokeWidth={1.8} />
+						</div>
+						<h3 class="mt-4 font-semibold">{s.title}</h3>
+						<p class="mt-1.5 text-sm leading-relaxed text-muted-foreground">{s.desc}</p>
 					</div>
 				{/each}
 			</div>
@@ -453,6 +558,10 @@
 					</li>
 					<li class="flex gap-2.5">
 						<Check class="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
+						Auth runs as a Cloudflare Agent on Better Auth, session state synced via Durable Objects
+					</li>
+					<li class="flex gap-2.5">
+						<Check class="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
 						Deploys with <code class="font-mono">git push</code> — no console clicking
 					</li>
 				</ul>
@@ -468,19 +577,18 @@
 							>'@cloudflarebase/sdk'</span
 						>
 
-<span class="text-muted-foreground">// same shape you already know</span>
+<span class="text-muted-foreground">// database — same shape you already know</span>
 const db = cloudflarebase.db.collection(<span class="text-primary">'todos'</span>)
+await db.insert({'{'} title: <span class="text-primary">'Migrate off Firebase'</span
+						>, done: false })
 
-await db.insert({'{'}
-  title: <span class="text-primary">'Migrate off Firebase'</span>,
-  done: false
-})
+<span class="text-muted-foreground"
+							>// auth — Cloudflare Agent + Better Auth, synced via Durable Objects</span
+						>
+const session = await cloudflarebase.auth.getSession(request)
 
-<span class="text-muted-foreground">// runs on the nearest edge node,</span>
-<span class="text-muted-foreground">// not a single AWS region</span>
-db.onSnapshot(todos =&gt; {'{'}
-  render(todos)
-})</code
+<span class="text-muted-foreground">// runs on the nearest edge node, not a single AWS region</span>
+db.onSnapshot(todos =&gt; render(todos))</code
 					></pre>
 			</div>
 		</div>
@@ -514,7 +622,7 @@ db.onSnapshot(todos =&gt; {'{'}
 					<div class="grid grid-cols-3 border-b border-border text-sm last:border-b-0">
 						<div class="px-6 py-4 font-medium">{row.cap}</div>
 						<div class="px-6 py-4 text-muted-foreground">{row.firebase}</div>
-						<div class="px-6 py-4 text-primary">{row.cloudflarebase}</div>
+						<div class="px-6 py-4 text-primary">{row.cfbase}</div>
 					</div>
 				{/each}
 			</div>
@@ -565,6 +673,40 @@ db.onSnapshot(todos =&gt; {'{'}
 						<Button class="w-full" variant={plan.featured ? 'default' : 'outline'}>
 							{plan.cta}
 						</Button>
+					</div>
+				{/each}
+			</div>
+		</div>
+	</section>
+
+	<!-- FAQ -->
+	<section id="faq" class="border-t border-border bg-card px-8 py-24">
+		<div class="mx-auto max-w-3xl">
+			<div class="mb-12 text-center">
+				<span
+					class="inline-flex items-center rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-medium tracking-wide text-primary uppercase"
+					>FAQ</span
+				>
+				<h2 class="mt-4 text-3xl font-bold md:text-4xl">Questions, answered plainly.</h2>
+			</div>
+			<div class="divide-y divide-border rounded-xl border border-border bg-background">
+				{#each faqs as item, i}
+					<div>
+						<button
+							onclick={() => (openFaq = openFaq === i ? null : i)}
+							class="flex w-full items-center justify-between gap-4 px-6 py-5 text-left"
+						>
+							<span class="font-medium">{item.q}</span>
+							<ChevronDown
+								class={cn(
+									'h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform',
+									openFaq === i && 'rotate-180'
+								)}
+							/>
+						</button>
+						{#if openFaq === i}
+							<div class="px-6 pb-5 text-sm leading-relaxed text-muted-foreground">{item.a}</div>
+						{/if}
 					</div>
 				{/each}
 			</div>
@@ -638,8 +780,8 @@ db.onSnapshot(todos =&gt; {'{'}
 							class="mb-2.5 block text-sm text-muted-foreground hover:text-foreground"
 							>Migrate from Firebase</a
 						>
-						<a href="#" class="mb-2.5 block text-sm text-muted-foreground hover:text-foreground"
-							>Status</a
+						<a href="#faq" class="mb-2.5 block text-sm text-muted-foreground hover:text-foreground"
+							>FAQ</a
 						>
 						<a
 							href="#"

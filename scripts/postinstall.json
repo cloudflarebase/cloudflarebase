@@ -1,0 +1,13 @@
+{
+    "prefix": "name",
+    "killOthersOn": [
+        "failure"
+    ],
+    "restartTries": 0,
+    "commands": [
+        {
+            "name": "auth-agent",
+            "command": "cd ./agents/auth && npm install"
+        }
+    ]
+}
