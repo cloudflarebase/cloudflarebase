@@ -1,0 +1,35 @@
+name: D1 Migrate Preview
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - preview
+    paths:
+      - 'migrations/**'
+
+jobs:
+  migrate-preview:
+    runs-on: ubuntu-latest
+    name: D1 Migrate Preview
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ vars.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: D1 Migrate Preview
+        uses: cloudflare/wrangler-action@v3
+        with:
+          wranglerVersion: ${{ vars.WRANGLER_VERSION }}
+          apiToken: ${{ secrets.CF_D1_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID}}
+          workingDirectory: ''
+          packageManager: npm
+          environment: preview
+          command: d1 migrations apply D1 --remote

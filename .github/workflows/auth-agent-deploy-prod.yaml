@@ -1,0 +1,35 @@
+name: Auth Agent Prod
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'agents/auth/**'
+      - 'src/lib/**'
+
+jobs:
+  deploy-prod:
+    runs-on: ubuntu-latest
+    name: Deploy Prod
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ vars.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Deploy Prod
+        uses: cloudflare/wrangler-action@v3
+        with:
+          wranglerVersion: ${{ vars.WRANGLER_VERSION }}
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID}}
+          workingDirectory: 'agents/auth'
+          packageManager: npm
+          environment: prod
