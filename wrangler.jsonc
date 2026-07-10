@@ -54,6 +54,11 @@
 			],
 
 			"services": [{ "binding": "AUTH_AGENT", "service": "auth-agent-local" }]
+		},
+
+		"preview": {
+			"routes": [],
+			"services": [{ "binding": "AUTH_AGENT", "service": "auth-agent-preview" }]
 		}
 	}
 
