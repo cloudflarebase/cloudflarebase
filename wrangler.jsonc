@@ -31,7 +31,31 @@
 		}
 	],
 
-	"services": [{ "binding": "AUTH_AGENT", "service": "auth-agent" }]
+	"services": [{ "binding": "AUTH_AGENT", "service": "auth-agent" }],
+
+	"env": {
+		"local": {
+			"routes": [],
+
+			"d1_databases": [
+				{
+					"binding": "D1",
+					"database_name": "D1",
+					"database_id": "local",
+					"preview_database_id": "D1"
+				}
+			],
+
+			"kv_namespaces": [
+				{
+					"binding": "KV",
+					"id": "KV"
+				}
+			],
+
+			"services": [{ "binding": "AUTH_AGENT", "service": "auth-agent-local" }]
+		}
+	}
 
 	/**
 	 * Smart Placement

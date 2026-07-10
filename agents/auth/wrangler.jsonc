@@ -26,6 +26,35 @@
 	},
 	"upload_source_maps": true,
 	"compatibility_flags": ["nodejs_compat", "nodejs_als"],
+
+	"env": {
+		"local": {
+			"name": "auth-agent-local",
+
+			"durable_objects": {
+				"bindings": [
+					{
+						"class_name": "MyDurableObject",
+						"name": "MY_DURABLE_OBJECT",
+					},
+				],
+			},
+		},
+
+		"preview": {
+			"name": "auth-agent-preview",
+
+			"durable_objects": {
+				"bindings": [
+					{
+						"class_name": "MyDurableObject",
+						"name": "MY_DURABLE_OBJECT",
+					},
+				],
+			},
+		},
+	},
+
 	/**
 	 * Smart Placement
 	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement

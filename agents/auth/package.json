@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "deploy": "wrangler deploy",
-    "dev": "wrangler dev --persist-to=../../.wrangler/state/ --ip 0.0.0.0 --port 8788",
+    "dev": "wrangler dev --env local --persist-to=../../.wrangler/state/ --ip 0.0.0.0 --port 8788",
     "start": "wrangler dev",
     "cf-typegen": "wrangler types"
   },

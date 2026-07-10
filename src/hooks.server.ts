@@ -7,7 +7,8 @@ if (dev) {
 
 	// @ts-expect-error wrangler dev local context
 	platform = await getPlatformProxy({
-		persist: true
+		persist: true,
+		environment: 'local'
 	});
 }
 
