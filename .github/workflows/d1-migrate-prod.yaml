@@ -31,5 +31,4 @@ jobs:
           accountId: ${{ secrets.CF_ACCOUNT_ID}}
           workingDirectory: ''
           packageManager: npm
-          environment: prod
           command: d1 migrations apply D1 --remote

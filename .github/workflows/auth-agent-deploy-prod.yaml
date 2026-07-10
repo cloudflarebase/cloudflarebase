@@ -32,4 +32,3 @@ jobs:
           accountId: ${{ secrets.CF_ACCOUNT_ID}}
           workingDirectory: 'agents/auth'
           packageManager: npm
-          environment: prod
