@@ -1,7 +1,8 @@
+import * as Sentry from '@sentry/cloudflare';
 import { routeAgentRequest } from 'agents';
 import { WorkerEntrypoint } from 'cloudflare:workers';
+import { AuthAgent as AuthAgentBase } from './agent';
 
-export { AuthAgent } from './agent';
 export type {
 	AgentChatReply,
 	AuthActivityEvent,
@@ -9,6 +10,15 @@ export type {
 	AuthAnalytics,
 	AuthOverview,
 } from './agent';
+
+const sentryOptions = (env: Env) => ({
+	dsn: env.SENTRY_DSN,
+	environment: env.SENTRY_ENV,
+	tracesSampleRate: 0.1,
+	enableRpcTracePropagation: true,
+});
+
+export const AuthAgent = Sentry.instrumentDurableObjectWithSentry(sentryOptions, AuthAgentBase);
 
 /**
  * Auth service for Cloudflarebase. Each project gets its own AuthAgent — a
@@ -18,7 +28,7 @@ export type {
  * - Service binding fetch from the dashboard worker (AUTH_AGENT binding)
  * - Directly over HTTP/WebSocket at /agents/auth-agent/<projectId>/...
  */
-export default class AuthService extends WorkerEntrypoint<Env> {
+class AuthService extends WorkerEntrypoint<Env> {
 	async fetch(request: Request): Promise<Response> {
 		const url = new URL(request.url);
 
@@ -32,3 +42,5 @@ export default class AuthService extends WorkerEntrypoint<Env> {
 		);
 	}
 }
+
+export default Sentry.withSentry(sentryOptions, AuthService);

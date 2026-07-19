@@ -6,7 +6,7 @@ interface Env {
 	AUTH_EMAIL_WEBHOOK_SECRET?: string;
 	GOOGLE_CLIENT_ID?: string;
 	GOOGLE_CLIENT_SECRET?: string;
-	DISABLE_RATE_LIMIT?: string;
+	DISABLE_RATE_LIMIT?: 'true';
 	/** Enable Analytics Engine SQL API querying (writes need no credentials). */
 	CF_ACCOUNT_ID?: string;
 	CF_ANALYTICS_API_TOKEN?: string;

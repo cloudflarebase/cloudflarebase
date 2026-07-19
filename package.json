@@ -67,6 +67,7 @@
 		"wrangler": "^4.110.0"
 	},
 	"dependencies": {
+		"@sentry/sveltekit": "^10.66.0",
 		"agents": "^0.17.4"
 	}
 }
