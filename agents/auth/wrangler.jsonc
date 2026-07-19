@@ -93,7 +93,6 @@
 			},
 
 			"vars": {
-				"BETTER_AUTH_SECRET": "cloudflarebase-local-dev-secret-at-least-32-chars-long",
 				"CHAT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
 				"TRUSTED_ORIGINS": "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8788",
 				"WAE_DATASET": "cloudflarebase_auth_events_local",
@@ -129,7 +128,6 @@
 			},
 
 			"vars": {
-				"BETTER_AUTH_SECRET": "cloudflarebase-e2e-test-secret-at-least-32-chars-long",
 				"DISABLE_RATE_LIMIT": "true",
 				"CHAT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
 				"TRUSTED_ORIGINS": "http://localhost:8797,http://127.0.0.1:8797",
