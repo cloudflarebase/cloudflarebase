@@ -65,6 +65,10 @@
 		"EMAIL_FROM": "auth@notifications.cloudflarebase.com",
 	},
 
+	"secrets": {
+		"required": ["CF_ACCOUNT_ID", "CF_ANALYTICS_API_TOKEN", "BETTER_AUTH_SECRET"],
+	},
+
 	// Metrics pipeline: every auth event writes a data point (event type,
 	// country, provider) indexed by project id. Dataset auto-creates on first
 	// write; local dev/test writes are no-ops.
@@ -93,7 +97,6 @@
 			},
 
 			"vars": {
-				"BETTER_AUTH_SECRET": "cloudflarebase-local-dev-secret-at-least-32-chars-long",
 				"CHAT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
 				"TRUSTED_ORIGINS": "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8788",
 				"WAE_DATASET": "cloudflarebase_auth_events_local",
@@ -129,7 +132,7 @@
 			},
 
 			"vars": {
-				"BETTER_AUTH_SECRET": "cloudflarebase-e2e-test-secret-at-least-32-chars-long",
+				"BETTER_AUTH_SECRET": "P6YAEopHeROWj8TE/tlIA7HnPNO8CGsF6bw+5G5UVxsVidsO5pJF8by37OWYEBlE",
 				"DISABLE_RATE_LIMIT": "true",
 				"CHAT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
 				"TRUSTED_ORIGINS": "http://localhost:8797,http://127.0.0.1:8797",
@@ -185,6 +188,10 @@
 
 			"workers_dev": false,
 			"preview_urls": false,
+
+			"secrets": {
+				"required": ["CF_ACCOUNT_ID", "CF_ANALYTICS_API_TOKEN", "BETTER_AUTH_SECRET"],
+			},
 		},
 	},
 }
