@@ -4,7 +4,8 @@ declare global {
 	namespace App {
 		interface Platform {
 			env: Env & {
-				AUTH_AGENT: Service<import('../agents/auth/src/index').default>;
+				/** Service binding to the auth-agent worker (fetch-only interface). */
+				AUTH_AGENT: Fetcher;
 			};
 			cf: CfProperties;
 			ctx: ExecutionContext;

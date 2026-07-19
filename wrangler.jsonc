@@ -56,6 +56,30 @@
 			"services": [{ "binding": "AUTH_AGENT", "service": "auth-agent-local" }]
 		},
 
+		// Isolated environment for Playwright e2e runs — same shape as production
+		// (built worker in workerd + service binding), but bound to auth-agent-test.
+		"test": {
+			"routes": [],
+
+			"d1_databases": [
+				{
+					"binding": "D1",
+					"database_name": "D1",
+					"database_id": "local",
+					"preview_database_id": "D1"
+				}
+			],
+
+			"kv_namespaces": [
+				{
+					"binding": "KV",
+					"id": "KV"
+				}
+			],
+
+			"services": [{ "binding": "AUTH_AGENT", "service": "auth-agent-test" }]
+		},
+
 		"preview": {
 			"routes": [],
 			"services": [{ "binding": "AUTH_AGENT", "service": "auth-agent-preview" }]

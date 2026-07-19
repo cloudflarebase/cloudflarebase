@@ -6,6 +6,7 @@ node_modules
 .netlify
 .wrangler
 /.svelte-kit
+/.svelte-kit-e2e
 /build
 
 # OS
@@ -24,3 +25,9 @@ vite.config.ts.timestamp-*
 
 .dev.vars*
 !.dev.vars.example
+
+# Playwright
+/test-results
+/playwright-report
+/blob-report
+/playwright/.cache

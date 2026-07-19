@@ -42,12 +42,12 @@
 		{
 			icon: Globe,
 			title: 'No region to pick',
-			desc: 'Every primitive deploys to 300+ Cloudflare locations at once. There is no us-east-1 to accidentally build your whole product around.'
+			desc: 'Requests enter through Cloudflare’s global network while stateful project agents keep a single strongly consistent identity. There is no origin fleet to operate.'
 		},
 		{
 			icon: ShieldCheck,
 			title: 'Auth that syncs where the user is',
-			desc: 'Auth runs as a Cloudflare Agent on top of Better Auth, with session and identity state synced in real time through Durable Objects — so a login in Tokyo and a check in São Paulo both resolve locally, not against one origin.'
+			desc: 'Auth runs as a Cloudflare Agent on Better Auth. Each project has one durable, strongly consistent identity store, with live state pushed to connected dashboards.'
 		},
 		{
 			icon: Gauge,
@@ -72,7 +72,7 @@
 			icon: KeyRound,
 			name: 'Auth',
 			tag: 'cloudflarebase.auth',
-			desc: 'A Cloudflare Agent built on Better Auth. Sessions, tokens, and identity state sync in real time across Durable Objects, so auth checks never leave the edge.'
+			desc: 'A Cloudflare Agent built on Better Auth. Every project gets an isolated Durable Object with embedded SQLite and realtime operational state.'
 		},
 		{
 			icon: HardDrive,
@@ -120,7 +120,11 @@
 	];
 
 	const migration = [
-		{ cap: 'Data locality', firebase: 'Single region per project', cfbase: '300+ edge locations' },
+		{
+			cap: 'Request ingress',
+			firebase: 'Regional service endpoint',
+			cfbase: 'Cloudflare global network'
+		},
 		{ cap: 'Egress cost on storage', firebase: 'Billed per GB out', cfbase: '$0 — no egress fees' },
 		{ cap: 'Cold start on functions', firebase: '~200–800ms', cfbase: '<5ms (V8 isolates)' },
 		{
@@ -131,7 +135,7 @@
 		{
 			cap: 'Auth session sync',
 			firebase: 'Single-region session store',
-			cfbase: 'Durable Objects, synced globally in real time'
+			cfbase: 'One strongly consistent agent per project'
 		}
 	];
 
@@ -181,7 +185,7 @@
 	const faqs = [
 		{
 			q: 'How is the Auth primitive actually built?',
-			a: 'cloudflarebase.auth runs as a Cloudflare Agent on top of Better Auth. Session and identity state is stored in Durable Objects and kept in sync in real time, so an auth check in one region reflects a login that just happened in another — without a round trip to a single origin.'
+			a: 'cloudflarebase.auth runs as a Cloudflare Agent on top of Better Auth. Each project maps to one Durable Object with embedded SQLite, giving sessions and identities a strongly consistent home while Workers provide global ingress.'
 		},
 		{
 			q: 'Do I need to know Cloudflare Workers to use Cloudflarebase?',
@@ -296,7 +300,9 @@
 								class="border bg-foreground/10 p-0.5"
 								style="border-radius: calc(0.5rem + 0.125rem + 4px);"
 							>
-								<Button size="lg" class="rounded-xl px-5 text-base">Start building free</Button>
+								<Button href="/dashboard" size="lg" class="rounded-xl px-5 text-base"
+									>Start building free</Button
+								>
 							</div>
 							<Button href="#code" size="lg" variant="ghost" class="rounded-xl px-5"
 								>Read the docs</Button
@@ -728,7 +734,7 @@ db.onSnapshot(todos =&gt; render(todos))</code
 			Free tier, no credit card. Bring your schema or start from a template.
 		</p>
 		<div class="mt-8 flex flex-wrap justify-center gap-3">
-			<Button size="lg">Start building free</Button>
+			<Button href="/dashboard" size="lg">Start building free</Button>
 			<Button size="lg" variant="outline">Book a demo</Button>
 		</div>
 	</section>
@@ -784,7 +790,7 @@ db.onSnapshot(todos =&gt; render(todos))</code
 							>FAQ</a
 						>
 						<a
-							href="#"
+							href="#code"
 							class="mb-2.5 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
 						>
 							GitHub
@@ -880,12 +886,13 @@ db.onSnapshot(todos =&gt; render(todos))</code
 							</ul>
 						</div>
 						<div class="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit">
-							<Button variant="outline" size="sm" class={cn(isScrolled && 'lg:hidden')}
-								>Sign in</Button
+							<Button href="/dashboard" size="sm" class={cn(isScrolled && 'lg:hidden')}
+								>Open live demo</Button
 							>
-							<Button size="sm" class={cn(isScrolled && 'lg:hidden')}>Start building</Button>
-							<Button size="sm" class={cn(isScrolled ? 'lg:inline-flex' : 'hidden')}
-								>Start building</Button
+							<Button
+								href="/dashboard"
+								size="sm"
+								class={cn(isScrolled ? 'lg:inline-flex' : 'hidden')}>Start building</Button
 							>
 						</div>
 					</div>

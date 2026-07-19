@@ -25,7 +25,13 @@ export async function handle({ event, resolve }) {
 		}
 	}
 
-	await event.platform?.env.AUTH_AGENT.helloWorld();
+	// Agents SDK traffic (HTTP + WebSocket state sync) goes straight through to
+	// the auth-agent worker. In local dev the dashboard connects directly to the
+	// agent worker on :8788 instead, since Vite's dev server can't proxy
+	// workerd WebSockets.
+	if (event.url.pathname.startsWith('/agents/') && event.platform?.env?.AUTH_AGENT) {
+		return event.platform.env.AUTH_AGENT.fetch(event.request) as unknown as Promise<Response>;
+	}
 
 	const response = await resolve(event);
 	return response;
