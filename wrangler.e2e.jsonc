@@ -1,0 +1,26 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "cloudflarebase-com-test",
+	"main": ".svelte-kit-e2e/cloudflare/_worker.js",
+	"compatibility_date": "2026-07-10",
+	"compatibility_flags": ["nodejs_compat", "nodejs_als"],
+	"assets": {
+		"binding": "ASSETS",
+		"directory": ".svelte-kit-e2e/cloudflare"
+	},
+	"d1_databases": [
+		{
+			"binding": "D1",
+			"database_name": "D1",
+			"database_id": "local",
+			"preview_database_id": "D1"
+		}
+	],
+	"kv_namespaces": [
+		{
+			"binding": "KV",
+			"id": "KV"
+		}
+	],
+	"services": [{ "binding": "AUTH_AGENT", "service": "auth-agent-test" }]
+}

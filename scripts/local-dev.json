@@ -1,17 +1,15 @@
 {
-    "prefix": "name",
-    "killOthersOn": [
-        "failure"
-    ],
-    "restartTries": 0,
-    "commands": [
-        {
-            "name": "auth-agent",
-            "command": "npm run dev --prefix ./agents/auth"
-        },
-        {
-            "name": "web",
-            "command": "wait-on tcp:localhost:8788 && vite dev --port 5173 --open"
-        }
-    ]
+	"prefix": "name",
+	"killOthersOn": ["failure"],
+	"restartTries": 0,
+	"commands": [
+		{
+			"name": "auth-agent",
+			"command": "npm run dev --prefix ./agents/auth"
+		},
+		{
+			"name": "web",
+			"command": "wait-on tcp:localhost:8788 && vite dev --port 5173 --open"
+		}
+	]
 }

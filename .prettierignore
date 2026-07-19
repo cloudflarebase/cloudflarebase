@@ -1,9 +1,8 @@
-# Package Managers
-package-lock.json
-pnpm-lock.yaml
-yarn.lock
-bun.lock
-bun.lockb
-
-# Miscellaneous
-/static/
+.claude/
+src/lib/components/ui/
+agents/auth/drizzle/meta/
+**/worker-configuration.d.ts
+AGENTS.md
+agents/auth/AGENTS.md
+**/package-lock.json
+agents/auth/.prettierrc

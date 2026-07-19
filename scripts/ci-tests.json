@@ -1,17 +1,11 @@
 {
-    "prefix": "name",
-    "killOthersOn": [
-        "failure"
-    ],
-    "restartTries": 0,
-    "commands": [
-        {
-            "name": "auth-agent",
-            "command": "npm run playwright:dev --prefix ./agents/auth"
-        },
-        {
-            "name": "web",
-            "command": "wait-on tcp:localhost:8788 && npm run build && npm run preview"
-        }
-    ]
+	"prefix": "name",
+	"killOthersOn": ["failure"],
+	"restartTries": 0,
+	"commands": [
+		{
+			"name": "e2e",
+			"command": "npx playwright test"
+		}
+	]
 }

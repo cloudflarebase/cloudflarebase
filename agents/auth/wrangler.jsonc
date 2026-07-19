@@ -12,12 +12,17 @@
 			"new_sqlite_classes": ["MyDurableObject"],
 			"tag": "v1",
 		},
+		{
+			"new_sqlite_classes": ["AuthAgent"],
+			"deleted_classes": ["MyDurableObject"],
+			"tag": "v2",
+		},
 	],
 	"durable_objects": {
 		"bindings": [
 			{
-				"class_name": "MyDurableObject",
-				"name": "MY_DURABLE_OBJECT",
+				"class_name": "AuthAgent",
+				"name": "AuthAgent",
 			},
 		],
 	},
@@ -26,66 +31,156 @@
 	},
 	"upload_source_maps": true,
 	"compatibility_flags": ["nodejs_compat", "nodejs_als"],
+	// Drizzle migrations are imported as text modules (drizzle/migrations.js).
+	"rules": [
+		{
+			"type": "Text",
+			"globs": ["**/*.sql"],
+			"fallthrough": true,
+		},
+	],
 	"workers_dev": false,
 	"preview_urls": false,
+	"ai": {
+		"binding": "AI",
+	},
+	"send_email": [{ "name": "EMAIL" }],
+
+	/**
+	 * BETTER_AUTH_SECRET must be set as a secret for deployed environments:
+	 *   npx wrangler secret put BETTER_AUTH_SECRET [--env preview]
+	 * TRUSTED_ORIGINS is a comma-separated list of origins allowed to call
+	 * the per-project auth endpoints (CSRF protection).
+	 *
+	 * Optional secrets: GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET (social
+	 * sign-in), CF_ACCOUNT_ID / CF_ANALYTICS_API_TOKEN (Analytics Engine SQL
+	 * API querying — writes need no credentials).
+	 */
+	"vars": {
+		"CHAT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+		"TRUSTED_ORIGINS": "https://cloudflarebase.com",
+		"WAE_DATASET": "cloudflarebase_auth_events",
+		"EMAIL_FROM": "auth@notifications.cloudflarebase.com",
+	},
+
+	// Metrics pipeline: every auth event writes a data point (event type,
+	// country, provider) indexed by project id. Dataset auto-creates on first
+	// write; local dev/test writes are no-ops.
+	"analytics_engine_datasets": [
+		{
+			"binding": "AUTH_EVENTS",
+			"dataset": "cloudflarebase_auth_events",
+		},
+	],
 
 	"env": {
 		"local": {
 			"name": "auth-agent-local",
+			"ai": {
+				"binding": "AI",
+				"remote": true,
+			},
 
 			"durable_objects": {
 				"bindings": [
 					{
-						"class_name": "MyDurableObject",
-						"name": "MY_DURABLE_OBJECT",
+						"class_name": "AuthAgent",
+						"name": "AuthAgent",
 					},
 				],
 			},
+
+			"vars": {
+				"BETTER_AUTH_SECRET": "cloudflarebase-local-dev-secret-at-least-32-chars-long",
+				"CHAT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+				"TRUSTED_ORIGINS": "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8788",
+				"WAE_DATASET": "cloudflarebase_auth_events_local",
+			},
+
+			"analytics_engine_datasets": [
+				{
+					"binding": "AUTH_EVENTS",
+					"dataset": "cloudflarebase_auth_events_local",
+				},
+			],
+			"d1_databases": [
+				{
+					"binding": "LOCAL_ANALYTICS",
+					"database_name": "cloudflarebase-auth-analytics-local",
+					"database_id": "11111111-1111-4111-8111-111111111111",
+				},
+			],
+		},
+
+		// Isolated environment for Playwright e2e runs (fresh state dir, own
+		// dev-registry name so it can coexist with a running `npm run dev`).
+		"test": {
+			"name": "auth-agent-test",
+
+			"durable_objects": {
+				"bindings": [
+					{
+						"class_name": "AuthAgent",
+						"name": "AuthAgent",
+					},
+				],
+			},
+
+			"vars": {
+				"BETTER_AUTH_SECRET": "cloudflarebase-e2e-test-secret-at-least-32-chars-long",
+				"DISABLE_RATE_LIMIT": "true",
+				"CHAT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+				"TRUSTED_ORIGINS": "http://localhost:8797,http://127.0.0.1:8797",
+				"WAE_DATASET": "cloudflarebase_auth_events_test",
+			},
+
+			"analytics_engine_datasets": [
+				{
+					"binding": "AUTH_EVENTS",
+					"dataset": "cloudflarebase_auth_events_test",
+				},
+			],
+			"d1_databases": [
+				{
+					"binding": "LOCAL_ANALYTICS",
+					"database_name": "cloudflarebase-auth-analytics-test",
+					"database_id": "22222222-2222-4222-8222-222222222222",
+				},
+			],
 		},
 
 		"preview": {
 			"name": "auth-agent-preview",
+			"ai": {
+				"binding": "AI",
+			},
+			"send_email": [{ "name": "EMAIL" }],
 
 			"durable_objects": {
 				"bindings": [
 					{
-						"class_name": "MyDurableObject",
-						"name": "MY_DURABLE_OBJECT",
+						"class_name": "AuthAgent",
+						"name": "AuthAgent",
 					},
 				],
 			},
+
+			"vars": {
+				"CHAT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+				"EMAIL_FROM": "auth@notifications.cloudflarebase.com",
+				"TRUSTED_ORIGINS": "https://preview.cloudflarebase.com",
+				"WAE_DATASET": "cloudflarebase_auth_events_preview",
+			},
+
+			"analytics_engine_datasets": [
+				{
+					"binding": "AUTH_EVENTS",
+					"dataset": "cloudflarebase_auth_events_preview",
+				},
+			],
 
 			"workers_dev": false,
 			"preview_urls": false,
 		},
 	},
-
-	/**
-	 * Smart Placement
-	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
-	 */
-	// "placement": {  "mode": "smart" }
-	/**
-	 * Bindings
-	 * Bindings allow your Worker to interact with resources on the Cloudflare Developer Platform, including
-	 * databases, object storage, AI inference, real-time communication and more.
-	 * https://developers.cloudflare.com/workers/runtime-apis/bindings/
-	 */
-	/**
-	 * Environment Variables
-	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
-	 * Note: Use secrets to store sensitive data.
-	 * https://developers.cloudflare.com/workers/configuration/secrets/
-	 */
-	// "vars": {  "MY_VARIABLE": "production_value" }
-	/**
-	 * Static Assets
-	 * https://developers.cloudflare.com/workers/static-assets/binding/
-	 */
-	// "assets": {  "directory": "./public/",  "binding": "ASSETS" }
-	/**
-	 * Service Bindings (communicate between multiple Workers)
-	 * https://developers.cloudflare.com/workers/wrangler/configuration/#service-bindings
-	 */
-	// "services": [  {   "binding": "MY_SERVICE",   "service": "my-service"  } ]
 }

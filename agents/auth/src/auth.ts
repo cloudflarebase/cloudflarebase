@@ -1,0 +1,132 @@
+import { betterAuth } from 'better-auth';
+import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { anonymous, bearer } from 'better-auth/plugins';
+import type { DrizzleSqliteDODatabase } from 'drizzle-orm/durable-sqlite';
+import * as schema from './db/schema';
+
+export type AuthDatabase = DrizzleSqliteDODatabase<typeof schema>;
+
+export interface AuthHookUser {
+	id: string;
+	email: string;
+	name: string;
+	isAnonymous?: boolean | null;
+}
+
+export interface ProjectAuthConfig {
+	/** Cloudflarebase project id — one AuthAgent (and one auth database) per project. */
+	projectId: string;
+	/** Drizzle handle over the Durable Object's embedded SQLite database. */
+	db: AuthDatabase;
+	secret: string;
+	/** Origins allowed to call this project's auth endpoints (CSRF protection). */
+	trustedOrigins: string[];
+	/** Disable throttling only in an isolated automated-test environment. */
+	disableRateLimit?: boolean;
+	/** Country of the request currently being handled (from request.cf). */
+	getRequestCountry?: () => string | null;
+	/** Optional Google OAuth credentials (per-project social sign-in). */
+	google?: { clientId: string; clientSecret: string };
+	github?: { clientId: string; clientSecret: string };
+	sendEmail?: (message: {
+		type: 'email-verification' | 'password-reset';
+		to: string;
+		url: string;
+	}) => Promise<void>;
+	onUserCreated?: (user: AuthHookUser) => void | Promise<void>;
+	onSessionActivity?: (
+		session: { id: string; userId: string },
+		kind: 'created' | 'refreshed',
+	) => void | Promise<void>;
+}
+
+/**
+ * Builds the Better Auth instance for a single project. All auth tables
+ * (user, session, account, verification) live inside the project's Durable
+ * Object SQLite database, so every project gets a fully isolated auth stack.
+ */
+export function createProjectAuth(config: ProjectAuthConfig) {
+	return betterAuth({
+		appName: `cloudflarebase:${config.projectId}`,
+		basePath: '/api/auth',
+		secret: config.secret,
+		trustedOrigins: config.trustedOrigins,
+		database: drizzleAdapter(config.db, {
+			provider: 'sqlite',
+			schema,
+			// DO SQLite exposes only sync transactions; run operations sequentially.
+			transaction: false,
+		}),
+		emailAndPassword: {
+			enabled: true,
+			minPasswordLength: 8,
+			maxPasswordLength: 128,
+			revokeSessionsOnPasswordReset: true,
+			sendResetPassword: config.sendEmail
+				? async ({ user, url }) =>
+						config.sendEmail?.({ type: 'password-reset', to: user.email, url })
+				: undefined,
+		},
+		emailVerification: config.sendEmail
+			? {
+					sendOnSignUp: true,
+					sendVerificationEmail: async ({ user, url }) =>
+						config.sendEmail?.({ type: 'email-verification', to: user.email, url }),
+				}
+			: undefined,
+		rateLimit: {
+			enabled: !config.disableRateLimit,
+			window: 60,
+			max: 100,
+			customRules: {
+				'/sign-in/email': { window: 60, max: 10 },
+				'/sign-up/email': { window: 60, max: 10 },
+				'/sign-in/anonymous': { window: 60, max: 20 },
+			},
+		},
+		// Guest sign-in (POST /sign-in/anonymous) — adds user.isAnonymous.
+		plugins: [anonymous(), bearer()],
+		socialProviders: {
+			...(config.google ? { google: config.google } : {}),
+			...(config.github ? { github: config.github } : {}),
+		},
+		session: {
+			additionalFields: {
+				country: { type: 'string', required: false, input: false },
+			},
+		},
+		advanced: {
+			// Scope cookies per project so multiple project dashboards on the
+			// same origin don't clobber each other's sessions.
+			cookiePrefix: `cfb-${config.projectId}`,
+		},
+		databaseHooks: {
+			user: {
+				create: {
+					after: async (user) => {
+						await config.onUserCreated?.(user as AuthHookUser);
+					},
+				},
+			},
+			session: {
+				create: {
+					// Stamp the session with the country Cloudflare resolved for
+					// the request that created it.
+					before: async (session) => ({
+						data: { ...session, country: config.getRequestCountry?.() ?? null },
+					}),
+					after: async (session) => {
+						await config.onSessionActivity?.(session, 'created');
+					},
+				},
+				update: {
+					after: async (session) => {
+						await config.onSessionActivity?.(session, 'refreshed');
+					},
+				},
+			},
+		},
+	});
+}
+
+export type ProjectAuth = ReturnType<typeof createProjectAuth>;
