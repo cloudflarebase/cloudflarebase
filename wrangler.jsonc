@@ -24,6 +24,9 @@
 	"upload_source_maps": true,
 	"preview_urls": true,
 	"workers_dev": false,
+	"vars": {
+		"SENTRY_DSN": "https://50ed6e26b886124ac39e983efb72144d@o4510375271530496.ingest.de.sentry.io/4511764380778576"
+	},
 	"routes": [
 		{
 			"pattern": "cloudflarebase.com",
@@ -32,6 +35,13 @@
 	],
 
 	"services": [{ "binding": "AUTH_AGENT", "service": "auth-agent" }],
+	"ratelimits": [
+		{
+			"name": "API_RATE_LIMITER",
+			"namespace_id": "4511764381",
+			"simple": { "limit": 100, "period": 60 }
+		}
+	],
 
 	"env": {
 		"local": {
@@ -53,7 +63,14 @@
 				}
 			],
 
-			"services": [{ "binding": "AUTH_AGENT", "service": "auth-agent-local" }]
+			"services": [{ "binding": "AUTH_AGENT", "service": "auth-agent-local" }],
+			"ratelimits": [
+				{
+					"name": "API_RATE_LIMITER",
+					"namespace_id": "4511764382",
+					"simple": { "limit": 100, "period": 60 }
+				}
+			]
 		},
 
 		// Isolated environment for Playwright e2e runs — same shape as production
@@ -77,11 +94,28 @@
 				}
 			],
 
-			"services": [{ "binding": "AUTH_AGENT", "service": "auth-agent-test" }]
+			"services": [{ "binding": "AUTH_AGENT", "service": "auth-agent-test" }],
+			"ratelimits": [
+				{
+					"name": "API_RATE_LIMITER",
+					"namespace_id": "4511764383",
+					"simple": { "limit": 100, "period": 60 }
+				}
+			]
 		},
 
 		"preview": {
 			"routes": [],
+			"vars": {
+				"SENTRY_DSN": "https://093f7505d223a871223f9a15130ef116@o4510375271530496.ingest.de.sentry.io/4511764377043024"
+			},
+			"ratelimits": [
+				{
+					"name": "API_RATE_LIMITER",
+					"namespace_id": "4511764382",
+					"simple": { "limit": 100, "period": 60 }
+				}
+			],
 			"services": [{ "binding": "AUTH_AGENT", "service": "auth-agent-preview" }]
 		}
 	}
