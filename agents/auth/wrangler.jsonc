@@ -65,6 +65,10 @@
 		"EMAIL_FROM": "auth@notifications.cloudflarebase.com",
 	},
 
+	"secrets": {
+		"required": ["CF_ACCOUNT_ID", "CF_ANALYTICS_API_TOKEN", "BETTER_AUTH_SECRET"],
+	},
+
 	// Metrics pipeline: every auth event writes a data point (event type,
 	// country, provider) indexed by project id. Dataset auto-creates on first
 	// write; local dev/test writes are no-ops.
@@ -184,6 +188,10 @@
 
 			"workers_dev": false,
 			"preview_urls": false,
+
+			"secrets": {
+				"required": ["CF_ACCOUNT_ID", "CF_ANALYTICS_API_TOKEN", "BETTER_AUTH_SECRET"],
+			},
 		},
 	},
 }
