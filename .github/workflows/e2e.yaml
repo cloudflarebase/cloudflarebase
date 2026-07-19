@@ -31,6 +31,8 @@ jobs:
       # + auth-agent, both in workerd) with fresh state, then runs the suite.
       - name: Run e2e tests
         run: npm test
+        env:
+          BETTER_AUTH_SECRET: P6YAEopHeROWj8TE/tlIA7HnPNO8CGsF6bw+5G5UVxsVidsO5pJF8by37OWYEBlE
 
       - name: Upload Playwright report
         if: failure()
