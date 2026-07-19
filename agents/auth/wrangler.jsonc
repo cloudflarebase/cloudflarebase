@@ -128,6 +128,7 @@
 			},
 
 			"vars": {
+				"BETTER_AUTH_SECRET": "P6YAEopHeROWj8TE/tlIA7HnPNO8CGsF6bw+5G5UVxsVidsO5pJF8by37OWYEBlE",
 				"DISABLE_RATE_LIMIT": "true",
 				"CHAT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
 				"TRUSTED_ORIGINS": "http://localhost:8797,http://127.0.0.1:8797",
