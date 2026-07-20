@@ -532,7 +532,7 @@
 							props={{
 								area: { fillOpacity: 0.18 },
 								line: { strokeWidth: 2.5 },
-								yAxis: { tickCount: 4 }
+								yAxis: { ticks: 4 }
 							}}
 						>
 							{#snippet tooltip()}
