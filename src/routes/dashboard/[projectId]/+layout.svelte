@@ -8,6 +8,8 @@
 	import { Input } from '$lib/components/ui/input';
 	import { IsMobile } from '$lib/hooks/is-mobile.svelte';
 	import ModeToggle from '$lib/components/mode-toggle.svelte';
+	import { cubicOut } from 'svelte/easing';
+	import { fade, fly } from 'svelte/transition';
 	import {
 		ArrowRight,
 		Bot,
@@ -204,19 +206,25 @@
 
 	<!-- Main -->
 	<div class="flex min-w-0 flex-1 flex-col">
-		<header class="flex items-center justify-between gap-4 border-b border-border px-6 py-3">
-			<div class="flex items-center gap-2 text-sm">
+		<header
+			class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-border px-3 py-3 sm:px-6"
+		>
+			<div class="flex min-w-0 items-center gap-2 text-sm">
 				<a href={resolve('/')} class="font-bold md:hidden">Cloudflarebase</a>
 				<span class="hidden text-muted-foreground md:inline">Project</span>
-				<Badge variant="secondary" class="font-mono" data-testid="project-badge">{projectId}</Badge>
+				<Badge
+					variant="secondary"
+					class="max-w-28 truncate font-mono sm:max-w-none"
+					data-testid="project-badge">{projectId}</Badge
+				>
 			</div>
 
-			<div class="flex items-center gap-2">
+			<div class="ml-auto flex items-center gap-1.5 sm:gap-2">
 				<ModeToggle class="h-8 w-8" testId="theme-toggle" />
 				<form onsubmit={switchProject} class="flex items-center gap-2">
 					<Input
 						bind:value={projectInput}
-						class="h-8 w-40 font-mono text-xs"
+						class="h-8 w-24 font-mono text-xs min-[380px]:w-32 sm:w-40"
 						placeholder="switch project…"
 						aria-label="Project id"
 					/>
@@ -244,14 +252,20 @@
 		</nav>
 
 		<main class="min-w-0 flex-1 bg-muted/20">
-			{@render children()}
+			{#key page.url.pathname}
+				<div class="min-h-full" in:fly={{ y: 6, duration: 220, easing: cubicOut, opacity: 0 }}>
+					{@render children()}
+				</div>
+			{/key}
 		</main>
 	</div>
 
 	{#if copilotOpen}
 		<aside
-			class="fixed right-4 bottom-4 z-40 flex h-[min(680px,calc(100vh-2rem))] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border bg-background shadow-2xl"
+			class="fixed right-2 bottom-2 z-40 flex h-[min(680px,calc(100dvh-1rem))] w-[min(380px,calc(100vw-1rem))] flex-col overflow-hidden rounded-2xl border bg-background shadow-2xl sm:right-4 sm:bottom-4 sm:h-[min(680px,calc(100dvh-2rem))] sm:w-[min(380px,calc(100vw-2rem))]"
 			data-testid="project-copilot"
+			in:fly={{ y: 20, duration: 320, easing: cubicOut }}
+			out:fade={{ duration: 120 }}
 		>
 			<header class="flex items-center gap-3 border-b px-4 py-3">
 				<div
@@ -350,7 +364,7 @@
 		</aside>
 	{:else}
 		<Button
-			class="fixed right-5 bottom-5 z-40 gap-2 rounded-full shadow-lg"
+			class="fixed right-3 bottom-3 z-40 gap-2 rounded-full shadow-lg sm:right-5 sm:bottom-5"
 			onclick={() => (copilotOpen = true)}
 			data-testid="open-project-copilot"
 		>

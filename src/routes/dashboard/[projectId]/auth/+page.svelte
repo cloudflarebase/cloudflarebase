@@ -424,7 +424,11 @@
 	<title>{data.projectId} · Authentication · Cloudflarebase</title>
 </svelte:head>
 
-<div class="mx-auto max-w-7xl space-y-6 px-6 py-8" data-testid="auth-page" data-hydrated={hydrated}>
+<div
+	class="mx-auto max-w-7xl space-y-5 px-3 py-5 sm:space-y-6 sm:px-6 sm:py-8"
+	data-testid="auth-page"
+	data-hydrated={hydrated}
+>
 	<div class="flex flex-wrap items-center justify-between gap-3">
 		<div>
 			<h1 class="text-2xl font-semibold">Authentication</h1>
@@ -452,7 +456,7 @@
 					<Card.Description
 						>New users over the last seven days from Analytics Engine.</Card.Description
 					>
-					<div class="mt-4 flex items-end gap-3">
+					<div class="mt-4 flex flex-wrap items-end gap-3">
 						<p class="flex items-baseline gap-1.5">
 							<span class="text-2xl leading-none font-semibold tabular-nums">{activityTotal}</span
 							><span class="text-xs font-medium text-muted-foreground">sign-ups</span>
@@ -531,10 +535,10 @@
 	</div>
 
 	<!-- Stats -->
-	<div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+	<div class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
 		{#each stats as stat (stat.id)}
 			<Card.Root class="py-4" data-testid={`stat-${stat.id}`}>
-				<Card.Content class="flex items-center justify-between px-5">
+				<Card.Content class="flex items-center justify-between gap-2 px-3 sm:px-5">
 					<div>
 						<p class="text-xs tracking-wide text-muted-foreground uppercase">{stat.label}</p>
 						<p class="mt-1 text-2xl font-semibold tabular-nums" data-testid="stat-value">
@@ -542,7 +546,7 @@
 						</p>
 					</div>
 					<div
-						class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary"
+						class="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary min-[360px]:flex"
 					>
 						<stat.icon class="h-4.5 w-4.5" strokeWidth={1.8} />
 					</div>
@@ -596,7 +600,7 @@
 										No users yet — create the first one in the playground.
 									</p>
 								{:else}
-									<Table.Root>
+									<Table.Root class="min-w-[42rem]">
 										<Table.Header>
 											<Table.Row>
 												<Table.Head>Identifier</Table.Head>
@@ -681,7 +685,7 @@
 										No active sessions.
 									</p>
 								{:else}
-									<Table.Root>
+									<Table.Root class="min-w-[42rem]">
 										<Table.Header>
 											<Table.Row>
 												<Table.Head>User</Table.Head>
@@ -873,7 +877,9 @@
 									{#if session?.user}
 										<div class="mt-3 space-y-1.5 text-sm">
 											<p class="font-medium">{session.user.name}</p>
-											<p class="font-mono text-xs text-muted-foreground">{session.user.email}</p>
+											<p class="font-mono text-xs break-all text-muted-foreground">
+												{session.user.email}
+											</p>
 											<p class="text-xs text-muted-foreground">
 												expires {new Date(session.session.expiresAt).toLocaleString()}
 											</p>
@@ -1049,7 +1055,7 @@ await fetch('${`/api/projects/${data.projectId}/auth/get-session`}', {
 										</div>
 									</div>
 									<div
-										class="flex items-start gap-2 rounded-lg border bg-muted/30 p-3 font-mono text-xs text-muted-foreground"
+										class="flex min-w-0 items-start gap-2 rounded-lg border bg-muted/30 p-3 font-mono text-xs break-all text-muted-foreground"
 									>
 										<Code2 class="mt-0.5 h-3.5 w-3.5 shrink-0" />
 										OAuth callback: {typeof window === 'undefined'
@@ -1234,7 +1240,7 @@ await fetch('${`/api/projects/${data.projectId}/auth/get-session`}', {
 					<Card.Description>Configuration and linked-user activity.</Card.Description>
 				</Card.Header>
 				<Card.Content class="space-y-4">
-					<div class="grid grid-cols-2 gap-2 text-sm">
+					<div class="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
 						<div class="flex items-center gap-2 rounded-lg border p-2.5">
 							<KeyRound class="h-4 w-4 text-primary" /> Email/password
 							<span class="ml-auto h-2 w-2 rounded-full bg-emerald-500"></span>

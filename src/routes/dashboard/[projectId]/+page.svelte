@@ -37,7 +37,7 @@
 	<title>{data.projectId} · Project Overview · Cloudflarebase</title>
 </svelte:head>
 
-<div class="mx-auto max-w-6xl space-y-8 px-6 py-8">
+<div class="mx-auto max-w-6xl space-y-6 px-3 py-5 sm:space-y-8 sm:px-6 sm:py-8">
 	<div>
 		<h1 class="text-2xl font-semibold">Project Overview</h1>
 		<p class="mt-1 text-sm text-muted-foreground">
@@ -106,7 +106,7 @@
 					sign-in.
 				</Card.Description>
 			</Card.Header>
-			<Card.Content class="flex items-end justify-between">
+			<Card.Content class="flex flex-wrap items-end justify-between gap-4">
 				<div class="flex gap-6">
 					<div>
 						<p class="text-2xl font-semibold tabular-nums" data-testid="overview-users-count">
