@@ -115,7 +115,7 @@ test.describe('authentication page (frontend)', () => {
 		test.skip(!process.env.RUN_AI_E2E, 'set RUN_AI_E2E=1 to test the real Workers AI binding');
 		await gotoAuthPage(page, SEED_PROJECT);
 
-		await page.getByTestId('open-project-copilot').click();
+		await expect(page.getByTestId('project-copilot')).toBeVisible();
 		const messages = page.getByTestId('copilot-messages');
 		await page.getByRole('button', { name: 'How is user activity?' }).click();
 		await expect(messages.getByText(/activity|DAU|daily/i)).toBeVisible();

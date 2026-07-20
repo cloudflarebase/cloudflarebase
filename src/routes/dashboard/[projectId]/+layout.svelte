@@ -29,7 +29,7 @@
 	// Writable derived: resets to the current project on navigation, while the
 	// input binding can still overwrite it locally.
 	let projectInput = $derived(page.params.projectId ?? 'demo');
-	let copilotOpen = $state(false);
+	let copilotOpen = $state(true);
 	let copilotInput = $state('');
 	let copilotBusy = $state(false);
 	let darkMode = $state(false);
