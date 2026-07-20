@@ -2,8 +2,6 @@
 // vars, so they are augmented here instead of hand-editing the generated
 // worker-configuration.d.ts.
 interface Env {
-	AUTH_EMAIL_WEBHOOK_URL?: string;
-	AUTH_EMAIL_WEBHOOK_SECRET?: string;
 	GOOGLE_CLIENT_ID?: string;
 	GOOGLE_CLIENT_SECRET?: string;
 	DISABLE_RATE_LIMIT?: 'true';

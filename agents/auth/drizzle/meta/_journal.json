@@ -22,6 +22,13 @@
       "when": 1784489733764,
       "tag": "0002_stiff_daredevil",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1784512063872,
+      "tag": "0003_reflective_tinkerer",
+      "breakpoints": true
     }
   ]
 }

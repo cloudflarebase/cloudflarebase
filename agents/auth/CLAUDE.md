@@ -25,7 +25,7 @@ If a Better Auth upgrade changes expected fields, compare the schema against `ge
 The Worker exposes `GET /health`. Agent requests use `/agents/auth-agent/<projectId>/...` and support:
 
 - `GET /overview`: current users, sessions, and synchronized state.
-- `GET /analytics`: operational and behavioral aggregates.
+- `GET /analytics`: operational and behavioral aggregates; accepts a validated `timeZone` query parameter for signup-day buckets.
 - `GET /config`: safe public client configuration; never returns provider secrets.
 - `POST /chat`: Workers AI answer grounded in project analytics.
 - `PUT /admin/settings`: trusted origins and per-project social credentials.
@@ -50,15 +50,15 @@ The SvelteKit Worker exposes matching `/api/projects/<projectId>/...` same-origi
 - Google credentials may come from environment secrets. Google and GitHub may also be configured per project.
 - Per-project credentials live in Durable Object storage. API responses expose only enabled provider names and never secrets.
 - Verification and password-reset mail prefers the `EMAIL` Cloudflare Email Service binding with `EMAIL_FROM`.
-- `AUTH_EMAIL_WEBHOOK_URL` is the fallback; `AUTH_EMAIL_WEBHOOK_SECRET` adds a bearer signature.
-- Core sign-up/sign-in remains usable when no email delivery mechanism is configured.
+- Core sign-up/sign-in remains usable when Cloudflare Email Service is not configured.
 
 ## Analytics and AI
 
 - Every auth event writes a best-effort data point to `AUTH_EVENTS` (Workers Analytics Engine). Analytics failures must never fail authentication.
 - Local/test mirror the same event dimensions to `LOCAL_ANALYTICS` D1 for DAU/WAU/MAU, provider, country, and trend queries without Cloudflare credentials.
-- Production Analytics Engine SQL reads require `CF_ACCOUNT_ID` and `CF_ANALYTICS_API_TOKEN`; otherwise analytics reports write-only mode.
-- `/chat` uses the `AI` binding and configured `CHAT_MODEL`. Workers AI has no local simulator, so the local binding is remote.
+- Production Analytics Engine SQL reads require `CF_ACCOUNT_ID` and a `CF_ANALYTICS_API_TOKEN` with Account Analytics Read; otherwise analytics reports write-only mode. Writes require no token.
+- Behavioral results are cached for 5 seconds. Cache entries include the validated IANA timezone because signup dates are grouped in the viewer's local day.
+- `/chat` does not require Better Auth. It stores successful user/agent message pairs in `chat_message`, scoped by a project-specific SHA-256 hash of `CF-Connecting-IP` (with proxy-header and local fallbacks). Never persist the raw address. Shared IPs share history; changed IPs start a new history. Recent history is model context. It is the only route that calls the `AI` binding; inference errors return 502 and must not affect auth or analytics. Workers AI has no local simulator, so the local binding is remote.
 
 ## Constraints and gotchas
 
@@ -66,11 +66,12 @@ The SvelteKit Worker exposes matching `/api/projects/<projectId>/...` same-origi
 - `AuthAgentState` is broadcast to every connected dashboard. Keep it small; activity is capped by `MAX_EVENTS`.
 - SQL files are Wrangler Text modules. Preserve the Wrangler `rules` entry and `src/modules.d.ts` declaration.
 - Service-binding calls through Node/miniflare must use `fetch(url, init)`, not a Node-realm `Request`.
-- `BETTER_AUTH_SECRET` is a plain variable only in local/test; preview and production require a Wrangler secret.
+- Run Wrangler commands from `agents/auth`; use `--env preview` for `auth-agent-preview`.
+- `BETTER_AUTH_SECRET` is a plain variable only in local/test; preview and production require a Wrangler secret. The fixed E2E value belongs only in `env.test.vars`.
 - Do not edit `worker-configuration.d.ts`. Run `npx wrangler types` after binding or variable changes.
 
 ## Development and tests
 
 `npm run dev` starts `wrangler dev --env local` on :8788 with state in `../../.wrangler/state/`, shared with the root app's development proxy.
 
-Playwright starts `auth-agent-test` on :8798 with persistence in `../../.wrangler/test-state/auth-agent`, local D1 analytics, and test-only rate-limit disabling. Windows cleanup is coordinated by the root `scripts/kill-port.mjs` and `scripts/clean-dir.mjs`; do not replace those with unscoped process kills or directory deletion.
+Playwright starts `auth-agent-test` on :8798 with persistence in `../../.wrangler/test-state/auth-agent`, local D1 analytics, a fixed test-only auth secret, and disabled rate limiting. Windows cleanup is coordinated by the root `scripts/kill-port.mjs` and `scripts/clean-dir.mjs`; do not replace those with unscoped process kills or directory deletion.

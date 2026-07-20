@@ -85,4 +85,13 @@ export interface AgentChatReply {
 	answer: string;
 	mode: 'workers-ai';
 	model: string;
+	userMessage: AgentChatMessage;
+	agentMessage: AgentChatMessage;
+}
+
+export interface AgentChatMessage {
+	id: string;
+	role: 'user' | 'agent';
+	content: string;
+	createdAt: string;
 }

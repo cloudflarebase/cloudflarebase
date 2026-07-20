@@ -1,6 +1,12 @@
 <script lang="ts">
 	import { dev } from '$app/environment';
-	import type { AgentChatReply, AuthAgentState, AuthAnalytics, AuthOverview } from '$lib/agents';
+	import type {
+		AgentChatMessage,
+		AgentChatReply,
+		AuthAgentState,
+		AuthAnalytics,
+		AuthOverview
+	} from '$lib/agents';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
 	import * as Card from '$lib/components/ui/card';
@@ -64,12 +70,7 @@
 	let authError = $state<string | null>(null);
 
 	// Agent chat state
-	interface ChatMessage {
-		id: string;
-		role: 'user' | 'agent';
-		content: string;
-	}
-	let chatMessages = $state<ChatMessage[]>([]);
+	let chatMessages = $state<AgentChatMessage[]>([]);
 	let chatInput = $state('');
 	let chatBusy = $state(false);
 	// svelte-ignore state_referenced_locally
@@ -99,6 +100,7 @@
 		agentState = data.overview.state;
 		analytics = data.analytics;
 		chatMessages = [];
+		void loadChatHistory(data.projectId);
 		allowedOriginsInput = (data.overview.state.allowedOrigins ?? []).join('\n');
 		googleEnabled = (data.overview.state.enabledSocialProviders ?? []).includes('google');
 		githubEnabled = (data.overview.state.enabledSocialProviders ?? []).includes('github');
@@ -159,6 +161,21 @@
 		}
 	}
 
+	async function loadChatHistory(projectId: string) {
+		try {
+			const response = await fetch(`/api/projects/${projectId}/chat`);
+			if (projectId !== data.projectId) return;
+			if (!response.ok) {
+				chatMessages = [];
+				return;
+			}
+			const history = (await response.json()) as { messages: AgentChatMessage[] };
+			chatMessages = history.messages;
+		} catch {
+			// Keep the panel usable if history is temporarily unavailable.
+		}
+	}
+
 	async function authPost(path: string, body: Record<string, unknown> = {}) {
 		busy = true;
 		authError = null;
@@ -173,7 +190,11 @@
 			if (!res.ok) {
 				throw new Error(json?.message ?? `request failed (HTTP ${res.status})`);
 			}
-			await Promise.all([refreshSession(data.projectId), refreshData(data.projectId)]);
+			await Promise.all([
+				refreshSession(data.projectId),
+				refreshData(data.projectId),
+				loadChatHistory(data.projectId)
+			]);
 		} catch (err) {
 			authError = err instanceof Error ? err.message : String(err);
 		} finally {
@@ -210,7 +231,11 @@
 		if (!trimmed || chatBusy) return;
 		chatBusy = true;
 		chatInput = '';
-		chatMessages = [...chatMessages, { id: crypto.randomUUID(), role: 'user', content: trimmed }];
+		const pendingId = crypto.randomUUID();
+		chatMessages = [
+			...chatMessages,
+			{ id: pendingId, role: 'user', content: trimmed, createdAt: new Date().toISOString() }
+		];
 		try {
 			const res = await fetch(`/api/projects/${data.projectId}/chat`, {
 				method: 'POST',
@@ -218,18 +243,32 @@
 				body: JSON.stringify({ question: trimmed })
 			});
 			const reply = (await res.json()) as AgentChatReply & { error?: string };
+			if (res.ok) {
+				chatMessages = [
+					...chatMessages.filter((message) => message.id !== pendingId),
+					reply.userMessage,
+					reply.agentMessage
+				];
+			} else {
+				chatMessages = [
+					...chatMessages,
+					{
+						id: crypto.randomUUID(),
+						role: 'agent',
+						content: reply.error ?? 'The agent could not answer that.',
+						createdAt: new Date().toISOString()
+					}
+				];
+			}
+		} catch {
 			chatMessages = [
 				...chatMessages,
 				{
 					id: crypto.randomUUID(),
 					role: 'agent',
-					content: res.ok ? reply.answer : (reply.error ?? 'The agent could not answer that.')
+					content: 'The agent is unreachable right now.',
+					createdAt: new Date().toISOString()
 				}
-			];
-		} catch {
-			chatMessages = [
-				...chatMessages,
-				{ id: crypto.randomUUID(), role: 'agent', content: 'The agent is unreachable right now.' }
 			];
 		} finally {
 			chatBusy = false;

@@ -12,8 +12,9 @@ Cloudflarebase is an agentic backend-as-a-service built directly on Cloudflare. 
 - Per-project trusted-origin configuration and CORS preflight support
 - User deletion and individual session revocation from the dashboard
 - Realtime user/session counters and activity through Agents SDK state sync
-- Behavioral analytics written to Workers Analytics Engine
+- Near-real-time, local-time behavioral charts backed by Workers Analytics Engine
 - A Workers AI project copilot grounded in operational and aggregated analytics data
+- Per-client AI conversation history persisted in Durable Object SQLite using a project-scoped IP hash
 - A public, isolated demo project created automatically for each browser
 
 The Durable Object database is the source of truth for identities and active sessions. Workers Analytics Engine is the source for behavioral/time-series analytics. It is intentionally not used as an authoritative identity database because Analytics Engine is sampled and retains data for a limited window.
@@ -27,7 +28,7 @@ npm run dev
 
 This starts the Auth Agent Worker on port `8788` and the SvelteKit dashboard on port `5173`.
 
-Workers AI has no local simulator. The local Wrangler AI binding is remote, so AI chat requires a logged-in Cloudflare account and consumes Workers AI usage. The rest of Auth Agent works locally without AI credentials.
+Workers AI has no local simulator. Local chat uses the remote binding; the rest of Auth Agent works without AI.
 
 ## Integrate a project
 
@@ -78,39 +79,44 @@ There are two independently deployed Workers:
 
 The web Worker reaches Auth Agent through a service binding. Auth endpoints preserve the caller origin so Better Auth can apply its CSRF and trusted-origin checks. The Auth Agent applies Drizzle migrations to embedded Durable Object SQLite when it starts.
 
-## Production configuration
+## Deploy to your Cloudflare account
 
-Auth Agent requires:
+Authenticate Wrangler, install dependencies, update the Worker names/domains and resource IDs in the Wrangler configs, then deploy the Auth Agent before the web Worker:
 
 ```bash
+npx wrangler login
+npm install
+```
+
+Generate a Better Auth secret locally (at least 32 random bytes):
+
+```bash
+openssl rand -base64 48
 cd agents/auth
 npx wrangler secret put BETTER_AUTH_SECRET
 ```
 
-Optional Google OAuth:
+Paste the generated value at the prompt. For preview, append `--env preview`.
 
-```bash
-npx wrangler secret put GOOGLE_CLIENT_ID
-npx wrangler secret put GOOGLE_CLIENT_SECRET
-```
-
-Verification and password-reset delivery uses Cloudflare Email Service in deployed environments. Onboard the `notifications.cloudflarebase.com` sending subdomain in Email Service; the Worker sends from `auth@notifications.cloudflarebase.com` through the structured `EMAIL.send()` binding. A signed webhook remains available as a fallback:
-
-```bash
-npx wrangler secret put AUTH_EMAIL_WEBHOOK_URL
-npx wrangler secret put AUTH_EMAIL_WEBHOOK_SECRET
-```
-
-When the native email binding is unavailable, Cloudflarebase sends `POST` JSON with `{ projectId, type, to, url }` and, when configured, `Authorization: Bearer <AUTH_EMAIL_WEBHOOK_SECRET>`. Without either delivery method, core signup/signin remains available and project config reports `emailDeliveryConfigured: false`.
-
-Analytics Engine event writes require no token. Dashboard SQL reads require:
+Analytics Engine writes need no credentials. For dashboard SQL reads, create a custom Cloudflare API token in **My Profile → API Tokens** with **Account → Account Analytics → Read**, restricted to your account. Then, from `agents/auth`:
 
 ```bash
 npx wrangler secret put CF_ACCOUNT_ID
 npx wrangler secret put CF_ANALYTICS_API_TOKEN
 ```
 
-The API token needs `Account Analytics Read`. Local and test environments mirror the same event dimensions into a D1 time-series table, so DAU/MAU, providers, countries, and charts work without Cloudflare account credentials. Production remains Analytics Engine-first; if its read credentials are absent or querying fails, auth remains available and the dashboard reports `write-only` or `error`.
+Use your 32-character account ID for `CF_ACCOUNT_ID` and the custom token for `CF_ANALYTICS_API_TOKEN`. Secrets are environment-specific; append `--env preview` when configuring preview.
+
+Deploy both Workers:
+
+```bash
+cd agents/auth
+npm run deploy
+cd ../..
+npm run deploy
+```
+
+Optional OAuth and email delivery require their corresponding secrets/bindings in `agents/auth/wrangler.jsonc`. Workers AI failure affects chat only; authentication remains available.
 
 ## Validation
 
