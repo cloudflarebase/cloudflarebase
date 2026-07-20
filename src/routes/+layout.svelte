@@ -24,5 +24,5 @@
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
-<ModeWatcher defaultMode="dark" />
+<ModeWatcher />
 <div class="app-viewport">{@render children()}</div>
