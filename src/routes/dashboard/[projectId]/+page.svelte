@@ -35,6 +35,10 @@
 
 <svelte:head>
 	<title>{data.projectId} · Project Overview · Cloudflarebase</title>
+	<meta
+		name="description"
+		content="Manage the isolated Cloudflarebase demo backend for project {data.projectId}."
+	/>
 </svelte:head>
 
 <div class="mx-auto max-w-6xl space-y-6 px-3 py-5 sm:space-y-8 sm:px-6 sm:py-8">
