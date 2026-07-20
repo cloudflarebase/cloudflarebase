@@ -28,6 +28,7 @@
 		Users
 	} from '@lucide/svelte';
 	import { AgentClient } from 'agents/client';
+	import { AreaChart } from 'layerchart';
 	import { onMount } from 'svelte';
 
 	let { data } = $props();
@@ -121,7 +122,7 @@
 
 		void refreshSession(projectId);
 		// Polling safety net for when the WebSocket can't connect.
-		const poll = setInterval(() => void refreshData(projectId), 10_000);
+		const poll = setInterval(() => void refreshData(projectId), 5_000);
 
 		return () => {
 			clearInterval(poll);
@@ -131,9 +132,10 @@
 
 	async function refreshData(projectId: string) {
 		try {
+			const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 			const [overviewRes, analyticsRes] = await Promise.all([
 				fetch(`/api/projects/${projectId}/overview`),
-				fetch(`/api/projects/${projectId}/analytics`)
+				fetch(`/api/projects/${projectId}/analytics?timeZone=${encodeURIComponent(timeZone)}`)
 			]);
 			if (projectId !== data.projectId) return;
 			if (overviewRes.ok) {
@@ -353,7 +355,11 @@
 		return Array.from({ length: 7 }, (_, index) => {
 			const date = new Date();
 			date.setDate(date.getDate() - (6 - index));
-			const key = date.toISOString().slice(0, 10);
+			const key = [
+				date.getFullYear(),
+				String(date.getMonth() + 1).padStart(2, '0'),
+				String(date.getDate()).padStart(2, '0')
+			].join('-');
 			return {
 				day: date.toLocaleDateString(undefined, { weekday: 'short' }),
 				dateLabel: date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
@@ -366,19 +372,7 @@
 			};
 		});
 	});
-	const activityMax = $derived(Math.max(1, ...activityChart.map((point) => point.count)));
 	const activityTotal = $derived(activityChart.reduce((sum, point) => sum + point.count, 0));
-	const activityPoints = $derived(
-		activityChart.map((point, index) => ({
-			x: 40 + index * (640 / 6),
-			y: 145 - (point.count / activityMax) * 115,
-			...point
-		}))
-	);
-	const activityLine = $derived(
-		activityPoints.map((point, index) => `${index ? 'L' : 'M'} ${point.x} ${point.y}`).join(' ')
-	);
-	const activityArea = $derived(`${activityLine} L 680 145 L 40 145 Z`);
 	const activityDateRange = $derived(
 		activityChart.length
 			? `${activityChart[0].dateLabel} – ${activityChart.at(-1)?.dateLabel}`
@@ -391,11 +385,7 @@
 	<title>{data.projectId} · Authentication · Cloudflarebase</title>
 </svelte:head>
 
-<div
-	class="mx-auto max-w-7xl space-y-6 px-6 py-8"
-	data-testid="auth-page"
-	data-hydrated={hydrated}
->
+<div class="mx-auto max-w-7xl space-y-6 px-6 py-8" data-testid="auth-page" data-hydrated={hydrated}>
 	<div class="flex flex-wrap items-center justify-between gap-3">
 		<div>
 			<h1 class="text-2xl font-semibold">Authentication</h1>
@@ -415,88 +405,91 @@
 		</Badge>
 	</div>
 
-	<Card.Root>
-		<Card.Header class="pb-2">
-			<div>
-				<Card.Title>Authentication activity</Card.Title>
-				<Card.Description
-					>New users over the last seven days from Analytics Engine.</Card.Description
-				>
-				<div class="mt-4 flex items-end gap-3">
-					<p class="flex items-baseline gap-1.5">
-						<span class="text-2xl leading-none font-semibold tabular-nums">{activityTotal}</span
-						><span class="text-xs font-medium text-muted-foreground">sign-ups</span>
-					</p>
-					<p class="border-l pl-3 text-xs text-muted-foreground">{activityDateRange}</p>
-				</div>
-			</div>
-		</Card.Header>
-		<Card.Content>
-			{#if ['connected', 'local'].includes(analytics.engine.status)}
-				<Chart.Container config={activityChartConfig} class="aspect-auto h-52 w-full">
-					<div class="h-full w-full" aria-label="Seven-day sign-up trend">
-						<svg viewBox="0 0 720 190" class="h-full w-full" role="img">
-							<defs
-								><linearGradient id="auth-activity-fill" x1="0" y1="0" x2="0" y2="1"
-									><stop offset="0%" stop-color="var(--color-primary)" stop-opacity=".24" /><stop
-										offset="100%"
-										stop-color="var(--color-primary)"
-										stop-opacity=".015"
-									/></linearGradient
-								></defs
-							>
-							{#each [30, 68, 106, 145] as y}<line
-									x1="40"
-									x2="680"
-									{y}
-									y2={y}
-									class="stroke-border"
-									stroke-dasharray="3 5"
-								/>{/each}
-							<path d={activityArea} fill="url(#auth-activity-fill)" />
-							<path
-								d={activityLine}
-								fill="none"
-								class="stroke-primary"
-								stroke-width="3"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							/>
-							{#each activityPoints as point (point.day)}
-								<g class="group">
-									<title>{point.fullDate}: {point.count} sign-ups</title>
-									<circle cx={point.x} cy={point.y} r="10" class="fill-transparent" />
-									<circle
-										cx={point.x}
-										cy={point.y}
-										r="4"
-										class="fill-card stroke-primary"
-										stroke-width="2.5"
-									/>
-									<text
-										x={point.x}
-										y="171"
-										text-anchor="middle"
-										class="fill-muted-foreground text-[11px]">{point.day}</text
-									>
-								</g>
-							{/each}
-						</svg>
+	<div class="grid items-stretch gap-6 lg:grid-cols-3">
+		<Card.Root class="lg:col-span-2">
+			<Card.Header class="pb-2">
+				<div>
+					<Card.Title>Authentication activity</Card.Title>
+					<Card.Description
+						>New users over the last seven days from Analytics Engine.</Card.Description
+					>
+					<div class="mt-4 flex items-end gap-3">
+						<p class="flex items-baseline gap-1.5">
+							<span class="text-2xl leading-none font-semibold tabular-nums">{activityTotal}</span
+							><span class="text-xs font-medium text-muted-foreground">sign-ups</span>
+						</p>
+						<p class="border-l pl-3 text-xs text-muted-foreground">{activityDateRange}</p>
 					</div>
-				</Chart.Container>
-			{:else}
-				<div
-					class="flex h-24 items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground"
-				>
-					{analytics.engine.status === 'write-only'
-						? 'Events are flowing. Add Analytics Engine read credentials to visualize activity.'
-						: analytics.engine.status === 'error'
-							? 'Analytics Engine reads are temporarily unavailable.'
-							: 'No sign-ups recorded in the last seven days.'}
 				</div>
-			{/if}
-		</Card.Content>
-	</Card.Root>
+			</Card.Header>
+			<Card.Content>
+				{#if ['connected', 'local'].includes(analytics.engine.status)}
+					<Chart.Container config={activityChartConfig} class="aspect-auto h-52 w-full">
+						<AreaChart
+							data={activityChart}
+							x="day"
+							y="count"
+							series={[{ key: 'count', label: 'Sign-ups', color: 'var(--color-count)' }]}
+							props={{
+								area: { fillOpacity: 0.18 },
+								line: { strokeWidth: 2.5 },
+								axis: { y: { tickCount: 4 } }
+							}}
+						>
+							{#snippet tooltip()}
+								<Chart.Tooltip indicator="line" />
+							{/snippet}
+						</AreaChart>
+					</Chart.Container>
+				{:else}
+					<div
+						class="flex h-24 items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground"
+					>
+						{analytics.engine.status === 'write-only'
+							? 'Events are flowing. Add Analytics Engine read credentials to visualize activity.'
+							: analytics.engine.status === 'error'
+								? 'Analytics Engine reads are temporarily unavailable.'
+								: 'No sign-ups recorded in the last seven days.'}
+					</div>
+				{/if}
+			</Card.Content>
+		</Card.Root>
+
+		<Card.Root data-testid="activity-card">
+			<Card.Header>
+				<Card.Title class="flex items-center gap-2">
+					<Radio class="h-4 w-4 text-primary" /> Live activity
+				</Card.Title>
+				<Card.Description>Streamed from the agent via WebSocket state sync.</Card.Description>
+			</Card.Header>
+			<Card.Content>
+				{#if agentState.events.length === 0}
+					<p class="py-6 text-center text-sm text-muted-foreground">Nothing yet.</p>
+				{:else}
+					<ScrollArea class="h-72 pr-3" type="always">
+						<ol class="space-y-4">
+							{#each agentState.events as event (event.id)}
+								{@const Icon = eventIcons[event.type] ?? Activity}
+								<li class="flex gap-3">
+									<div
+										class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
+									>
+										<Icon class="h-3.5 w-3.5" />
+									</div>
+									<div class="min-w-0">
+										<p class="text-sm leading-snug">{event.message}</p>
+										<p class="mt-0.5 font-mono text-[11px] text-muted-foreground">
+											{event.type} · {timeAgo(event.at)}
+										</p>
+									</div>
+								</li>
+							{/each}
+						</ol>
+					</ScrollArea>
+				{/if}
+			</Card.Content>
+		</Card.Root>
+	</div>
 
 	<!-- Stats -->
 	<div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -1135,37 +1128,63 @@ await fetch('${`/api/projects/${data.projectId}/auth/get-session`}', {
 
 		<!-- Right column -->
 		<div class="space-y-6">
-			<Card.Root data-testid="activity-card">
+			<Card.Root data-testid="wae-card">
 				<Card.Header>
-					<Card.Title class="flex items-center gap-2">
-						<Radio class="h-4 w-4 text-primary" /> Live activity
-					</Card.Title>
-					<Card.Description>Streamed from the agent via WebSocket state sync.</Card.Description>
+					<Card.Title>Events pipeline</Card.Title>
+					<Card.Description>Workers Analytics Engine</Card.Description>
+				</Card.Header>
+				<Card.Content class="space-y-3">
+					<div class="flex items-center justify-between gap-2">
+						<span class="truncate font-mono text-xs">{analytics.engine.dataset}</span>
+						<Badge variant="outline">{analytics.engine.status}</Badge>
+					</div>
+					{#if analytics.engine.error}
+						<p class="mt-2 text-xs text-destructive">{analytics.engine.error}</p>
+					{/if}
+					{#if analytics.eventsLast24h?.length}
+						<ul class="space-y-2">
+							{#each analytics.eventsLast24h as e (e.eventType)}
+								<li class="flex items-center justify-between text-sm">
+									<span class="font-mono text-xs">{e.eventType}</span>
+									<span class="tabular-nums">{e.count}</span>
+								</li>
+							{/each}
+						</ul>
+					{:else}
+						<p class="text-xs text-muted-foreground">
+							Every auth event streams a data point (event, country, provider) indexed by project.
+							Set CF_ACCOUNT_ID + CF_ANALYTICS_API_TOKEN on the agent to query it from here.
+						</p>
+					{/if}
+				</Card.Content>
+			</Card.Root>
+
+			<Card.Root data-testid="countries-card">
+				<Card.Header>
+					<Card.Title>Top countries</Card.Title>
+					<Card.Description>By session count, resolved at the edge.</Card.Description>
 				</Card.Header>
 				<Card.Content>
-					{#if agentState.events.length === 0}
-						<p class="py-6 text-center text-sm text-muted-foreground">Nothing yet.</p>
+					{#if analytics.countries.length === 0}
+						{#if analytics.engine.status === 'write-only'}
+							<p class="text-sm text-muted-foreground">
+								Country events are being collected. Configure Analytics Engine read credentials to
+								show rankings.
+							</p>
+						{:else if analytics.engine.status === 'error'}
+							<p class="text-sm text-destructive">Country analytics are temporarily unavailable.</p>
+						{:else}
+							<p class="text-sm text-muted-foreground">No sessions recorded in the last 30 days.</p>
+						{/if}
 					{:else}
-						<ScrollArea class="h-72 pr-3">
-							<ol class="space-y-4">
-								{#each agentState.events as event (event.id)}
-									{@const Icon = eventIcons[event.type] ?? Activity}
-									<li class="flex gap-3">
-										<div
-											class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
-										>
-											<Icon class="h-3.5 w-3.5" />
-										</div>
-										<div class="min-w-0">
-											<p class="text-sm leading-snug">{event.message}</p>
-											<p class="mt-0.5 font-mono text-[11px] text-muted-foreground">
-												{event.type} · {timeAgo(event.at)}
-											</p>
-										</div>
-									</li>
-								{/each}
-							</ol>
-						</ScrollArea>
+						<ul class="space-y-2">
+							{#each analytics.countries as c (c.country)}
+								<li class="flex items-center justify-between text-sm">
+									<span class="font-mono text-xs">{c.country}</span>
+									<span class="tabular-nums">{c.sessions}</span>
+								</li>
+							{/each}
+						</ul>
 					{/if}
 				</Card.Content>
 			</Card.Root>
@@ -1239,67 +1258,6 @@ await fetch('${`/api/projects/${data.projectId}/auth/get-session`}', {
 							</ul>
 						{/if}
 					</div>
-				</Card.Content>
-			</Card.Root>
-
-			<Card.Root data-testid="countries-card">
-				<Card.Header>
-					<Card.Title>Top countries</Card.Title>
-					<Card.Description>By session count, resolved at the edge.</Card.Description>
-				</Card.Header>
-				<Card.Content>
-					{#if analytics.countries.length === 0}
-						{#if analytics.engine.status === 'write-only'}
-							<p class="text-sm text-muted-foreground">
-								Country events are being collected. Configure Analytics Engine read credentials to
-								show rankings.
-							</p>
-						{:else if analytics.engine.status === 'error'}
-							<p class="text-sm text-destructive">Country analytics are temporarily unavailable.</p>
-						{:else}
-							<p class="text-sm text-muted-foreground">No sessions recorded in the last 30 days.</p>
-						{/if}
-					{:else}
-						<ul class="space-y-2">
-							{#each analytics.countries as c (c.country)}
-								<li class="flex items-center justify-between text-sm">
-									<span class="font-mono text-xs">{c.country}</span>
-									<span class="tabular-nums">{c.sessions}</span>
-								</li>
-							{/each}
-						</ul>
-					{/if}
-				</Card.Content>
-			</Card.Root>
-
-			<Card.Root data-testid="wae-card">
-				<Card.Header>
-					<Card.Title>Events pipeline</Card.Title>
-					<Card.Description>Workers Analytics Engine</Card.Description>
-				</Card.Header>
-				<Card.Content class="space-y-3">
-					<div class="flex items-center justify-between gap-2">
-						<span class="truncate font-mono text-xs">{analytics.engine.dataset}</span>
-						<Badge variant="outline">{analytics.engine.status}</Badge>
-					</div>
-					{#if analytics.engine.error}
-						<p class="mt-2 text-xs text-destructive">{analytics.engine.error}</p>
-					{/if}
-					{#if analytics.eventsLast24h?.length}
-						<ul class="space-y-2">
-							{#each analytics.eventsLast24h as e (e.eventType)}
-								<li class="flex items-center justify-between text-sm">
-									<span class="font-mono text-xs">{e.eventType}</span>
-									<span class="tabular-nums">{e.count}</span>
-								</li>
-							{/each}
-						</ul>
-					{:else}
-						<p class="text-xs text-muted-foreground">
-							Every auth event streams a data point (event, country, provider) indexed by project.
-							Set CF_ACCOUNT_ID + CF_ANALYTICS_API_TOKEN on the agent to query it from here.
-						</p>
-					{/if}
 				</Card.Content>
 			</Card.Root>
 		</div>

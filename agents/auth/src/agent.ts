@@ -7,7 +7,10 @@ import { createProjectAuth, type AuthDatabase, type ProjectAuth } from './auth';
 import * as schema from './db/schema';
 
 const MAX_EVENTS = 50;
-const ANALYTICS_CACHE_MS = 60_000;
+// Analytics Engine ingestion is asynchronous. Keep this short so a query that
+// races a new write is retried quickly instead of holding stale graph data.
+const ANALYTICS_CACHE_MS = 5_000;
+const TIME_ZONE_PATTERN = /^(?:Etc\/UTC|[A-Za-z_]+(?:\/[A-Za-z0-9_+-]+)+)$/;
 
 type SocialCredentials = Partial<
 	Record<'google' | 'github', { clientId: string; clientSecret: string }>
@@ -166,7 +169,11 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 
 	db: AuthDatabase;
 	private _auth: ProjectAuth | null = null;
-	private behavioralCache: { expiresAt: number; data: BehavioralAnalytics } | null = null;
+	private behavioralCache: {
+		expiresAt: number;
+		timeZone: string;
+		data: BehavioralAnalytics;
+	} | null = null;
 	/** Country Cloudflare resolved for the request currently being handled. */
 	private requestCountry: string | null = null;
 	private socialCredentials: SocialCredentials = {};
@@ -421,7 +428,9 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 		}
 
 		if (subPath === '/analytics') {
-			return Response.json(await this.getAnalytics());
+			const requestedTimeZone = url.searchParams.get('timeZone') ?? 'Etc/UTC';
+			const timeZone = TIME_ZONE_PATTERN.test(requestedTimeZone) ? requestedTimeZone : 'Etc/UTC';
+			return Response.json(await this.getAnalytics(timeZone));
 		}
 
 		if (subPath === '/config' && request.method === 'GET') {
@@ -662,7 +671,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 	}
 
 	/** Operational totals from SQLite plus behavioral analytics from Analytics Engine. */
-	async getAnalytics(): Promise<AuthAnalytics> {
+	async getAnalytics(timeZone = 'Etc/UTC'): Promise<AuthAnalytics> {
 		const [totalUsers] = await this.db.select({ n: count() }).from(schema.user);
 		const [anonymousUsers] = await this.db
 			.select({ n: count() })
@@ -676,7 +685,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 		let analyticsError: string | undefined;
 		let behavioral: BehavioralAnalytics;
 		try {
-			behavioral = await this.queryBehavioralAnalytics();
+			behavioral = await this.queryBehavioralAnalytics(timeZone);
 		} catch (error) {
 			analyticsError = error instanceof Error ? error.message : 'Analytics Engine query failed';
 			console.error(analyticsError);
@@ -746,15 +755,23 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 	}
 
 	/** Behavioral analytics are exclusively sourced from Analytics Engine. */
-	private async queryBehavioralAnalytics(): Promise<BehavioralAnalytics> {
-		if (this.behavioralCache && this.behavioralCache.expiresAt > Date.now()) {
+	private async queryBehavioralAnalytics(timeZone: string): Promise<BehavioralAnalytics> {
+		if (
+			this.behavioralCache &&
+			this.behavioralCache.timeZone === timeZone &&
+			this.behavioralCache.expiresAt > Date.now()
+		) {
 			return this.behavioralCache.data;
 		}
 		const config = this.waeConfig;
 		if (!config && this.env.LOCAL_ANALYTICS) return this.queryLocalBehavioralAnalytics();
 		const empty = this.emptyBehavioralAnalytics();
 		if (!config) {
-			this.behavioralCache = { expiresAt: Date.now() + ANALYTICS_CACHE_MS, data: empty };
+			this.behavioralCache = {
+				expiresAt: Date.now() + ANALYTICS_CACHE_MS,
+				timeZone,
+				data: empty,
+			};
 			return empty;
 		}
 		if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(config.dataset)) {
@@ -777,7 +794,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 				`SELECT blob2 AS country, SUM(_sample_interval) AS sessions ${from} AND blob1 = 'session.created' AND timestamp > NOW() - INTERVAL '30' DAY GROUP BY country ORDER BY sessions DESC LIMIT 10`,
 			),
 			this.analyticsSql<{ day: string; count: number | string }>(
-				`SELECT toStartOfDay(timestamp) AS day, SUM(_sample_interval) AS count ${from} AND blob1 = 'user.created' AND timestamp > NOW() - INTERVAL '7' DAY GROUP BY day ORDER BY day`,
+				`SELECT formatDateTime(timestamp, '%Y-%m-%d', '${timeZone}') AS day, SUM(_sample_interval) AS count ${from} AND blob1 = 'user.created' AND timestamp > NOW() - INTERVAL '7' DAY GROUP BY day ORDER BY day`,
 			),
 			this.analyticsSql<{ users: number | string }>(
 				`SELECT count(DISTINCT blob4) AS users ${from} AND blob1 = 'user.created' AND blob6 = 'gmail.com'`,
@@ -799,7 +816,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 			})),
 			eventsLast24h: events.map((row) => ({ ...row, count: Number(row.count) })),
 		};
-		this.behavioralCache = { expiresAt: Date.now() + ANALYTICS_CACHE_MS, data };
+		this.behavioralCache = { expiresAt: Date.now() + ANALYTICS_CACHE_MS, timeZone, data };
 		return data;
 	}
 

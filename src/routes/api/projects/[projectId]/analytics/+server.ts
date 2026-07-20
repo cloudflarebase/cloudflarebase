@@ -11,6 +11,10 @@ export const GET: RequestHandler = async ({ params, url, platform }) => {
 	const projectId = assertProjectId(params.projectId);
 	const agent = requireAuthAgent(platform);
 
-	const response = await agent.fetch(agentUrl(url.origin, projectId, '/analytics'));
+	const timeZone = url.searchParams.get('timeZone');
+	const analyticsPath = timeZone
+		? `/analytics?timeZone=${encodeURIComponent(timeZone)}`
+		: '/analytics';
+	const response = await agent.fetch(agentUrl(url.origin, projectId, analyticsPath));
 	return toNativeResponse(response as unknown as Response);
 };
