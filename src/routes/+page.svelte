@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { scrollY } from 'svelte/reactivity/window';
 	import { Button } from '$lib/components/ui/button';
+	import ModeToggle from '$lib/components/mode-toggle.svelte';
 	import { cn } from '$lib/utils';
 	import {
 		Menu,
@@ -833,21 +834,27 @@ db.onSnapshot(todos =&gt; render(todos))</code
 							Cloudflarebase
 						</a>
 
-						<button
-							onclick={() => (menuState = !menuState)}
-							aria-label={menuState == true ? 'Close Menu' : 'Open Menu'}
-							class="relative z-20 -m-2.5 -mr-4 block cursor-pointer p-2.5 lg:hidden"
-						>
-							<Menu
-								class={['m-auto size-6 duration-200', menuState && 'scale-0 rotate-180 opacity-0']}
-							/>
-							<X
-								class={[
-									'absolute inset-0 m-auto size-6 scale-0 -rotate-180 opacity-0 duration-200',
-									menuState && 'scale-100 rotate-0 opacity-100'
-								]}
-							/>
-						</button>
+						<div class="flex items-center gap-1 lg:hidden">
+							<ModeToggle variant="ghost" class="h-9 w-9" />
+							<button
+								onclick={() => (menuState = !menuState)}
+								aria-label={menuState == true ? 'Close Menu' : 'Open Menu'}
+								class="relative z-20 -m-2.5 -mr-4 block cursor-pointer p-2.5"
+							>
+								<Menu
+									class={[
+										'm-auto size-6 duration-200',
+										menuState && 'scale-0 rotate-180 opacity-0'
+									]}
+								/>
+								<X
+									class={[
+										'absolute inset-0 m-auto size-6 scale-0 -rotate-180 opacity-0 duration-200',
+										menuState && 'scale-100 rotate-0 opacity-100'
+									]}
+								/>
+							</button>
+						</div>
 					</div>
 
 					<div class="absolute inset-0 m-auto hidden size-fit lg:block">
@@ -871,6 +878,11 @@ db.onSnapshot(todos =&gt; render(todos))</code
 							menuState ? 'block lg:flex' : 'hidden lg:flex'
 						]}
 					>
+						<ModeToggle
+							variant="ghost"
+							class="hidden h-9 w-9 lg:inline-flex"
+							testId="landing-theme-toggle"
+						/>
 						<div class="lg:hidden">
 							<ul class="space-y-6 text-base">
 								{#each menuItems as item}
