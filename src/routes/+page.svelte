@@ -221,6 +221,29 @@
 	let edgeMs = $state(0);
 
 	onMount(() => {
+		const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		const sections = Array.from(document.querySelectorAll<HTMLElement>('main > section'));
+		sections.forEach((section, index) => {
+			section.classList.add('landing-reveal');
+			section.style.setProperty('--reveal-delay', `${Math.min(index * 35, 140)}ms`);
+		});
+
+		const observer = reducedMotion
+			? null
+			: new IntersectionObserver(
+					(entries) => {
+						for (const entry of entries) {
+							if (!entry.isIntersecting) continue;
+							(entry.target as HTMLElement).classList.add('is-visible');
+							observer?.unobserve(entry.target);
+						}
+					},
+					{ threshold: 0.12, rootMargin: '0px 0px -7% 0px' }
+				);
+
+		if (observer) sections.forEach((section) => observer.observe(section));
+		else sections.forEach((section) => section.classList.add('is-visible'));
+
 		const start = performance.now();
 		const duration = 1400;
 		function step(ts: number) {
@@ -231,6 +254,7 @@
 			if (p < 1) requestAnimationFrame(step);
 		}
 		requestAnimationFrame(step);
+		return () => observer?.disconnect();
 	});
 </script>
 
@@ -264,7 +288,7 @@
 				<div
 					class="absolute inset-0 -z-10 size-full [background:radial-gradient(125%_125%_at_50%_100%,transparent_0%,var(--color-background)_75%)]"
 				></div>
-				<div class="mx-auto max-w-7xl px-6">
+				<div class="mx-auto max-w-7xl px-4 sm:px-6">
 					<div class="text-center sm:mx-auto lg:mt-0 lg:mr-auto">
 						<div>
 							<a
@@ -288,10 +312,14 @@
 							</a>
 						</div>
 
-						<h1 class="mt-8 text-6xl text-balance md:text-7xl lg:mt-16 xl:text-[5.25rem]">
+						<h1
+							class="mt-8 text-4xl leading-[1.05] text-balance sm:text-6xl md:text-7xl lg:mt-16 xl:text-[5.25rem]"
+						>
 							Ship a backend that lives everywhere your users already are.
 						</h1>
-						<p class="mx-auto mt-8 max-w-2xl text-lg text-balance text-muted-foreground">
+						<p
+							class="mx-auto mt-6 max-w-2xl text-base text-balance text-muted-foreground sm:mt-8 sm:text-lg"
+						>
 							Database, auth, storage, and functions — deployed to 300+ Cloudflare locations instead
 							of one AWS region. Same developer experience you're used to, none of the round trips.
 						</p>
@@ -316,7 +344,7 @@
 				</div>
 
 				<!-- Signature visual -->
-				<div class="relative mt-8 -mr-56 overflow-hidden px-2 sm:mt-12 sm:mr-0 md:mt-20">
+				<div class="relative mt-8 overflow-hidden px-2 sm:mt-12 md:mt-20">
 					<div
 						class="absolute inset-0 z-10 bg-linear-to-b from-transparent from-35% to-background"
 					></div>
@@ -327,7 +355,7 @@
 							<div
 								class="flex items-center justify-between border-b border-border px-5 py-3.5 font-mono text-xs text-muted-foreground"
 							>
-								<span class="flex items-center gap-2.5">
+								<span class="flex min-w-0 items-center gap-2.5 truncate">
 									<span class="flex gap-1.5">
 										<span class="h-2 w-2 rounded-full bg-border"></span>
 										<span class="h-2 w-2 rounded-full bg-border"></span>
@@ -335,7 +363,7 @@
 									</span>
 									request-simulator.cloudflarebase.dev
 								</span>
-								<span>Toronto → nearest endpoint</span>
+								<span class="hidden shrink-0 sm:inline">Toronto → nearest endpoint</span>
 							</div>
 							<div class="grid grid-cols-1 md:grid-cols-2">
 								<div class="border-b border-border p-6 md:border-r md:border-b-0">
@@ -447,7 +475,7 @@
 	</main>
 
 	<!-- BENEFITS -->
-	<section class="border-y border-border bg-card px-8 py-24">
+	<section class="border-y border-border bg-card px-4 py-16 sm:px-8 sm:py-24">
 		<div class="mx-auto max-w-6xl">
 			<div class="mb-14 max-w-xl">
 				<span
@@ -477,7 +505,7 @@
 	</section>
 
 	<!-- PRIMITIVES -->
-	<section id="primitives" class="px-8 py-24">
+	<section id="primitives" class="px-4 py-16 sm:px-8 sm:py-24">
 		<div class="mx-auto max-w-6xl">
 			<div class="mb-14 max-w-xl">
 				<span
@@ -513,7 +541,7 @@
 	</section>
 
 	<!-- HOW IT WORKS -->
-	<section id="how-it-works" class="border-y border-border bg-card px-8 py-24">
+	<section id="how-it-works" class="border-y border-border bg-card px-4 py-16 sm:px-8 sm:py-24">
 		<div class="mx-auto max-w-6xl">
 			<div class="mb-14 max-w-xl">
 				<span
@@ -540,7 +568,7 @@
 	</section>
 
 	<!-- CODE SHOWCASE -->
-	<section id="code" class="px-8 py-24">
+	<section id="code" class="px-4 py-16 sm:px-8 sm:py-24">
 		<div class="mx-auto grid max-w-6xl grid-cols-1 items-center gap-14 md:grid-cols-2">
 			<div>
 				<span
@@ -602,7 +630,7 @@ db.onSnapshot(todos =&gt; render(todos))</code
 	</section>
 
 	<!-- MIGRATION -->
-	<section id="migrate" class="border-y border-border bg-card px-8 py-24">
+	<section id="migrate" class="border-y border-border bg-card px-4 py-16 sm:px-8 sm:py-24">
 		<div class="mx-auto max-w-6xl">
 			<div class="mb-14 max-w-xl">
 				<span
@@ -617,27 +645,29 @@ db.onSnapshot(todos =&gt; render(todos))</code
 					model with a script we generate for you.
 				</p>
 			</div>
-			<div class="overflow-hidden rounded-xl border border-border">
-				<div
-					class="grid grid-cols-3 border-b border-border bg-accent/40 font-mono text-[11px] tracking-wide text-muted-foreground uppercase"
-				>
-					<div class="px-6 py-4">Capability</div>
-					<div class="px-6 py-4">Firebase</div>
-					<div class="px-6 py-4">Cloudflarebase</div>
-				</div>
-				{#each migration as row}
-					<div class="grid grid-cols-3 border-b border-border text-sm last:border-b-0">
-						<div class="px-6 py-4 font-medium">{row.cap}</div>
-						<div class="px-6 py-4 text-muted-foreground">{row.firebase}</div>
-						<div class="px-6 py-4 text-primary">{row.cfbase}</div>
+			<div class="overflow-x-auto rounded-xl border border-border">
+				<div class="min-w-160">
+					<div
+						class="grid grid-cols-3 border-b border-border bg-accent/40 font-mono text-[11px] tracking-wide text-muted-foreground uppercase"
+					>
+						<div class="px-6 py-4">Capability</div>
+						<div class="px-6 py-4">Firebase</div>
+						<div class="px-6 py-4">Cloudflarebase</div>
 					</div>
-				{/each}
+					{#each migration as row}
+						<div class="grid grid-cols-3 border-b border-border text-sm last:border-b-0">
+							<div class="px-6 py-4 font-medium">{row.cap}</div>
+							<div class="px-6 py-4 text-muted-foreground">{row.firebase}</div>
+							<div class="px-6 py-4 text-primary">{row.cfbase}</div>
+						</div>
+					{/each}
+				</div>
 			</div>
 		</div>
 	</section>
 
 	<!-- PRICING -->
-	<section id="pricing" class="px-8 py-24">
+	<section id="pricing" class="px-4 py-16 sm:px-8 sm:py-24">
 		<div class="mx-auto max-w-6xl">
 			<div class="mx-auto mb-14 max-w-xl text-center">
 				<span
@@ -687,7 +717,7 @@ db.onSnapshot(todos =&gt; render(todos))</code
 	</section>
 
 	<!-- FAQ -->
-	<section id="faq" class="border-t border-border bg-card px-8 py-24">
+	<section id="faq" class="border-t border-border bg-card px-4 py-16 sm:px-8 sm:py-24">
 		<div class="mx-auto max-w-3xl">
 			<div class="mb-12 text-center">
 				<span
@@ -721,14 +751,14 @@ db.onSnapshot(todos =&gt; render(todos))</code
 	</section>
 
 	<!-- CTA BAND -->
-	<section class="px-8 py-28 text-center">
+	<section class="px-4 py-20 text-center sm:px-8 sm:py-28">
 		<span
 			class="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-medium tracking-wide text-primary uppercase"
 		>
 			<span class="h-1.5 w-1.5 animate-pulse rounded-full bg-primary"></span>
 			Deploys in minutes
 		</span>
-		<h2 class="mx-auto mt-5 max-w-2xl text-4xl font-bold md:text-5xl">
+		<h2 class="mx-auto mt-5 max-w-2xl text-3xl font-bold sm:text-4xl md:text-5xl">
 			Your next backend doesn't need a region.
 		</h2>
 		<p class="mt-4 text-muted-foreground">
@@ -741,7 +771,7 @@ db.onSnapshot(todos =&gt; render(todos))</code
 	</section>
 
 	<!-- FOOTER -->
-	<footer class="border-t border-border px-8 pt-12 pb-8">
+	<footer class="border-t border-border px-4 pt-12 pb-8 sm:px-8">
 		<div class="mx-auto max-w-6xl">
 			<div class="mb-11 flex flex-wrap justify-between gap-10">
 				<div>
@@ -761,7 +791,7 @@ db.onSnapshot(todos =&gt; render(todos))</code
 						about regions.
 					</p>
 				</div>
-				<div class="flex flex-wrap gap-16">
+				<div class="flex w-full flex-wrap gap-10 sm:w-auto sm:gap-16">
 					<div>
 						<h4 class="mb-3.5 font-mono text-xs tracking-wide text-muted-foreground/70 uppercase">
 							Product
