@@ -210,7 +210,16 @@
 			class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-border px-3 py-3 sm:px-6"
 		>
 			<div class="flex min-w-0 items-center gap-2 text-sm">
-				<a href={resolve('/')} class="font-bold md:hidden">Cloudflarebase</a>
+				<a href={resolve('/')} class="shrink-0 md:hidden" aria-label="Cloudflarebase home">
+					<svg viewBox="0 0 24 24" fill="none" class="h-5 w-5 text-primary">
+						<path
+							d="M12 2L3 7V17L12 22L21 17V7L12 2Z"
+							stroke="currentColor"
+							stroke-width="1.6"
+							stroke-linejoin="round"
+						/>
+					</svg>
+				</a>
 				<span class="hidden text-muted-foreground md:inline">Project</span>
 				<Badge
 					variant="secondary"
@@ -303,7 +312,7 @@
 						</p>
 					</div>
 					<div class="grid gap-2">
-						{#each ['Summarize this project', 'What should I investigate?', 'How is user activity?'] as suggestion}
+						{#each ['Summarize this project', 'What should I investigate?', 'How is user activity?'] as suggestion (suggestion)}
 							<button
 								class="rounded-lg border px-3 py-2 text-left text-xs hover:border-primary/40 hover:bg-primary/5"
 								onclick={() => askCopilot(suggestion)}

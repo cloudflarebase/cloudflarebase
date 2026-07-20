@@ -1,21 +1,24 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('landing page (frontend)', () => {
-	test('renders the hero and primitives', async ({ page }) => {
+	test('renders the hero and the live feature grid', async ({ page }) => {
 		await page.goto('/');
 
 		await expect(page.getByRole('heading', { level: 1 })).toContainText(
-			'Ship a backend that lives everywhere'
+			'The open-source Firebase for Cloudflare'
 		);
 		await expect(
-			page.getByRole('heading', { name: 'Six building blocks. One network.' })
+			page.getByRole('heading', { name: "Auth shipped first. It's live right now." })
+		).toBeVisible();
+		await expect(
+			page.getByRole('heading', { name: 'Every Firebase primitive. One agent at a time.' })
 		).toBeVisible();
 	});
 
-	test('"Start building" leads to the demo project dashboard', async ({ page }) => {
+	test('"Open the live demo" leads to the demo project dashboard', async ({ page }) => {
 		await page.goto('/');
 
-		await page.getByRole('link', { name: 'Start building free' }).first().click();
+		await page.getByRole('link', { name: 'Open the live demo' }).first().click();
 
 		await expect(page).toHaveURL(/\/dashboard\/demo-[a-f0-9]{20}$/);
 		await expect(page.getByRole('heading', { name: 'Project Overview' })).toBeVisible();
