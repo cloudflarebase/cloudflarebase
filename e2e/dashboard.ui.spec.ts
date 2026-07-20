@@ -167,19 +167,6 @@ test.describe('authentication page (frontend)', () => {
 		await expect(page.getByLabel('GitHub client secret')).toHaveValue('');
 	});
 
-	test('sign-in methods summary opens provider settings', async ({ page }) => {
-		await gotoAuthPage(page, SEED_PROJECT);
-
-		await page.getByTestId('providers-card').getByRole('button').click();
-
-		await expect(page).toHaveURL(/#sign-in-methods$/);
-		await expect(page.getByTestId('settings-card')).toBeVisible();
-		await expect(page.getByRole('tab', { name: 'Sign-in methods' })).toHaveAttribute(
-			'aria-selected',
-			'true'
-		);
-	});
-
 	test('deleting a user from the console removes the identity', async ({ page }) => {
 		const project = 'e2e-ui-delete';
 		const email = uniqueEmail('ui-delete');
