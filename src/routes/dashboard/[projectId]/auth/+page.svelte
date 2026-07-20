@@ -35,14 +35,24 @@
 	} from '@lucide/svelte';
 	import { AgentClient } from 'agents/client';
 	import { AreaChart } from 'layerchart';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 
 	let { data } = $props();
 	let hydrated = $state(false);
 
 	onMount(() => {
 		hydrated = true;
+		if (window.location.hash === '#sign-in-methods') activeTab = 'settings';
 	});
+
+	async function openSignInMethods() {
+		activeTab = 'settings';
+		history.replaceState(history.state, '', '#sign-in-methods');
+		await tick();
+		document
+			.getElementById('sign-in-methods')
+			?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	}
 
 	// Initial values from the server load; kept in sync on navigation by the
 	// $effect below and updated live via WebSocket state sync.
@@ -52,6 +62,10 @@
 	let agentState = $state<AuthAgentState>(data.overview.state);
 	// svelte-ignore state_referenced_locally
 	let analytics = $state<AuthAnalytics>(data.analytics);
+	// The server cannot know the browser's IANA timezone. Keep the activity
+	// panel hidden until its first timezone-specific refresh instead of briefly
+	// rendering UTC buckets and then shifting the graph after hydration.
+	let activityTimeZone = $state<string | null>(null);
 	let live = $state(false);
 	let activeTab = $state('users');
 	let playgroundTab = $state('sign-up');
@@ -99,6 +113,7 @@
 		overview = data.overview;
 		agentState = data.overview.state;
 		analytics = data.analytics;
+		activityTimeZone = null;
 		chatMessages = [];
 		void loadChatHistory(data.projectId);
 		allowedOriginsInput = (data.overview.state.allowedOrigins ?? []).join('\n');
@@ -146,6 +161,7 @@
 			}
 			if (analyticsRes.ok) {
 				analytics = await analyticsRes.json();
+				activityTimeZone = timeZone;
 			}
 		} catch {
 			// agent unreachable — keep last snapshot
@@ -422,6 +438,10 @@
 
 <svelte:head>
 	<title>{data.projectId} · Authentication · Cloudflarebase</title>
+	<meta
+		name="description"
+		content="Configure authentication, users, sessions, OAuth providers, and analytics for project {data.projectId}."
+	/>
 </svelte:head>
 
 <div
@@ -456,18 +476,30 @@
 					<Card.Description
 						>New users over the last seven days from Analytics Engine.</Card.Description
 					>
-					<div class="mt-4 flex flex-wrap items-end gap-3">
-						<p class="flex items-baseline gap-1.5">
-							<span class="text-2xl leading-none font-semibold tabular-nums">{activityTotal}</span
-							><span class="text-xs font-medium text-muted-foreground">sign-ups</span>
+					{#if activityTimeZone}
+						<div class="mt-4 flex flex-wrap items-end gap-3">
+							<p class="flex items-baseline gap-1.5">
+								<span class="text-2xl leading-none font-semibold tabular-nums">{activityTotal}</span
+								><span class="text-xs font-medium text-muted-foreground">sign-ups</span>
+							</p>
+							<p class="border-l pl-3 text-xs text-muted-foreground">{activityDateRange}</p>
+						</div>
+					{:else}
+						<p class="mt-4 text-xs text-muted-foreground" data-testid="activity-timezone-loading">
+							Loading activity in your timezone…
 						</p>
-						<p class="border-l pl-3 text-xs text-muted-foreground">{activityDateRange}</p>
-					</div>
+					{/if}
 				</div>
 			</Card.Header>
 			<Card.Content>
-				{#if ['connected', 'local'].includes(analytics.engine.status)}
-					<Chart.Container config={activityChartConfig} class="aspect-auto h-52 w-full">
+				{#if !activityTimeZone}
+					<div class="h-52 w-full animate-pulse rounded-lg bg-muted/50" aria-hidden="true"></div>
+				{:else if ['connected', 'local'].includes(analytics.engine.status)}
+					<Chart.Container
+						config={activityChartConfig}
+						class="aspect-auto h-52 w-full"
+						data-testid="activity-chart"
+					>
 						<AreaChart
 							data={activityChart}
 							x="day"
@@ -950,7 +982,7 @@ await fetch('${`/api/projects/${data.projectId}/auth/get-session`}', {
 						</Card.Root>
 					</div>{/if}
 
-				{#if activeTab === 'settings'}<div class="mt-4">
+				{#if activeTab === 'settings'}<div class="mt-4" id="sign-in-methods">
 						<Card.Root data-testid="settings-card" class="overflow-hidden">
 							<Card.Header class="border-b bg-muted/20">
 								<Card.Title>Sign-in methods</Card.Title>
@@ -1235,75 +1267,88 @@ await fetch('${`/api/projects/${data.projectId}/auth/get-session`}', {
 			</Card.Root>
 
 			<Card.Root data-testid="providers-card">
-				<Card.Header>
-					<Card.Title>Sign-in methods</Card.Title>
-					<Card.Description>Configuration and linked-user activity.</Card.Description>
-				</Card.Header>
-				<Card.Content class="space-y-4">
-					<div class="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
-						<div class="flex items-center gap-2 rounded-lg border p-2.5">
-							<KeyRound class="h-4 w-4 text-primary" /> Email/password
-							<span class="ml-auto h-2 w-2 rounded-full bg-emerald-500"></span>
+				<button
+					type="button"
+					class="w-full rounded-xl text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+					onclick={openSignInMethods}
+					aria-label="Configure sign-in methods"
+				>
+					<Card.Header>
+						<Card.Title>Sign-in methods</Card.Title>
+						<Card.Description
+							>Configuration and linked-user activity. Open settings →</Card.Description
+						>
+					</Card.Header>
+					<Card.Content class="space-y-4">
+						<div class="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+							<div class="flex items-center gap-2 rounded-lg border p-2.5">
+								<KeyRound class="h-4 w-4 text-primary" /> Email/password
+								<span class="ml-auto h-2 w-2 rounded-full bg-emerald-500"></span>
+							</div>
+							<div class="flex items-center gap-2 rounded-lg border p-2.5">
+								<UserRound class="h-4 w-4 text-primary" /> Guest
+								<span class="ml-auto h-2 w-2 rounded-full bg-emerald-500"></span>
+							</div>
+							<div class="flex items-center gap-2 rounded-lg border p-2.5">
+								<svg viewBox="0 0 24 24" class="h-4 w-4" aria-label="Google"
+									><path
+										fill="#4285F4"
+										d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.8 3-4.3 3-7.3Z"
+									/><path
+										fill="#34A853"
+										d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1a5.8 5.8 0 0 1-5.4-4H3.3v2.6A10 10 0 0 0 12 22Z"
+									/><path
+										fill="#FBBC05"
+										d="M6.6 14a6 6 0 0 1 0-4V7.4H3.3a10 10 0 0 0 0 9.2L6.6 14Z"
+									/><path
+										fill="#EA4335"
+										d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.9-2.8A9.7 9.7 0 0 0 3.3 7.4L6.6 10A5.8 5.8 0 0 1 12 6Z"
+									/></svg
+								>
+								Google
+								<Badge variant="outline" class="ml-auto text-[10px]"
+									>{agentState.enabledSocialProviders?.includes('google')
+										? 'enabled'
+										: 'off'}</Badge
+								>
+							</div>
+							<div class="flex items-center gap-2 rounded-lg border p-2.5">
+								<svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-label="GitHub"
+									><path
+										d="M12 .7a11.5 11.5 0 0 0-3.6 22.4c.6.1.8-.2.8-.5v-2c-3.3.7-4-1.4-4-1.4-.5-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.4 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.6.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0C15.2 5 16.2 5.3 16.2 5.3c.6 1.5.2 2.8.1 3.1.8.8 1.2 1.9 1.2 3.1 0 4.4-2.7 5.4-5.5 5.7.4.4.8 1.1.8 2.3v3.1c0 .3.2.7.8.5A11.5 11.5 0 0 0 12 .7Z"
+									/></svg
+								>
+								GitHub
+								<Badge variant="outline" class="ml-auto text-[10px]"
+									>{agentState.enabledSocialProviders?.includes('github')
+										? 'enabled'
+										: 'off'}</Badge
+								>
+							</div>
 						</div>
-						<div class="flex items-center gap-2 rounded-lg border p-2.5">
-							<UserRound class="h-4 w-4 text-primary" /> Guest
-							<span class="ml-auto h-2 w-2 rounded-full bg-emerald-500"></span>
-						</div>
-						<div class="flex items-center gap-2 rounded-lg border p-2.5">
-							<svg viewBox="0 0 24 24" class="h-4 w-4" aria-label="Google"
-								><path
-									fill="#4285F4"
-									d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.8 3-4.3 3-7.3Z"
-								/><path
-									fill="#34A853"
-									d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1a5.8 5.8 0 0 1-5.4-4H3.3v2.6A10 10 0 0 0 12 22Z"
-								/><path
-									fill="#FBBC05"
-									d="M6.6 14a6 6 0 0 1 0-4V7.4H3.3a10 10 0 0 0 0 9.2L6.6 14Z"
-								/><path
-									fill="#EA4335"
-									d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.9-2.8A9.7 9.7 0 0 0 3.3 7.4L6.6 10A5.8 5.8 0 0 1 12 6Z"
-								/></svg
-							>
-							Google
-							<Badge variant="outline" class="ml-auto text-[10px]"
-								>{agentState.enabledSocialProviders?.includes('google') ? 'enabled' : 'off'}</Badge
-							>
-						</div>
-						<div class="flex items-center gap-2 rounded-lg border p-2.5">
-							<svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-label="GitHub"
-								><path
-									d="M12 .7a11.5 11.5 0 0 0-3.6 22.4c.6.1.8-.2.8-.5v-2c-3.3.7-4-1.4-4-1.4-.5-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.4 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.6.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0C15.2 5 16.2 5.3 16.2 5.3c.6 1.5.2 2.8.1 3.1.8.8 1.2 1.9 1.2 3.1 0 4.4-2.7 5.4-5.5 5.7.4.4.8 1.1.8 2.3v3.1c0 .3.2.7.8.5A11.5 11.5 0 0 0 12 .7Z"
-								/></svg
-							>
-							GitHub
-							<Badge variant="outline" class="ml-auto text-[10px]"
-								>{agentState.enabledSocialProviders?.includes('github') ? 'enabled' : 'off'}</Badge
-							>
-						</div>
-					</div>
-					<div class="border-t pt-3">
-						<p class="mb-2 text-xs font-medium text-muted-foreground">Linked users (30 days)</p>
-						{#if analytics.providers.length === 0}
-							<p class="text-sm text-muted-foreground">
-								No users have completed a provider sign-in yet.
-							</p>
-						{:else}
-							<ul class="space-y-2">
-								{#each analytics.providers as p (p.provider)}
-									<li class="flex items-center justify-between text-sm">
-										<span class="font-mono text-xs">{p.provider}</span>
-										<span class="tabular-nums">{p.users}</span>
+						<div class="border-t pt-3">
+							<p class="mb-2 text-xs font-medium text-muted-foreground">Linked users (30 days)</p>
+							{#if analytics.providers.length === 0}
+								<p class="text-sm text-muted-foreground">
+									No users have completed a provider sign-in yet.
+								</p>
+							{:else}
+								<ul class="space-y-2">
+									{#each analytics.providers as p (p.provider)}
+										<li class="flex items-center justify-between text-sm">
+											<span class="font-mono text-xs">{p.provider}</span>
+											<span class="tabular-nums">{p.users}</span>
+										</li>
+									{/each}
+									<li class="flex items-center justify-between border-t border-border pt-2 text-sm">
+										<span class="font-mono text-xs">@gmail.com emails</span>
+										<span class="tabular-nums">{analytics.gmailUsers}</span>
 									</li>
-								{/each}
-								<li class="flex items-center justify-between border-t border-border pt-2 text-sm">
-									<span class="font-mono text-xs">@gmail.com emails</span>
-									<span class="tabular-nums">{analytics.gmailUsers}</span>
-								</li>
-							</ul>
-						{/if}
-					</div>
-				</Card.Content>
+								</ul>
+							{/if}
+						</div>
+					</Card.Content>
+				</button>
 			</Card.Root>
 		</div>
 	</div>

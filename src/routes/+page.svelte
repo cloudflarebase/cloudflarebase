@@ -238,6 +238,16 @@
 		name="description"
 		content="The open-source Firebase for Cloudflare. Every backend primitive is a Cloudflare Agent — one Durable Object per project. Auth is live today with realtime sync, analytics, and an AI copilot."
 	/>
+	<meta property="og:title" content="Cloudflarebase — The open-source Firebase for Cloudflare" />
+	<meta
+		property="og:description"
+		content="Ship authentication on Cloudflare with isolated Durable Objects, realtime analytics, and an AI copilot."
+	/>
+	<meta name="twitter:title" content="Cloudflarebase — The open-source Firebase for Cloudflare" />
+	<meta
+		name="twitter:description"
+		content="Ship authentication on Cloudflare with isolated Durable Objects, realtime analytics, and an AI copilot."
+	/>
 </svelte:head>
 
 <div class="bg-background text-foreground">
@@ -791,14 +801,7 @@ await fetch(<span class="text-primary">'/api/projects/PROJECT_ID/auth/get-sessio
 			<div class="mb-11 flex flex-wrap justify-between gap-10">
 				<div>
 					<div class="flex items-center gap-2 text-lg font-bold">
-						<svg viewBox="0 0 24 24" fill="none" class="h-5 w-5 text-primary">
-							<path
-								d="M12 2L3 7V17L12 22L21 17V7L12 2Z"
-								stroke="currentColor"
-								stroke-width="1.6"
-								stroke-linejoin="round"
-							/>
-						</svg>
+						<img src="/brand/mark.svg" alt="" class="h-5 w-5" />
 						Cloudflarebase
 					</div>
 					<p class="mt-2.5 max-w-[240px] text-sm text-muted-foreground/70">
@@ -879,14 +882,7 @@ await fetch(<span class="text-primary">'/api/projects/PROJECT_ID/auth/get-sessio
 				>
 					<div class="flex w-full justify-between lg:w-auto">
 						<a href="/" aria-label="home" class="flex items-center gap-2 text-lg font-bold">
-							<svg viewBox="0 0 24 24" fill="none" class="h-[22px] w-[22px] text-primary">
-								<path
-									d="M12 2L3 7V17L12 22L21 17V7L12 2Z"
-									stroke="currentColor"
-									stroke-width="1.6"
-									stroke-linejoin="round"
-								/>
-							</svg>
+							<img src="/brand/mark.svg" alt="" class="h-[22px] w-[22px]" />
 							Cloudflarebase
 						</a>
 

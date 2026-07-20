@@ -144,6 +144,10 @@
 	}
 </script>
 
+<svelte:head>
+	<meta name="robots" content="noindex, nofollow, noarchive" />
+</svelte:head>
+
 <div class="flex min-h-screen bg-background text-foreground">
 	<!-- Sidebar -->
 	<aside class="hidden w-60 shrink-0 flex-col border-r border-border bg-card md:flex">
@@ -151,14 +155,7 @@
 			href={resolve('/')}
 			class="flex items-center gap-2 border-b border-border px-5 py-4 font-bold"
 		>
-			<svg viewBox="0 0 24 24" fill="none" class="h-5 w-5 text-primary">
-				<path
-					d="M12 2L3 7V17L12 22L21 17V7L12 2Z"
-					stroke="currentColor"
-					stroke-width="1.6"
-					stroke-linejoin="round"
-				/>
-			</svg>
+			<img src="/brand/mark.svg" alt="" class="h-5 w-5" />
 			Cloudflarebase
 		</a>
 
@@ -224,14 +221,7 @@
 		>
 			<div class="flex min-w-0 items-center gap-2 text-sm">
 				<a href={resolve('/')} class="shrink-0 md:hidden" aria-label="Cloudflarebase home">
-					<svg viewBox="0 0 24 24" fill="none" class="h-5 w-5 text-primary">
-						<path
-							d="M12 2L3 7V17L12 22L21 17V7L12 2Z"
-							stroke="currentColor"
-							stroke-width="1.6"
-							stroke-linejoin="round"
-						/>
-					</svg>
+					<img src="/brand/mark.svg" alt="" class="h-5 w-5" />
 				</a>
 				<span class="hidden text-muted-foreground md:inline">Project</span>
 				<Badge

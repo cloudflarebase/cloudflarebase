@@ -1,3 +1,6 @@
-# allow crawling everything by default
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /dashboard/
+Disallow: /api/
+
+Sitemap: https://cloudflarebase.com/sitemap.xml
