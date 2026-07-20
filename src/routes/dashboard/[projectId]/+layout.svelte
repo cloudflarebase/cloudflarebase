@@ -6,6 +6,7 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
+	import { IsMobile } from '$lib/hooks/is-mobile.svelte';
 	import {
 		ArrowRight,
 		Bot,
@@ -29,7 +30,8 @@
 	// Writable derived: resets to the current project on navigation, while the
 	// input binding can still overwrite it locally.
 	let projectInput = $derived(page.params.projectId ?? 'demo');
-	let copilotOpen = $state(true);
+	const isMobile = new IsMobile();
+	let copilotOpen = $derived(!isMobile.current);
 	let copilotInput = $state('');
 	let copilotBusy = $state(false);
 	let darkMode = $state(false);
