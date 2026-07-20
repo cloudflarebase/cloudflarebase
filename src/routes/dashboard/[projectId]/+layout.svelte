@@ -2,11 +2,11 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import { onMount } from 'svelte';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { IsMobile } from '$lib/hooks/is-mobile.svelte';
+	import ModeToggle from '$lib/components/mode-toggle.svelte';
 	import {
 		ArrowRight,
 		Bot,
@@ -15,11 +15,9 @@
 		HardDrive,
 		House,
 		KeyRound,
-		Moon,
 		Radio,
 		SendHorizontal,
 		Sparkles,
-		Sun,
 		X,
 		Zap
 	} from '@lucide/svelte';
@@ -34,7 +32,6 @@
 	let copilotOpen = $derived(!isMobile.current);
 	let copilotInput = $state('');
 	let copilotBusy = $state(false);
-	let darkMode = $state(false);
 	type CopilotMessage = { id: string; role: 'user' | 'agent'; content: string; mode?: string };
 	let copilotMessages = $state<CopilotMessage[]>([]);
 
@@ -51,16 +48,6 @@
 		{ label: 'Realtime', icon: Radio },
 		{ label: 'Cron & Queues', icon: Clock }
 	];
-
-	onMount(() => {
-		darkMode = document.documentElement.classList.contains('dark');
-	});
-
-	function toggleTheme() {
-		darkMode = !darkMode;
-		document.documentElement.classList.toggle('dark', darkMode);
-		localStorage.setItem('cfb-theme', darkMode ? 'dark' : 'light');
-	}
 
 	function switchProject(event: SubmitEvent) {
 		event.preventDefault();
@@ -191,17 +178,7 @@
 			</div>
 
 			<div class="flex items-center gap-2">
-				<Button
-					type="button"
-					size="icon"
-					variant="outline"
-					class="h-8 w-8"
-					onclick={toggleTheme}
-					aria-label={darkMode ? 'Use light mode' : 'Use dark mode'}
-					data-testid="theme-toggle"
-				>
-					{#if darkMode}<Sun class="h-4 w-4" />{:else}<Moon class="h-4 w-4" />{/if}
-				</Button>
+				<ModeToggle class="h-8 w-8" testId="theme-toggle" />
 				<form onsubmit={switchProject} class="flex items-center gap-2">
 					<Input
 						bind:value={projectInput}
