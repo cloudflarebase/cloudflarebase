@@ -98,6 +98,32 @@ test.describe('project agents (backend)', () => {
 		expect(invalid.status()).toBe(400);
 	});
 
+	test('rejects malformed settings payloads at the web API boundary', async ({ request }) => {
+		const project = 'e2e-api-invalid-settings';
+		const cases = [
+			{},
+			{ allowedOrigins: 'https://app.example.com' },
+			{ allowedOrigins: ['not-a-url'] },
+			{ allowedOrigins: [], socialProviders: { unknown: { preserve: true } } },
+			{
+				allowedOrigins: [],
+				socialProviders: { github: { clientId: 'id', clientSecret: '' } }
+			}
+		];
+
+		for (const data of cases) {
+			const response = await request.put(settingsPath(project), { data });
+			expect(response.status()).toBe(400);
+			await expect(response.json()).resolves.toMatchObject({ error: 'Invalid settings' });
+		}
+
+		const invalidJson = await request.put(settingsPath(project), {
+			headers: { 'content-type': 'application/json' },
+			data: '{broken'
+		});
+		expect(invalidJson.status()).toBe(400);
+	});
+
 	test('configures social providers without exposing their secrets', async ({ request }) => {
 		const project = 'e2e-api-social';
 		const saved = await request.put(settingsPath(project), {

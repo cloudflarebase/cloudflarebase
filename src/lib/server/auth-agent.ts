@@ -1,13 +1,13 @@
 import { error } from '@sveltejs/kit';
-
-const PROJECT_ID_PATTERN = /^[a-z0-9][a-z0-9-]{0,31}$/;
+import { projectIdSchema } from '$lib/schemas/auth';
 
 /** Project ids become Durable Object names and cookie prefixes — keep them tame. */
 export function assertProjectId(projectId: string | undefined): string {
-	if (!projectId || !PROJECT_ID_PATTERN.test(projectId)) {
+	const parsed = projectIdSchema.safeParse(projectId);
+	if (!parsed.success) {
 		error(400, 'invalid project id — use lowercase letters, digits and dashes (max 32 chars)');
 	}
-	return projectId;
+	return parsed.data;
 }
 
 export function requireAuthAgent(platform: App.Platform | undefined) {

@@ -14,6 +14,7 @@
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
+	import { signInSchema, signUpSchema } from '$lib/schemas/auth';
 	import * as Table from '$lib/components/ui/table';
 	import * as Tabs from '$lib/components/ui/tabs';
 	import {
@@ -36,6 +37,8 @@
 	import { AgentClient } from 'agents/client';
 	import { AreaChart } from 'layerchart';
 	import { onMount, tick } from 'svelte';
+	import { superForm } from 'sveltekit-superforms';
+	import { zod4Client } from 'sveltekit-superforms/adapters';
 
 	let { data } = $props();
 	let hydrated = $state(false);
@@ -76,10 +79,19 @@
 	} | null;
 	let session = $state<SessionInfo>(null);
 
-	// Playground form state
-	let email = $state('ada@example.com');
-	let password = $state('correct-horse-battery');
-	let name = $state('Ada Lovelace');
+	// Form instances intentionally initialize once; the route is keyed by project path.
+	// svelte-ignore state_referenced_locally
+	const signUp = superForm(data.signUpForm, {
+		validators: zod4Client(signUpSchema),
+		validationMethod: 'onblur'
+	});
+	// svelte-ignore state_referenced_locally
+	const signIn = superForm(data.signInForm, {
+		validators: zod4Client(signInSchema),
+		validationMethod: 'onblur'
+	});
+	const { form: signUpForm, errors: signUpErrors, validateForm: validateSignUp } = signUp;
+	const { form: signInForm, errors: signInErrors, validateForm: validateSignIn } = signIn;
 	let busy = $state(false);
 	let authError = $state<string | null>(null);
 
@@ -216,6 +228,18 @@
 		} finally {
 			busy = false;
 		}
+	}
+
+	async function submitSignUp() {
+		const result = await validateSignUp({ update: true });
+		if (!result.valid) return;
+		await authPost('sign-up/email', $signUpForm);
+	}
+
+	async function submitSignIn() {
+		const result = await validateSignIn({ update: true });
+		if (!result.valid) return;
+		await authPost('sign-in/email', $signInForm);
 	}
 
 	async function socialSignIn(provider: 'google' | 'github') {
@@ -508,7 +532,7 @@
 							props={{
 								area: { fillOpacity: 0.18 },
 								line: { strokeWidth: 2.5 },
-								axis: { y: { tickCount: 4 } }
+								yAxis: { tickCount: 4 }
 							}}
 						>
 							{#snippet tooltip()}
@@ -807,21 +831,41 @@
 										{#if playgroundTab === 'sign-up'}<div class="mt-4 space-y-3">
 												<div class="space-y-1.5">
 													<Label for="su-name">Name</Label>
-													<Input id="su-name" bind:value={name} placeholder="Ada Lovelace" />
+													<Input
+														id="su-name"
+														bind:value={$signUpForm.name}
+														placeholder="Ada Lovelace"
+														aria-invalid={$signUpErrors.name ? 'true' : undefined}
+													/>
+													{#if $signUpErrors.name}<p class="text-xs text-destructive">
+															{$signUpErrors.name}
+														</p>{/if}
 												</div>
 												<div class="space-y-1.5">
 													<Label for="su-email">Email</Label>
-													<Input id="su-email" type="email" bind:value={email} />
+													<Input
+														id="su-email"
+														type="email"
+														bind:value={$signUpForm.email}
+														aria-invalid={$signUpErrors.email ? 'true' : undefined}
+													/>
+													{#if $signUpErrors.email}<p class="text-xs text-destructive">
+															{$signUpErrors.email}
+														</p>{/if}
 												</div>
 												<div class="space-y-1.5">
 													<Label for="su-password">Password</Label>
-													<Input id="su-password" type="password" bind:value={password} />
+													<Input
+														id="su-password"
+														type="password"
+														bind:value={$signUpForm.password}
+														aria-invalid={$signUpErrors.password ? 'true' : undefined}
+													/>
+													{#if $signUpErrors.password}<p class="text-xs text-destructive">
+															{$signUpErrors.password}
+														</p>{/if}
 												</div>
-												<Button
-													class="w-full"
-													disabled={busy}
-													onclick={() => authPost('sign-up/email', { email, password, name })}
-												>
+												<Button class="w-full" disabled={busy} onclick={submitSignUp}>
 													<UserPlus class="mr-1 h-4 w-4" /> Create account
 												</Button>
 												<Button
@@ -836,17 +880,29 @@
 											</div>{:else}<div class="mt-4 space-y-3">
 												<div class="space-y-1.5">
 													<Label for="si-email">Email</Label>
-													<Input id="si-email" type="email" bind:value={email} />
+													<Input
+														id="si-email"
+														type="email"
+														bind:value={$signInForm.email}
+														aria-invalid={$signInErrors.email ? 'true' : undefined}
+													/>
+													{#if $signInErrors.email}<p class="text-xs text-destructive">
+															{$signInErrors.email}
+														</p>{/if}
 												</div>
 												<div class="space-y-1.5">
 													<Label for="si-password">Password</Label>
-													<Input id="si-password" type="password" bind:value={password} />
+													<Input
+														id="si-password"
+														type="password"
+														bind:value={$signInForm.password}
+														aria-invalid={$signInErrors.password ? 'true' : undefined}
+													/>
+													{#if $signInErrors.password}<p class="text-xs text-destructive">
+															{$signInErrors.password}
+														</p>{/if}
 												</div>
-												<Button
-													class="w-full"
-													disabled={busy}
-													onclick={() => authPost('sign-in/email', { email, password })}
-												>
+												<Button class="w-full" disabled={busy} onclick={submitSignIn}>
 													<LogIn class="mr-1 h-4 w-4" /> Sign in
 												</Button>
 											</div>{/if}

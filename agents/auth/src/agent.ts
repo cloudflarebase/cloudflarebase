@@ -5,49 +5,40 @@ import { migrate } from 'drizzle-orm/durable-sqlite/migrator';
 import migrations from '../drizzle/migrations';
 import { createProjectAuth, type AuthDatabase, type ProjectAuth } from './auth';
 import * as schema from './db/schema';
+import {
+	analyticsApiResponseSchema,
+	chatRequestSchema,
+	projectIdSchema,
+	resourceIdSchema,
+	sessionActivityResponseSchema,
+	settingsRequestSchema,
+	socialCredentialsSchema,
+	timeZoneSchema,
+	workersAiResponseSchema,
+	type ProviderUpdates,
+	type SocialCredentials,
+} from './schemas';
 
 const MAX_EVENTS = 50;
 // Analytics Engine ingestion is asynchronous. Keep this short so a query that
 // races a new write is retried quickly instead of holding stale graph data.
 const ANALYTICS_CACHE_MS = 5_000;
-const TIME_ZONE_PATTERN = /^(?:Etc\/UTC|[A-Za-z_]+(?:\/[A-Za-z0-9_+-]+)+)$/;
-
-type SocialCredentials = Partial<
-	Record<'google' | 'github', { clientId: string; clientSecret: string }>
->;
-
-function parseSocialCredentials(
-	value: unknown,
+function applySocialCredentials(
+	value: ProviderUpdates,
 	existing: SocialCredentials,
-): { credentials: SocialCredentials } | { error: string } {
-	if (!value || typeof value !== 'object' || Array.isArray(value)) {
-		return { error: 'socialProviders must be an object' };
-	}
+): SocialCredentials {
 	const credentials: SocialCredentials = {};
 	for (const provider of ['google', 'github'] as const) {
-		const entry = (value as Record<string, unknown>)[provider];
-		if (entry === undefined || entry === null || entry === false) continue;
-		if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
-			return { error: `${provider} credentials are invalid` };
-		}
-		if ((entry as Record<string, unknown>).preserve === true && existing[provider]) {
+		const entry = value[provider];
+		if (!entry) continue;
+		if ('preserve' in entry) {
+			if (!existing[provider]) continue;
 			credentials[provider] = existing[provider];
 			continue;
 		}
-		const { clientId, clientSecret } = entry as Record<string, unknown>;
-		if (
-			typeof clientId !== 'string' ||
-			typeof clientSecret !== 'string' ||
-			!clientId.trim() ||
-			!clientSecret.trim() ||
-			clientId.length > 512 ||
-			clientSecret.length > 512
-		) {
-			return { error: `${provider} requires a client ID and client secret` };
-		}
-		credentials[provider] = { clientId: clientId.trim(), clientSecret: clientSecret.trim() };
+		credentials[provider] = entry;
 	}
-	return { credentials };
+	return credentials;
 }
 
 export interface AuthActivityEvent {
@@ -271,8 +262,9 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 				),
 			]);
 		}
-		this.socialCredentials =
-			(await this.ctx.storage.get<SocialCredentials>('social-provider-credentials')) ?? {};
+		this.socialCredentials = socialCredentialsSchema.parse(
+			await this.ctx.storage.get('social-provider-credentials'),
+		);
 
 		if (!this.state.projectId) {
 			this.setState({
@@ -417,6 +409,9 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 
 	async onRequest(request: Request): Promise<Response> {
 		const url = new URL(request.url);
+		if (!projectIdSchema.safeParse(this.name).success) {
+			return Response.json({ error: 'invalid project id' }, { status: 400 });
+		}
 		// Requests arrive with the full /agents/auth-agent/<name>/... path.
 		const subPath = url.pathname.match(/\/agents\/[^/]+\/[^/]+(\/.*)?$/)?.[1] ?? '/';
 
@@ -426,8 +421,11 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 
 		if (subPath === '/analytics') {
 			const requestedTimeZone = url.searchParams.get('timeZone') ?? 'Etc/UTC';
-			const timeZone = TIME_ZONE_PATTERN.test(requestedTimeZone) ? requestedTimeZone : 'Etc/UTC';
-			return Response.json(await this.getAnalytics(timeZone));
+			const timeZone = timeZoneSchema.safeParse(requestedTimeZone);
+			if (!timeZone.success) {
+				return Response.json({ error: 'invalid timeZone' }, { status: 400 });
+			}
+			return Response.json(await this.getAnalytics(timeZone.data));
 		}
 
 		if (subPath === '/config' && request.method === 'GET') {
@@ -446,14 +444,13 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 		}
 
 		if (subPath === '/chat' && request.method === 'POST') {
-			const body = (await request.json().catch(() => null)) as { question?: string } | null;
-			const question = body?.question?.trim().slice(0, 500);
-			if (!question) {
+			const body = chatRequestSchema.safeParse(await request.json().catch(() => null));
+			if (!body.success) {
 				return Response.json({ error: 'question is required' }, { status: 400 });
 			}
 			const clientKey = await this.chatClientKey(request);
 			try {
-				return Response.json(await this.answerQuestion(question, clientKey));
+				return Response.json(await this.answerQuestion(body.data.question, clientKey));
 			} catch (error) {
 				console.error('AuthAgent AI request failed', error);
 				return Response.json(
@@ -465,12 +462,12 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 
 		const userDelete = subPath.match(/^\/admin\/users\/([^/]+)$/);
 		if (userDelete && request.method === 'DELETE') {
-			return this.deleteUser(decodeURIComponent(userDelete[1]));
+			return this.deleteUser(this.decodeResourceId(userDelete[1]));
 		}
 
 		const sessionDelete = subPath.match(/^\/admin\/sessions\/([^/]+)$/);
 		if (sessionDelete && request.method === 'DELETE') {
-			return this.revokeSession(decodeURIComponent(sessionDelete[1]));
+			return this.revokeSession(this.decodeResourceId(sessionDelete[1]));
 		}
 
 		if (subPath === '/admin/settings' && request.method === 'PUT') {
@@ -511,15 +508,14 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 				});
 				await this.recordEvent('session.revoked', 'user signed out');
 			} else if (response.ok && request.method === 'GET' && /\/get-session$/.test(subPath)) {
-				const session = (await response
-					.clone()
-					.json()
-					.catch(() => null)) as {
-					user?: { id?: string };
-					session?: { id?: string };
-				} | null;
-				if (session?.user?.id && session.session?.id) {
-					await this.trackSessionActivity(session.user.id, session.session.id);
+				const session = sessionActivityResponseSchema.safeParse(
+					await response
+						.clone()
+						.json()
+						.catch(() => null),
+				);
+				if (session.success && session.data) {
+					await this.trackSessionActivity(session.data.user.id, session.data.session.id);
 				}
 			} else if (request.method !== 'GET') {
 				await this.syncCounters();
@@ -535,6 +531,15 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 		}
 
 		return Response.json({ error: 'not found' }, { status: 404 });
+	}
+
+	private decodeResourceId(encoded: string): string {
+		try {
+			const parsed = resourceIdSchema.safeParse(decodeURIComponent(encoded));
+			return parsed.success ? parsed.data : '';
+		} catch {
+			return '';
+		}
 	}
 
 	private async deleteUser(userId: string): Promise<Response> {
@@ -573,45 +578,31 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 	}
 
 	private async updateSettings(request: Request): Promise<Response> {
-		const body = (await request.json().catch(() => null)) as {
-			allowedOrigins?: unknown;
-			socialProviders?: unknown;
-		} | null;
-		if (!Array.isArray(body?.allowedOrigins) || body.allowedOrigins.length > 10) {
+		const body = settingsRequestSchema.safeParse(await request.json().catch(() => null));
+		if (!body.success) {
 			return Response.json(
-				{ error: 'allowedOrigins must be an array with at most 10 entries' },
+				{ error: 'invalid settings', issues: body.error.flatten().fieldErrors },
 				{ status: 400 },
 			);
 		}
-		const origins: string[] = [];
-		for (const value of body.allowedOrigins) {
-			if (typeof value !== 'string') {
-				return Response.json({ error: 'every allowed origin must be a string' }, { status: 400 });
-			}
-			try {
-				const url = new URL(value);
-				const local = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
-				if (
-					(url.protocol !== 'https:' && !(local && url.protocol === 'http:')) ||
-					url.origin !== value
-				) {
-					throw new Error('invalid origin');
-				}
-				if (!origins.includes(url.origin)) origins.push(url.origin);
-			} catch {
-				return Response.json({ error: `invalid origin: ${value}` }, { status: 400 });
-			}
-		}
-		if (body.socialProviders !== undefined) {
-			const parsed = parseSocialCredentials(body.socialProviders, this.socialCredentials);
-			if ('error' in parsed) return Response.json({ error: parsed.error }, { status: 400 });
-			this.socialCredentials = parsed.credentials;
+		if (body.data.socialProviders !== undefined) {
+			this.socialCredentials = applySocialCredentials(
+				body.data.socialProviders,
+				this.socialCredentials,
+			);
 			await this.ctx.storage.put('social-provider-credentials', this.socialCredentials);
 		}
 		const enabledSocialProviders = this.configuredSocialProviders;
-		this.setState({ ...this.state, allowedOrigins: origins, enabledSocialProviders });
+		this.setState({
+			...this.state,
+			allowedOrigins: body.data.allowedOrigins,
+			enabledSocialProviders,
+		});
 		this._auth = null;
-		return Response.json({ allowedOrigins: origins, enabledSocialProviders });
+		return Response.json({
+			allowedOrigins: body.data.allowedOrigins,
+			enabledSocialProviders,
+		});
 	}
 
 	/** Snapshot used by the dashboard's initial server-side load and polling. */
@@ -752,8 +743,8 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 		if (!response.ok) {
 			throw new Error(`Analytics Engine query failed (${response.status})`);
 		}
-		const result = (await response.json()) as { data?: T[] };
-		return result.data ?? [];
+		const result = analyticsApiResponseSchema.parse(await response.json());
+		return (result.data ?? []) as T[];
 	}
 
 	/** Behavioral analytics are exclusively sourced from Analytics Engine. */
@@ -928,28 +919,30 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 
 		const history = await this.getChatMessages(clientKey, 20);
 		const model = this.env.CHAT_MODEL ?? DEFAULT_CHAT_MODEL;
-		const result = (await this.env.AI.run(model as keyof AiModels, {
-			messages: [
-				{
-					role: 'system',
-					content:
-						`You are the Cloudflarebase auth analytics agent for project "${this.name}". ` +
-						'Answer only from the aggregated JSON supplied by the user. Never invent metrics. ' +
-						'Be concise, explain useful ratios or trends when the data supports them, and say when there is not enough data. ' +
-						'Do not claim you can modify users, sessions, or configuration.',
-				},
-				...history.map((message) => ({
-					role: message.role === 'agent' ? ('assistant' as const) : ('user' as const),
-					content: message.content,
-				})),
-				{
-					role: 'user',
-					content: `Question: ${question}\n\nAggregated auth analytics:\n${JSON.stringify(a)}`,
-				},
-			],
-			max_tokens: 350,
-			temperature: 0.2,
-		})) as { response?: string };
+		const result = workersAiResponseSchema.parse(
+			await this.env.AI.run(model as keyof AiModels, {
+				messages: [
+					{
+						role: 'system',
+						content:
+							`You are the Cloudflarebase auth analytics agent for project "${this.name}". ` +
+							'Answer only from the aggregated JSON supplied by the user. Never invent metrics. ' +
+							'Be concise, explain useful ratios or trends when the data supports them, and say when there is not enough data. ' +
+							'Do not claim you can modify users, sessions, or configuration.',
+					},
+					...history.map((message) => ({
+						role: message.role === 'agent' ? ('assistant' as const) : ('user' as const),
+						content: message.content,
+					})),
+					{
+						role: 'user',
+						content: `Question: ${question}\n\nAggregated auth analytics:\n${JSON.stringify(a)}`,
+					},
+				],
+				max_tokens: 350,
+				temperature: 0.2,
+			}),
+		);
 
 		const answer = result.response?.trim();
 		if (!answer) throw new Error('Workers AI returned an empty response');

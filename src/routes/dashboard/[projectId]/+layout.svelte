@@ -7,6 +7,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { IsMobile } from '$lib/hooks/is-mobile.svelte';
+	import { projectIdSchema } from '$lib/schemas/auth';
 	import ModeToggle from '$lib/components/mode-toggle.svelte';
 	import { tick } from 'svelte';
 	import { cubicOut } from 'svelte/easing';
@@ -32,6 +33,7 @@
 	// Writable derived: resets to the current project on navigation, while the
 	// input binding can still overwrite it locally.
 	let projectInput = $derived(page.params.projectId ?? 'demo');
+	let projectSwitchError = $state('');
 	const isMobile = new IsMobile();
 	let copilotOpen = $derived(!isMobile.current);
 	let copilotInput = $state('');
@@ -89,8 +91,14 @@
 	function switchProject(event: SubmitEvent) {
 		event.preventDefault();
 		const slug = projectInput.trim().toLowerCase();
-		if (/^[a-z0-9][a-z0-9-]{0,31}$/.test(slug) && slug !== projectId) {
-			void goto(resolve('/dashboard/[projectId]', { projectId: slug }));
+		const parsed = projectIdSchema.safeParse(slug);
+		if (!parsed.success) {
+			projectSwitchError = parsed.error.issues[0]?.message ?? 'Invalid project ID.';
+			return;
+		}
+		projectSwitchError = '';
+		if (parsed.data !== projectId) {
+			void goto(resolve('/dashboard/[projectId]', { projectId: parsed.data }));
 		}
 	}
 
@@ -233,16 +241,32 @@
 
 			<div class="ml-auto flex items-center gap-1.5 sm:gap-2">
 				<ModeToggle class="h-8 w-8" testId="theme-toggle" />
-				<form onsubmit={switchProject} class="flex items-center gap-2">
+				<form onsubmit={switchProject} novalidate class="relative flex items-center gap-2">
 					<Input
 						bind:value={projectInput}
+						oninput={() => (projectSwitchError = '')}
 						class="h-8 w-24 font-mono text-xs min-[380px]:w-32 sm:w-40"
 						placeholder="switch project…"
 						aria-label="Project id"
+						aria-invalid={projectSwitchError ? 'true' : undefined}
+						aria-describedby={projectSwitchError ? 'project-switch-error' : undefined}
+						maxlength={32}
+						pattern={'[a-z0-9][a-z0-9-]{0,31}'}
+						autocomplete="off"
+						spellcheck="false"
 					/>
 					<Button type="submit" size="sm" variant="outline" class="h-8" aria-label="Switch project">
 						<ArrowRight class="h-3.5 w-3.5" />
 					</Button>
+					{#if projectSwitchError}
+						<p
+							id="project-switch-error"
+							role="alert"
+							class="absolute top-full right-0 z-50 mt-1 w-64 rounded-md border border-destructive/30 bg-background px-2 py-1.5 text-xs text-destructive shadow-md"
+						>
+							{projectSwitchError}
+						</p>
+					{/if}
 				</form>
 			</div>
 		</header>
