@@ -27,7 +27,13 @@
 		],
 	},
 	"observability": {
-		"enabled": true,
+		"logs": {
+			"enabled": true,
+			"invocation_logs": true,
+		},
+		"traces": {
+			"enabled": true,
+		},
 	},
 	"upload_source_maps": true,
 	"compatibility_flags": ["nodejs_compat", "nodejs_als"],
