@@ -8,6 +8,7 @@
 	import { Input } from '$lib/components/ui/input';
 	import { IsMobile } from '$lib/hooks/is-mobile.svelte';
 	import ModeToggle from '$lib/components/mode-toggle.svelte';
+	import { tick } from 'svelte';
 	import { cubicOut } from 'svelte/easing';
 	import { fade, fly } from 'svelte/transition';
 	import {
@@ -37,6 +38,8 @@
 	let copilotBusy = $state(false);
 	type CopilotMessage = AgentChatMessage & { mode?: string };
 	let copilotMessages = $state<CopilotMessage[]>([]);
+	let copilotMessagesEl = $state<HTMLDivElement>();
+	let pendingHistoryScroll = $state(false);
 
 	const overviewHref = $derived(resolve('/dashboard/[projectId]', { projectId }));
 	const authHref = $derived(resolve('/dashboard/[projectId]/auth', { projectId }));
@@ -55,7 +58,16 @@
 	$effect(() => {
 		const currentProject = projectId;
 		copilotMessages = [];
+		pendingHistoryScroll = false;
 		void loadCopilotHistory(currentProject);
+	});
+
+	$effect(() => {
+		if (copilotOpen && pendingHistoryScroll && copilotMessagesEl) {
+			const el = copilotMessagesEl;
+			pendingHistoryScroll = false;
+			tick().then(() => el.scrollTo({ top: el.scrollHeight }));
+		}
 	});
 
 	async function loadCopilotHistory(currentProject: string) {
@@ -68,6 +80,7 @@
 			}
 			const history = (await response.json()) as { messages: AgentChatMessage[] };
 			copilotMessages = history.messages;
+			pendingHistoryScroll = copilotMessages.length > 0;
 		} catch {
 			// Keep chat usable when history cannot be loaded.
 		}
@@ -300,7 +313,11 @@
 				</Button>
 			</header>
 
-			<div class="flex-1 space-y-3 overflow-y-auto p-4" data-testid="copilot-messages">
+			<div
+				class="flex-1 space-y-3 overflow-y-auto p-4"
+				data-testid="copilot-messages"
+				bind:this={copilotMessagesEl}
+			>
 				{#if copilotMessages.length === 0}
 					<div class="rounded-xl border bg-muted/40 p-4">
 						<div class="mb-2 flex items-center gap-2 text-sm font-medium">
