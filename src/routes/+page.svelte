@@ -306,7 +306,7 @@
 								class="border bg-foreground/10 p-0.5"
 								style="border-radius: calc(0.5rem + 0.125rem + 4px);"
 							>
-								<Button href="/dashboard?auth=1" size="lg" class="rounded-xl px-5 text-base"
+								<Button href="/dashboard" size="lg" class="rounded-xl px-5 text-base"
 									>Open the live demo</Button
 								>
 							</div>
@@ -776,7 +776,7 @@ await fetch(<span class="text-primary">'/api/projects/PROJECT_ID/auth/get-sessio
 				the state sync live, ask the copilot about it.
 			</p>
 			<div class="mt-8 flex flex-wrap justify-center gap-3">
-				<Button href="/dashboard?auth=1" size="lg">Open the live demo</Button>
+				<Button href="/dashboard" size="lg">Open the live demo</Button>
 				<Button href={github} target="_blank" rel="noreferrer" size="lg" variant="outline">
 					{@render githubMark('h-4 w-4')}
 					View on GitHub
@@ -955,11 +955,11 @@ await fetch(<span class="text-primary">'/api/projects/PROJECT_ID/auth/get-sessio
 							</ul>
 						</div>
 						<div class="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit">
-							<Button href="/dashboard?auth=1" size="sm" class={cn(isScrolled && 'lg:hidden')}
+							<Button href="/dashboard" size="sm" class={cn(isScrolled && 'lg:hidden')}
 								>Open live demo</Button
 							>
 							<Button
-								href="/dashboard?auth=1"
+								href="/dashboard"
 								size="sm"
 								class={cn('hidden', isScrolled && 'lg:inline-flex')}>Live demo</Button
 							>
