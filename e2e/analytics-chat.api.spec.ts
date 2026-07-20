@@ -34,12 +34,22 @@ test.describe('analytics (backend)', () => {
 
 test.describe('agent chat (backend)', () => {
 	test.skip(!process.env.RUN_AI_E2E, 'set RUN_AI_E2E=1 to test the real Workers AI binding');
+
 	async function ask(request: APIRequestContext, question: string) {
 		const response = await request.post(chatPath(SEED_PROJECT), { data: { question } });
 		expect(response.ok()).toBe(true);
 		const reply = await response.json();
 		expect(reply.mode).toBe('workers-ai');
 		expect(reply.model).toContain('@cf/');
+		expect(reply.userMessage.content).toBe(question);
+		expect(reply.agentMessage.content).toBe(reply.answer);
+		const history = await (await request.get(chatPath(SEED_PROJECT))).json();
+		expect(history.messages).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ id: reply.userMessage.id, role: 'user' }),
+				expect.objectContaining({ id: reply.agentMessage.id, role: 'agent' })
+			])
+		);
 		return reply;
 	}
 
@@ -77,4 +87,12 @@ test.describe('agent chat (backend)', () => {
 		const response = await request.post(chatPath(SEED_PROJECT), { data: {} });
 		expect(response.status()).toBe(400);
 	});
+});
+
+test('chat history is available without an authenticated session', async ({ request }) => {
+	const response = await request.get(chatPath('e2e-chat-ip-history'), {
+		headers: { 'cf-connecting-ip': '203.0.113.7' }
+	});
+	expect(response.ok()).toBe(true);
+	expect(await response.json()).toEqual({ messages: [] });
 });

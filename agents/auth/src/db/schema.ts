@@ -1,4 +1,4 @@
-import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 /**
  * Better Auth core tables (better-auth 1.6), defined as Drizzle tables so the
@@ -59,3 +59,15 @@ export const verification = sqliteTable('verification', {
 	createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
 	updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
 });
+
+export const chatMessage = sqliteTable(
+	'chat_message',
+	{
+		id: text('id').primaryKey(),
+		clientKey: text('client_key').notNull(),
+		role: text('role', { enum: ['user', 'agent'] }).notNull(),
+		content: text('content').notNull(),
+		createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+	},
+	(table) => [index('chat_message_client_created_idx').on(table.clientKey, table.createdAt)],
+);

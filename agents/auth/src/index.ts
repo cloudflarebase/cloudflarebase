@@ -5,6 +5,7 @@ import { AuthAgent as AuthAgentBase } from './agent';
 
 export type {
 	AgentChatReply,
+	AgentChatMessage,
 	AuthActivityEvent,
 	AuthAgentState,
 	AuthAnalytics,

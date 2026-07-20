@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
+	import type { AgentChatMessage, AgentChatReply } from '$lib/agents';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
@@ -32,7 +33,7 @@
 	let copilotOpen = $derived(!isMobile.current);
 	let copilotInput = $state('');
 	let copilotBusy = $state(false);
-	type CopilotMessage = { id: string; role: 'user' | 'agent'; content: string; mode?: string };
+	type CopilotMessage = AgentChatMessage & { mode?: string };
 	let copilotMessages = $state<CopilotMessage[]>([]);
 
 	const overviewHref = $derived(resolve('/dashboard/[projectId]', { projectId }));
@@ -49,6 +50,27 @@
 		{ label: 'Cron & Queues', icon: Clock }
 	];
 
+	$effect(() => {
+		const currentProject = projectId;
+		copilotMessages = [];
+		void loadCopilotHistory(currentProject);
+	});
+
+	async function loadCopilotHistory(currentProject: string) {
+		try {
+			const response = await fetch(`/api/projects/${currentProject}/chat`);
+			if (currentProject !== projectId) return;
+			if (!response.ok) {
+				copilotMessages = [];
+				return;
+			}
+			const history = (await response.json()) as { messages: AgentChatMessage[] };
+			copilotMessages = history.messages;
+		} catch {
+			// Keep chat usable when history cannot be loaded.
+		}
+	}
+
 	function switchProject(event: SubmitEvent) {
 		event.preventDefault();
 		const slug = projectInput.trim().toLowerCase();
@@ -62,9 +84,10 @@
 		if (!trimmed || copilotBusy) return;
 		copilotBusy = true;
 		copilotInput = '';
+		const pendingId = crypto.randomUUID();
 		copilotMessages = [
 			...copilotMessages,
-			{ id: crypto.randomUUID(), role: 'user', content: trimmed }
+			{ id: pendingId, role: 'user', content: trimmed, createdAt: new Date().toISOString() }
 		];
 		try {
 			const response = await fetch(`/api/projects/${projectId}/chat`, {
@@ -72,22 +95,33 @@
 				headers: { 'content-type': 'application/json' },
 				body: JSON.stringify({ question: trimmed })
 			});
-			const reply = (await response.json()) as { answer?: string; error?: string; mode?: string };
+			const reply = (await response.json()) as AgentChatReply & { error?: string };
+			if (response.ok) {
+				copilotMessages = [
+					...copilotMessages.filter((message) => message.id !== pendingId),
+					reply.userMessage,
+					{ ...reply.agentMessage, mode: reply.mode }
+				];
+			} else {
+				copilotMessages = [
+					...copilotMessages,
+					{
+						id: crypto.randomUUID(),
+						role: 'agent',
+						content: reply.error ?? 'I could not answer that.',
+						createdAt: new Date().toISOString()
+					}
+				];
+			}
+		} catch {
 			copilotMessages = [
 				...copilotMessages,
 				{
 					id: crypto.randomUUID(),
 					role: 'agent',
-					content: response.ok
-						? (reply.answer ?? 'No answer returned.')
-						: (reply.error ?? 'I could not answer that.'),
-					mode: reply.mode
+					content: 'The project agent is unavailable.',
+					createdAt: new Date().toISOString()
 				}
-			];
-		} catch {
-			copilotMessages = [
-				...copilotMessages,
-				{ id: crypto.randomUUID(), role: 'agent', content: 'The project agent is unavailable.' }
 			];
 		} finally {
 			copilotBusy = false;

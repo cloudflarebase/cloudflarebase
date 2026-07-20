@@ -129,6 +129,15 @@ export interface AgentChatReply {
 	answer: string;
 	mode: 'workers-ai';
 	model: string;
+	userMessage: AgentChatMessage;
+	agentMessage: AgentChatMessage;
+}
+
+export interface AgentChatMessage {
+	id: string;
+	role: 'user' | 'agent';
+	content: string;
+	createdAt: string;
 }
 
 interface BehavioralAnalytics {
@@ -202,7 +211,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 					: undefined),
 			github: this.socialCredentials.github,
 			sendEmail:
-				(this.env.EMAIL && this.env.EMAIL_FROM) || this.env.AUTH_EMAIL_WEBHOOK_URL
+				this.env.EMAIL && this.env.EMAIL_FROM
 					? (message) => this.sendAuthEmail(message)
 					: undefined,
 			onUserCreated: async (user) => {
@@ -383,19 +392,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 			this.writeAuthEvent('email.sent', { provider: 'cloudflare-email-service' });
 			return;
 		}
-		const endpoint = this.env.AUTH_EMAIL_WEBHOOK_URL;
-		if (!endpoint) throw new Error('email delivery is not configured');
-		const headers = new Headers({ 'content-type': 'application/json' });
-		if (this.env.AUTH_EMAIL_WEBHOOK_SECRET) {
-			headers.set('authorization', `Bearer ${this.env.AUTH_EMAIL_WEBHOOK_SECRET}`);
-		}
-		const response = await fetch(endpoint, {
-			method: 'POST',
-			headers,
-			body: JSON.stringify({ projectId: this.name, ...message }),
-		});
-		if (!response.ok) throw new Error(`auth email webhook failed (${response.status})`);
-		this.writeAuthEvent('email.sent', { provider: message.type });
+		throw new Error('Cloudflare Email Service is not configured');
 	}
 
 	private async trackSessionActivity(
@@ -439,9 +436,13 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 				providers: ['email-password', 'anonymous', ...this.configuredSocialProviders],
 				availableSocialProviders: ['google', 'github'],
 				bearerTokens: true,
-				emailDeliveryConfigured:
-					!!(this.env.EMAIL && this.env.EMAIL_FROM) || !!this.env.AUTH_EMAIL_WEBHOOK_URL,
+				emailDeliveryConfigured: !!(this.env.EMAIL && this.env.EMAIL_FROM),
 			});
+		}
+
+		if (subPath === '/chat' && request.method === 'GET') {
+			const clientKey = await this.chatClientKey(request);
+			return Response.json({ messages: await this.getChatMessages(clientKey) });
 		}
 
 		if (subPath === '/chat' && request.method === 'POST') {
@@ -450,8 +451,9 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 			if (!question) {
 				return Response.json({ error: 'question is required' }, { status: 400 });
 			}
+			const clientKey = await this.chatClientKey(request);
 			try {
-				return Response.json(await this.answerQuestion(question));
+				return Response.json(await this.answerQuestion(question, clientKey));
 			} catch (error) {
 				console.error('AuthAgent AI request failed', error);
 				return Response.json(
@@ -876,12 +878,55 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 	 * Workers AI is mandatory: failures are surfaced to the caller and are
 	 * never replaced with a response that only looks model-generated.
 	 */
-	async answerQuestion(question: string): Promise<AgentChatReply> {
+	private async chatClientKey(request: Request): Promise<string> {
+		const forwarded = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
+		const address =
+			request.headers.get('cf-connecting-ip') ??
+			request.headers.get('x-real-ip') ??
+			forwarded ??
+			'local';
+		const digest = await crypto.subtle.digest(
+			'SHA-256',
+			new TextEncoder().encode(`${this.name}:${address}`),
+		);
+		return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join(
+			'',
+		);
+	}
+
+	private async getChatMessages(clientKey: string, limit = 50): Promise<AgentChatMessage[]> {
+		const rows = await this.db
+			.select()
+			.from(schema.chatMessage)
+			.where(eq(schema.chatMessage.clientKey, clientKey))
+			.orderBy(desc(schema.chatMessage.createdAt))
+			.limit(limit);
+		return rows.reverse().map((message) => ({
+			id: message.id,
+			role: message.role,
+			content: message.content,
+			createdAt: message.createdAt.toISOString(),
+		}));
+	}
+
+	private async saveChatMessage(
+		clientKey: string,
+		role: AgentChatMessage['role'],
+		content: string,
+		createdAt: Date,
+	): Promise<AgentChatMessage> {
+		const message = { id: crypto.randomUUID(), clientKey, role, content, createdAt };
+		await this.db.insert(schema.chatMessage).values(message);
+		return { id: message.id, role, content, createdAt: createdAt.toISOString() };
+	}
+
+	async answerQuestion(question: string, clientKey: string): Promise<AgentChatReply> {
 		const a = await this.getAnalytics();
 		if (!this.env.AI) {
 			throw new Error('Workers AI binding is required for the AuthAgent');
 		}
 
+		const history = await this.getChatMessages(clientKey, 20);
 		const model = this.env.CHAT_MODEL ?? DEFAULT_CHAT_MODEL;
 		const result = (await this.env.AI.run(model as keyof AiModels, {
 			messages: [
@@ -893,6 +938,10 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 						'Be concise, explain useful ratios or trends when the data supports them, and say when there is not enough data. ' +
 						'Do not claim you can modify users, sessions, or configuration.',
 				},
+				...history.map((message) => ({
+					role: message.role === 'agent' ? ('assistant' as const) : ('user' as const),
+					content: message.content,
+				})),
 				{
 					role: 'user',
 					content: `Question: ${question}\n\nAggregated auth analytics:\n${JSON.stringify(a)}`,
@@ -904,7 +953,28 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 
 		const answer = result.response?.trim();
 		if (!answer) throw new Error('Workers AI returned an empty response');
-		return { question, topic: 'ai-analysis', answer, mode: 'workers-ai', model };
+		const createdAt = Date.now();
+		const userMessage = await this.saveChatMessage(
+			clientKey,
+			'user',
+			question,
+			new Date(createdAt),
+		);
+		const agentMessage = await this.saveChatMessage(
+			clientKey,
+			'agent',
+			answer,
+			new Date(createdAt + 1),
+		);
+		return {
+			question,
+			topic: 'ai-analysis',
+			answer,
+			mode: 'workers-ai',
+			model,
+			userMessage,
+			agentMessage,
+		};
 	}
 
 	private async counters(): Promise<Pick<AuthAgentState, 'users' | 'activeSessions'>> {
