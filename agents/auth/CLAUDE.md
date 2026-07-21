@@ -6,7 +6,8 @@ One `AuthAgent` Durable Object exists per Cloudflarebase project; the instance n
 
 - `src/agent.ts`: `AuthAgent` state, HTTP/admin routes, analytics, Workers AI chat, email delivery, project CORS, and Better Auth dispatch. Its DTOs are mirrored in the app's `src/lib/agents.ts`.
 - `src/auth.ts`: Better Auth factory with Drizzle adapter, email/password, anonymous and bearer plugins, social providers, rate limiting, project cookie prefix, and database hooks.
-- `src/index.ts`: Worker entrypoint and `/health`; delegates agent routes through `routeAgentRequest` without default CORS.
+- `src/index.ts`: Worker entrypoint, `/health`, and the internal `/fleet/overview`; delegates agent routes through `routeAgentRequest` without default CORS.
+- `src/fleet.ts`: cross-project fleet rollup for the dashboard's `/admin` page. Lists projects from auth-event analytics (Analytics Engine SQL API, or `LOCAL_ANALYTICS` D1 locally), then fans out to each project's Durable Object via `getAgentByName` RPC (`getFleetCounts`, capped and batched). Its DTOs are mirrored in the app's `src/lib/agents.ts`.
 - `src/db/schema.ts`: Better Auth user, session, account, and verification tables. Property names must match Better Auth field names.
 - `drizzle/`: generated migrations. `drizzle/migrations.js` is imported and applied from `onStart`.
 - `src/env.d.ts`: optional secrets and variables not represented by generated Wrangler types.
@@ -22,7 +23,7 @@ If a Better Auth upgrade changes expected fields, compare the schema against `ge
 
 ## HTTP surface
 
-The Worker exposes `GET /health`. Agent requests use `/agents/auth-agent/<projectId>/...` and support:
+The Worker exposes `GET /health` and `GET /fleet/overview` (internal fleet rollup — outside `/agents/*` so it is only reachable over the dashboard's service binding; the worker has no public route). `AuthAgent.getFleetCounts()` serves the per-project half over Durable Object RPC, including the DO's colo resolved once per instance from a cdn-cgi trace subrequest. Agent requests use `/agents/auth-agent/<projectId>/...` and support:
 
 - `GET /overview`: current users, sessions, and synchronized state.
 - `GET /analytics`: operational and behavioral aggregates; accepts a validated `timeZone` query parameter for signup-day buckets.

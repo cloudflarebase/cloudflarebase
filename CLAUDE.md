@@ -17,18 +17,18 @@ The root Worker binds `AUTH_AGENT` to the Auth Agent service. Agent instances us
 
 ## Commands
 
-| Location      | Command                          | Purpose                                                          |
-| ------------- | -------------------------------- | ---------------------------------------------------------------- |
-| root          | `npm run dev`                    | Auth Agent on :8788, then Vite on :5173                          |
-| root          | `npm run check` / `npm run lint` | Svelte diagnostics / Prettier and ESLint                         |
+| Location      | Command                          | Purpose                                                                                                                                        |
+| ------------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| root          | `npm run dev`                    | Auth Agent on :8788, then Vite on :5173                                                                                                        |
+| root          | `npm run check` / `npm run lint` | Svelte diagnostics / Prettier and ESLint                                                                                                       |
 | root          | `npm run demo:video`             | Self-driving demo tour for screen recording (seeds data, backfills local analytics, generates live traffic; `--check` for headless validation) |
-| root          | `npm run build`                  | Production SvelteKit Cloudflare build                            |
-| root          | `npm test` / `npm run test:e2e`  | Full Playwright suite against Workers on :8797/:8798             |
-| root          | `npm run test:e2e:ui`            | Playwright UI                                                    |
-| root          | `npm run cf-typegen`             | Regenerate `src/worker-configuration.d.ts` after binding changes |
-| `agents/auth` | `npx tsc --noEmit`               | Typecheck the Auth Agent                                         |
-| `agents/auth` | `npx drizzle-kit generate`       | Generate migrations after schema edits                           |
-| `agents/auth` | `npx wrangler types`             | Regenerate Auth Agent Worker types                               |
+| root          | `npm run build`                  | Production SvelteKit Cloudflare build                                                                                                          |
+| root          | `npm test` / `npm run test:e2e`  | Full Playwright suite against Workers on :8797/:8798                                                                                           |
+| root          | `npm run test:e2e:ui`            | Playwright UI                                                                                                                                  |
+| root          | `npm run cf-typegen`             | Regenerate `src/worker-configuration.d.ts` after binding changes                                                                               |
+| `agents/auth` | `npx tsc --noEmit`               | Typecheck the Auth Agent                                                                                                                       |
+| `agents/auth` | `npx drizzle-kit generate`       | Generate migrations after schema edits                                                                                                         |
+| `agents/auth` | `npx wrangler types`             | Regenerate Auth Agent Worker types                                                                                                             |
 
 ## Architecture decisions
 
@@ -44,7 +44,8 @@ The root Worker binds `AUTH_AGENT` to the Auth Agent service. Agent instances us
 - Workers AI chat is grounded in the project's operational and aggregate auth data. Conversations persist in AuthAgent SQLite under a project-scoped SHA-256 hash of the connecting IP; raw IPs and Better Auth user IDs are not stored in chat rows. Recent messages become model context. This is best-effort client identity: shared IPs share history and changing IPs start a new history. Only `/chat` calls `env.AI`; inference failure returns 502 without affecting auth, sessions, or analytics. Real AI e2e coverage is opt-in and is never replaced with fake model output.
 - Theme state is owned by root `ModeWatcher` from `mode-watcher`. All theme buttons use the shared `$lib/components/mode-toggle.svelte`; do not manipulate the root `dark` class or local storage directly.
 - Project chat uses the shared `IsMobile` hook: closed by default below 768px and open by default on desktop.
-- Shared DTOs in `src/lib/agents.ts` mirror types in `agents/auth/src/agent.ts`. Keep both copies synchronized.
+- The platform admin fleet dashboard is `/admin`, gated by `ADMIN_SECRET` (plain var only in local/test; `wrangler secret put ADMIN_SECRET` for preview/production). The session cookie stores a SHA-256 digest of the secret, so rotating it signs admins out. There is no project registry: the agent worker's `GET /fleet/overview` derives the project list from auth-event analytics (Analytics Engine SQL API, or the local D1 mirror), then asks each listed project's Durable Object for counts and its colo over RPC (`getFleetCounts`). `/fleet/*` is deliberately outside `/agents/*`, so it is reachable only through the `AUTH_AGENT` service binding — never through the public `/agents/*` passthrough.
+- Shared DTOs in `src/lib/agents.ts` mirror types in `agents/auth/src/agent.ts` and `agents/auth/src/fleet.ts`. Keep the copies synchronized.
 
 ## Playwright e2e
 
@@ -58,7 +59,7 @@ The web build sets `E2E_BUILD=true`. `svelte.config.js` then sends the Cloudflar
 
 State lives under `.wrangler/test-state/` and is cleared whenever Playwright starts a server. Local runs use `reuseExistingServer`, so VS Code Test Explorer and repeated commands may reuse an existing stack; seed operations are idempotent and generated test identities must remain unique. CI never reuses servers. Better Auth throttling is disabled only in `env.test`, and its fixed test secret belongs only in `env.test.vars`.
 
-Playwright projects are `seed`, then dependent `api` and `chromium` projects. API contexts supply the required `Origin` header. Set `BASE_URL` for a deployed or tunnelled target; Playwright then skips local server startup. The direct-agent smoke test skips remotely because the agent has no public route.
+Playwright projects are `seed`, then dependent `api` and `chromium` projects. API contexts supply the required `Origin` header. Set `BASE_URL` for a deployed or tunnelled target; Playwright then skips local server startup. The direct-agent smoke test skips remotely because the agent has no public route, and the admin fleet spec skips remotely because a deployed `ADMIN_SECRET` is unknown to the suite.
 
 UI tests use stable `data-testid` contracts. Auth dashboard tests must call `gotoAuthPage()`, which waits until `data-testid="auth-page"` has `data-hydrated="true"`. Without this readiness check, a click on an SSR-rendered tab can happen before Svelte attaches its handler, losing the event and leaving the panel unmounted.
 

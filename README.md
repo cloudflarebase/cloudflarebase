@@ -41,10 +41,11 @@ npx wrangler secret put BETTER_AUTH_SECRET   # add --env preview for the preview
 npm run deploy
 
 cd ../..
+npx wrangler secret put ADMIN_SECRET         # password for the /admin fleet dashboard
 npm run deploy
 ```
 
-Analytics reads require `CF_ACCOUNT_ID` and `CF_ANALYTICS_API_TOKEN` secrets on Auth Agent. OAuth providers require their corresponding credentials.
+Analytics reads require `CF_ACCOUNT_ID` and `CF_ANALYTICS_API_TOKEN` secrets on Auth Agent. OAuth providers require their corresponding credentials. `ADMIN_SECRET` gates the platform admin dashboard at `/admin` (demo/user/session counts across all projects); without it the page reports itself as not configured.
 
 ## Validate
 
