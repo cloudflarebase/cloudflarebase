@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import {
+	analyticsPath,
 	authPath,
 	configPath,
 	overviewPath,
@@ -96,6 +97,28 @@ test.describe('project agents (backend)', () => {
 			data: { allowedOrigins: ['http://insecure.example.com'] }
 		});
 		expect(invalid.status()).toBe(400);
+	});
+
+	test('analytics buckets daily sign-ups and sign-ins', async ({ request }) => {
+		const project = 'e2e-api-activity';
+		const email = uniqueEmail('activity');
+		const signUp = await request.post(authPath(project, 'sign-up/email'), {
+			data: { name: 'Activity User', email, password: 'activity-password-1' }
+		});
+		expect(signUp.ok()).toBe(true);
+
+		// The local analytics mirror writes via waitUntil, so poll briefly.
+		await expect
+			.poll(async () => {
+				const analytics = (await (await request.get(analyticsPath(project))).json()) as {
+					activityByDay: { day: string; signups: number; signins: number }[];
+				};
+				return analytics.activityByDay.reduce(
+					(sum, point) => sum + point.signups + point.signins,
+					0
+				);
+			})
+			.toBeGreaterThanOrEqual(2);
 	});
 
 	test('assigns roles that flow into sessions and JWT claims', async ({ request }) => {
