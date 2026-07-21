@@ -11,16 +11,52 @@
 	let copyResetTimer: ReturnType<typeof setTimeout> | undefined;
 	const active = $derived(examples.find((example) => example.id === activeId) ?? examples[0]);
 
-	// Highlighting is client-only and lazy: shiki stays out of the SSR pass and
-	// the initial bundle, and the plain <pre> renders until it resolves.
+	// Highlighting is client-only and deferred: shiki stays out of the SSR pass
+	// and the initial bundle, and nothing loads or runs until the block nears
+	// the viewport and the main thread goes idle — the plain <pre> renders
+	// until then, so hydration and first paint never wait on grammar work.
+	let container = $state<HTMLElement | null>(null);
+	let nearViewport = $state(false);
+	let ready = $state(false);
 	let highlighted = $state<string | null>(null);
+
 	$effect(() => {
-		const { code, lang } = active;
-		highlighted = null;
+		if (!container || nearViewport) return;
+		if (typeof IntersectionObserver === 'undefined') {
+			nearViewport = true;
+			return;
+		}
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries.some((entry) => entry.isIntersecting)) nearViewport = true;
+			},
+			{ rootMargin: '200px' }
+		);
+		observer.observe(container);
+		return () => observer.disconnect();
+	});
+
+	$effect(() => {
+		if (!nearViewport || ready) return;
+		if (typeof requestIdleCallback === 'function') {
+			const id = requestIdleCallback(() => (ready = true), { timeout: 2000 });
+			return () => cancelIdleCallback(id);
+		}
+		const id = setTimeout(() => (ready = true), 200);
+		return () => clearTimeout(id);
+	});
+
+	const highlightCache = new Map<string, string>();
+	$effect(() => {
+		if (!ready) return;
+		const { id, code, lang } = active;
+		highlighted = highlightCache.get(id) ?? null;
+		if (highlighted) return;
 		let cancelled = false;
-		void import('shiki')
-			.then(({ codeToHtml }) => codeToHtml(code, { lang, theme: 'github-dark-default' }))
+		void import('$lib/shiki')
+			.then(({ highlightCode }) => highlightCode(code, lang))
 			.then((html) => {
+				highlightCache.set(id, html);
 				if (!cancelled) highlighted = html;
 			})
 			.catch(() => {});
@@ -41,7 +77,7 @@
 	}
 </script>
 
-<div class={className}>
+<div class={className} bind:this={container}>
 	<div class="flex flex-wrap gap-1.5" role="tablist" aria-label="Code examples">
 		{#each examples as example (example.id)}
 			<button
@@ -70,8 +106,10 @@
 			{#if copied}<Check class="h-3.5 w-3.5" />{:else}<Copy class="h-3.5 w-3.5" />{/if}
 		</Button>
 		{#if highlighted}
+			<!-- bg-zinc-950! overrides the shiki theme's inline background so the
+			     swap from the plain fallback doesn't flash a different color -->
 			<div
-				class="[&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:border [&_pre]:p-4 [&_pre]:text-xs [&_pre]:leading-relaxed"
+				class="[&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:border [&_pre]:bg-zinc-950! [&_pre]:p-4 [&_pre]:text-xs [&_pre]:leading-relaxed"
 			>
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -- shiki output over our own literals -->
 				{@html highlighted}
