@@ -15,8 +15,10 @@
 	import {
 		Activity,
 		CodeXml,
+		Dices,
 		Globe,
 		KeyRound,
+		LoaderCircle,
 		LogIn,
 		LogOut,
 		Radio,
@@ -87,6 +89,33 @@
 	const { form: signInForm, errors: signInErrors, validateForm: validateSignIn } = signIn;
 	let busy = $state(false);
 	let authError = $state<string | null>(null);
+	let authSuccess = $state<string | null>(null);
+	const authErrorHint = $derived(
+		authError && /already exist/i.test(authError)
+			? ' — switch to “Sign in”, or roll a new identity with the dice.'
+			: ''
+	);
+
+	const demoNames = [
+		'Grace Hopper',
+		'Alan Turing',
+		'Radia Perlman',
+		'Katherine Johnson',
+		'Margaret Hamilton',
+		'Barbara Liskov',
+		'Ken Thompson',
+		'Donald Knuth'
+	];
+
+	/** Fresh sign-up identity so repeat sign-ups don't collide on the same email. */
+	function randomizeIdentity() {
+		const name = demoNames[Math.floor(Math.random() * demoNames.length)];
+		const suffix = Math.random().toString(36).slice(2, 6);
+		$signUpForm.name = name;
+		$signUpForm.email = `${name.toLowerCase().replace(/[^a-z]+/g, '.')}-${suffix}@example.com`;
+		authError = null;
+		authSuccess = null;
+	}
 
 	// svelte-ignore state_referenced_locally
 	let allowedOriginsInput = $state((data.overview.state.allowedOrigins ?? []).join('\n'));
@@ -169,9 +198,14 @@
 		}
 	}
 
-	async function authPost(path: string, body: Record<string, unknown> = {}) {
+	async function authPost(
+		path: string,
+		body: Record<string, unknown> = {},
+		successMessage?: string
+	): Promise<boolean> {
 		busy = true;
 		authError = null;
+		authSuccess = null;
 		try {
 			const res = await fetch(`${authBase}/${path}`, {
 				method: 'POST',
@@ -188,9 +222,12 @@
 			if (!res.ok) {
 				throw new Error(json?.message ?? `request failed (HTTP ${res.status})`);
 			}
+			authSuccess = successMessage ?? null;
 			await Promise.all([refreshSession(data.projectId), refreshData(data.projectId)]);
+			return true;
 		} catch (err) {
 			authError = err instanceof Error ? err.message : String(err);
+			return false;
 		} finally {
 			busy = false;
 		}
@@ -199,18 +236,25 @@
 	async function submitSignUp() {
 		const result = await validateSignUp({ update: true });
 		if (!result.valid) return;
-		await authPost('sign-up/email', $signUpForm);
+		const created = await authPost(
+			'sign-up/email',
+			$signUpForm,
+			`Account created — you're signed in as ${$signUpForm.email}.`
+		);
+		// Carry the identity over so switching to “Sign in” just works.
+		if (created) $signInForm.email = $signUpForm.email;
 	}
 
 	async function submitSignIn() {
 		const result = await validateSignIn({ update: true });
 		if (!result.valid) return;
-		await authPost('sign-in/email', $signInForm);
+		await authPost('sign-in/email', $signInForm, `Signed in as ${$signInForm.email}.`);
 	}
 
 	async function socialSignIn(provider: 'google' | 'github') {
 		busy = true;
 		authError = null;
+		authSuccess = null;
 		try {
 			const response = await fetch(`${authBase}/sign-in/social`, {
 				method: 'POST',
@@ -237,6 +281,7 @@
 		if (!confirm(`Delete this ${label}? This cannot be undone.`)) return;
 		busy = true;
 		authError = null;
+		authSuccess = null;
 		try {
 			const response = await fetch(
 				`/api/projects/${data.projectId}/admin/${kind}/${encodeURIComponent(id)}`,
@@ -742,9 +787,10 @@
 				{#if activeTab === 'playground'}<div class="mt-4">
 						<Card.Root>
 							<Card.Header>
-								<Card.Title>Auth playground</Card.Title>
+								<Card.Title>Try authentication</Card.Title>
 								<Card.Description>
-									Exercise this project's Better Auth endpoints from the browser.
+									The form below is what your app's sign-in UI would call — every action hits this
+									project's live Better Auth endpoints, and the session panel shows the result.
 								</Card.Description>
 							</Card.Header>
 							<Card.Content class="grid gap-6 md:grid-cols-2">
@@ -773,6 +819,18 @@
 											>
 										</div>
 										{#if playgroundTab === 'sign-up'}<div class="mt-4 space-y-3">
+												<div class="flex items-center justify-between">
+													<p class="text-xs text-muted-foreground">Prefilled demo identity</p>
+													<Button
+														variant="ghost"
+														size="sm"
+														class="h-7 gap-1.5 px-2 text-xs"
+														data-testid="randomize-identity"
+														onclick={randomizeIdentity}
+													>
+														<Dices class="h-3.5 w-3.5" /> New identity
+													</Button>
+												</div>
 												<div class="space-y-1.5">
 													<Label for="su-name">Name</Label>
 													<Input
@@ -810,14 +868,21 @@
 														</p>{/if}
 												</div>
 												<Button class="w-full" disabled={busy} onclick={submitSignUp}>
-													<UserPlus class="mr-1 h-4 w-4" /> Create account
+													{#if busy}<LoaderCircle
+															class="mr-1 h-4 w-4 animate-spin"
+														/>{:else}<UserPlus class="mr-1 h-4 w-4" />{/if} Create account
 												</Button>
 												<Button
 													variant="outline"
 													class="w-full"
 													disabled={busy}
 													data-testid="guest-button"
-													onclick={() => authPost('sign-in/anonymous')}
+													onclick={() =>
+														authPost(
+															'sign-in/anonymous',
+															{},
+															'Guest session started — no email needed.'
+														)}
 												>
 													Continue as guest
 												</Button>
@@ -847,9 +912,27 @@
 														</p>{/if}
 												</div>
 												<Button class="w-full" disabled={busy} onclick={submitSignIn}>
-													<LogIn class="mr-1 h-4 w-4" /> Sign in
+													{#if busy}<LoaderCircle class="mr-1 h-4 w-4 animate-spin" />{:else}<LogIn
+															class="mr-1 h-4 w-4"
+														/>{/if} Sign in
 												</Button>
 											</div>{/if}
+										{#if authSuccess}
+											<p
+												class="mt-3 rounded-md bg-emerald-500/10 px-3 py-2 text-xs text-emerald-600 dark:text-emerald-400"
+												data-testid="auth-success"
+											>
+												{authSuccess}
+											</p>
+										{/if}
+										{#if authError}
+											<p
+												class="mt-3 rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive"
+												data-testid="auth-error"
+											>
+												{authError}{authErrorHint}
+											</p>
+										{/if}
 									</div>
 									{#if agentState.enabledSocialProviders?.length}
 										<div class="space-y-2 border-t pt-4">
@@ -885,33 +968,38 @@
 									<p class="text-xs tracking-wide text-muted-foreground uppercase">
 										Current session
 									</p>
+									<p class="mt-1 text-[11px] text-muted-foreground/70">
+										What <code class="font-mono">get-session</code> returns for this browser.
+									</p>
 									{#if session?.user}
-										<div class="mt-3 space-y-1.5 text-sm">
-											<p class="font-medium">{session.user.name}</p>
-											<p class="font-mono text-xs break-all text-muted-foreground">
-												{session.user.email}
-											</p>
-											<p class="text-xs text-muted-foreground">
-												expires {new Date(session.session.expiresAt).toLocaleString()}
-											</p>
+										<div class="mt-3 flex items-center gap-2.5">
+											<span
+												class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+											>
+												<UserRound class="h-4 w-4" />
+											</span>
+											<div class="min-w-0 text-sm">
+												<p class="truncate font-medium">{session.user.name}</p>
+												<p class="truncate font-mono text-xs break-all text-muted-foreground">
+													{session.user.email}
+												</p>
+											</div>
 										</div>
+										<p class="mt-2 text-xs text-muted-foreground">
+											expires {new Date(session.session.expiresAt).toLocaleString()}
+										</p>
 										<Button
 											variant="outline"
 											size="sm"
 											class="mt-auto w-full"
 											disabled={busy}
-											onclick={() => authPost('sign-out')}
+											onclick={() => authPost('sign-out', {}, 'Signed out.')}
 										>
 											<LogOut class="mr-1 h-4 w-4" /> Sign out
 										</Button>
 									{:else}
 										<p class="mt-3 text-sm text-muted-foreground">
 											No active session on this browser. Sign up or sign in to create one.
-										</p>
-									{/if}
-									{#if authError}
-										<p class="mt-3 rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
-											{authError}
 										</p>
 									{/if}
 								</div>
