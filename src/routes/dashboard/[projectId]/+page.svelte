@@ -62,7 +62,7 @@
 			>
 			<Card.Content class="flex flex-wrap gap-2"
 				><Button href={authHref}><KeyRound class="mr-1.5 h-4 w-4" /> Open Auth Agent</Button><Button
-					href={authHref}
+					href={`${authHref}#integration`}
 					variant="outline"><CodeXml class="mr-1.5 h-4 w-4" /> View integration guide</Button
 				></Card.Content
 			>

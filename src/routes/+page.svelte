@@ -5,7 +5,9 @@
 	import { fly } from 'svelte/transition';
 	import { flip } from 'svelte/animate';
 	import { Button } from '$lib/components/ui/button';
+	import CodeExamples from '$lib/components/code-examples.svelte';
 	import ModeToggle from '$lib/components/mode-toggle.svelte';
+	import { buildIntegrationExamples } from '$lib/integration-examples';
 	import { cn } from '$lib/utils';
 	import {
 		Menu,
@@ -151,6 +153,8 @@
 	];
 
 	let openFaq = $state<number | null>(0);
+
+	const apiExamples = buildIntegrationExamples('/api/projects/PROJECT_ID/auth');
 
 	// Agent-topology visual: simulated traffic converging on one project agent.
 	const mapW = 480;
@@ -663,27 +667,7 @@
 						<span class="h-2.5 w-2.5 rounded-full bg-border"></span>
 						<span class="h-2.5 w-2.5 rounded-full bg-border"></span>
 					</div>
-					<pre class="overflow-x-auto p-5 font-mono text-[13px] leading-relaxed"><code
-							><span class="text-muted-foreground">// sign up — any HTTP client works</span>
-const res = await fetch(
-  <span class="text-primary">'/api/projects/PROJECT_ID/auth/sign-up/email'</span>,
-  {'{'}
-    method: <span class="text-primary">'POST'</span>,
-    headers: {'{'} <span class="text-primary">'content-type'</span>: <span class="text-primary"
-								>'application/json'</span
-							> },
-    body: JSON.stringify({'{'} name, email, password })
-  }
-)
-
-<span class="text-muted-foreground">// bearer token for non-browser clients</span>
-const token = res.headers.get(<span class="text-primary">'set-auth-token'</span>)
-
-<span class="text-muted-foreground">// later — cookie or bearer, your choice</span>
-await fetch(<span class="text-primary">'/api/projects/PROJECT_ID/auth/get-session'</span>, {'{'}
-  headers: {'{'} authorization: `Bearer ${'{'}token}` }
-})</code
-						></pre>
+					<CodeExamples examples={apiExamples} class="p-4" />
 				</div>
 			</div>
 		</section>
