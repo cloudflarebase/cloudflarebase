@@ -60,7 +60,7 @@ The SvelteKit Worker exposes matching `/api/projects/<projectId>/...` same-origi
 - Every auth event writes a best-effort data point to `AUTH_EVENTS` (Workers Analytics Engine). Analytics failures must never fail authentication.
 - Local/test mirror the same event dimensions to `LOCAL_ANALYTICS` D1 for DAU/WAU/MAU, provider, country, and trend queries without Cloudflare credentials.
 - Production Analytics Engine SQL reads require `CF_ACCOUNT_ID` and a `CF_ANALYTICS_API_TOKEN` with Account Analytics Read; otherwise analytics reports write-only mode. Writes require no token.
-- Behavioral results are cached for 5 seconds. Cache entries include the validated IANA timezone because signup dates are grouped in the viewer's local day.
+- Behavioral results are cached for 5 seconds. Cache entries include the validated IANA timezone because daily activity (sign-ups and sign-ins, 90-day window) is grouped in the viewer's local day.
 - `/chat` does not require Better Auth. It stores successful user/agent message pairs in `chat_message`, scoped by a project-specific SHA-256 hash of `CF-Connecting-IP` (with proxy-header and local fallbacks). Never persist the raw address. Shared IPs share history; changed IPs start a new history. Recent history is model context. It is the only route that calls the `AI` binding; inference errors return 502 and must not affect auth or analytics. Workers AI has no local simulator, so the local binding is remote.
 
 ## Constraints and gotchas
