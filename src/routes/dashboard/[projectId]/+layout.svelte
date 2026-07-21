@@ -137,6 +137,12 @@
 		}
 	}
 
+	function scrollCopilotToLatest() {
+		const el = copilotMessagesEl;
+		if (!el) return;
+		void tick().then(() => el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' }));
+	}
+
 	async function askCopilot(question: string) {
 		const trimmed = question.trim();
 		if (!trimmed || copilotBusy) return;
@@ -148,6 +154,7 @@
 			...copilotMessages,
 			{ id: pendingId, role: 'user', content: trimmed, createdAt: new Date().toISOString() }
 		];
+		scrollCopilotToLatest();
 		try {
 			const response = await fetch(`/api/projects/${currentProject}/chat`, {
 				method: 'POST',
@@ -189,6 +196,7 @@
 		} finally {
 			copilotBusy = false;
 			copilotSuggestions = pickSuggestions();
+			scrollCopilotToLatest();
 		}
 	}
 </script>
