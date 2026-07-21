@@ -118,7 +118,7 @@ export interface AuthAnalytics {
 	activeSessions: number;
 	providers: { provider: string; users: number }[];
 	countries: { country: string; sessions: number }[];
-	signupsLast7Days: { day: string; count: number }[];
+	activityByDay: { day: string; signups: number; signins: number }[];
 	/** Workers Analytics Engine metrics pipeline. */
 	engine: {
 		dataset: string;
@@ -154,7 +154,7 @@ interface BehavioralAnalytics {
 	gmailUsers: number;
 	providers: { provider: string; users: number }[];
 	countries: { country: string; sessions: number }[];
-	signupsLast7Days: { day: string; count: number }[];
+	activityByDay: { day: string; signups: number; signins: number }[];
 	eventsLast24h?: { eventType: string; count: number }[];
 }
 
@@ -788,7 +788,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 			activeSessions: activeSessions?.n ?? 0,
 			providers: behavioral.providers,
 			countries: behavioral.countries,
-			signupsLast7Days: behavioral.signupsLast7Days,
+			activityByDay: behavioral.activityByDay,
 			engine: {
 				dataset: this.env.WAE_DATASET ?? 'cloudflarebase_auth_events',
 				enabled: this.waeConfig !== null || !!this.env.LOCAL_ANALYTICS,
@@ -813,7 +813,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 			gmailUsers: 0,
 			providers: [],
 			countries: [],
-			signupsLast7Days: [],
+			activityByDay: [],
 			eventsLast24h: undefined,
 		};
 	}
@@ -865,26 +865,43 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 			this.analyticsSql<{ users: number | string }>(
 				`SELECT count(DISTINCT blob4) AS users ${from} AND blob1 = 'user.active' AND timestamp > NOW() - INTERVAL '${days}' DAY`,
 			);
-		const [dau, wau, mau, providers, countries, signups, gmail, events] = await Promise.all([
-			activeUsers(1),
-			activeUsers(7),
-			activeUsers(30),
-			this.analyticsSql<{ provider: string; users: number | string }>(
-				`SELECT blob3 AS provider, count(DISTINCT blob4) AS users ${from} AND blob1 = 'user.active' AND timestamp > NOW() - INTERVAL '30' DAY GROUP BY provider ORDER BY users DESC`,
-			),
-			this.analyticsSql<{ country: string; sessions: number | string }>(
-				`SELECT blob2 AS country, SUM(_sample_interval) AS sessions ${from} AND blob1 = 'session.created' AND timestamp > NOW() - INTERVAL '30' DAY GROUP BY country ORDER BY sessions DESC LIMIT 10`,
-			),
+		// Day buckets in the viewer's timezone; the dashboard filters 7/30/90-day
+		// windows client-side from this 90-day series.
+		const dailyCounts = (eventType: string) =>
 			this.analyticsSql<{ day: string; count: number | string }>(
-				`SELECT formatDateTime(timestamp, '%Y-%m-%d', '${timeZone}') AS day, SUM(_sample_interval) AS count ${from} AND blob1 = 'user.created' AND timestamp > NOW() - INTERVAL '7' DAY GROUP BY day ORDER BY day`,
-			),
-			this.analyticsSql<{ users: number | string }>(
-				`SELECT count(DISTINCT blob4) AS users ${from} AND blob1 = 'user.created' AND blob6 = 'gmail.com'`,
-			),
-			this.analyticsSql<{ eventType: string; count: number | string }>(
-				`SELECT blob1 AS eventType, SUM(_sample_interval) AS count ${from} AND timestamp > NOW() - INTERVAL '1' DAY GROUP BY eventType ORDER BY count DESC`,
-			),
-		]);
+				`SELECT formatDateTime(timestamp, '%Y-%m-%d', '${timeZone}') AS day, SUM(_sample_interval) AS count ${from} AND blob1 = '${eventType}' AND timestamp > NOW() - INTERVAL '90' DAY GROUP BY day ORDER BY day`,
+			);
+		const [dau, wau, mau, providers, countries, signups, signins, gmail, events] =
+			await Promise.all([
+				activeUsers(1),
+				activeUsers(7),
+				activeUsers(30),
+				this.analyticsSql<{ provider: string; users: number | string }>(
+					`SELECT blob3 AS provider, count(DISTINCT blob4) AS users ${from} AND blob1 = 'user.active' AND timestamp > NOW() - INTERVAL '30' DAY GROUP BY provider ORDER BY users DESC`,
+				),
+				this.analyticsSql<{ country: string; sessions: number | string }>(
+					`SELECT blob2 AS country, SUM(_sample_interval) AS sessions ${from} AND blob1 = 'session.created' AND timestamp > NOW() - INTERVAL '30' DAY GROUP BY country ORDER BY sessions DESC LIMIT 10`,
+				),
+				dailyCounts('user.created'),
+				dailyCounts('session.created'),
+				this.analyticsSql<{ users: number | string }>(
+					`SELECT count(DISTINCT blob4) AS users ${from} AND blob1 = 'user.created' AND blob6 = 'gmail.com'`,
+				),
+				this.analyticsSql<{ eventType: string; count: number | string }>(
+					`SELECT blob1 AS eventType, SUM(_sample_interval) AS count ${from} AND timestamp > NOW() - INTERVAL '1' DAY GROUP BY eventType ORDER BY count DESC`,
+				),
+			]);
+		const activityByDay = new Map<string, { day: string; signups: number; signins: number }>();
+		const dayEntry = (day: string) => {
+			let entry = activityByDay.get(day);
+			if (!entry) {
+				entry = { day, signups: 0, signins: 0 };
+				activityByDay.set(day, entry);
+			}
+			return entry;
+		};
+		for (const row of signups) dayEntry(row.day.slice(0, 10)).signups += Number(row.count);
+		for (const row of signins) dayEntry(row.day.slice(0, 10)).signins += Number(row.count);
 		const data: BehavioralAnalytics = {
 			dau: Number(dau[0]?.users ?? 0),
 			wau: Number(wau[0]?.users ?? 0),
@@ -892,10 +909,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 			gmailUsers: Number(gmail[0]?.users ?? 0),
 			providers: providers.map((row) => ({ ...row, users: Number(row.users) })),
 			countries: countries.map((row) => ({ ...row, sessions: Number(row.sessions) })),
-			signupsLast7Days: signups.map((row) => ({
-				day: row.day.slice(0, 10),
-				count: Number(row.count),
-			})),
+			activityByDay: [...activityByDay.values()].sort((a, b) => a.day.localeCompare(b.day)),
 			eventsLast24h: events.map((row) => ({ ...row, count: Number(row.count) })),
 		};
 		this.behavioralCache = { expiresAt: Date.now() + ANALYTICS_CACHE_MS, timeZone, data };
@@ -906,7 +920,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 		const db = this.env.LOCAL_ANALYTICS!;
 		const since = (days: number) => Date.now() - days * 86_400_000;
 		const bind = (sql: string, ...values: unknown[]) => db.prepare(sql).bind(this.name, ...values);
-		const [dau, wau, mau, providers, countries, signups, gmail, events] = await db.batch([
+		const [dau, wau, mau, providers, countries, activity, gmail, events] = await db.batch([
 			bind(
 				`SELECT COUNT(DISTINCT subject_id) users FROM auth_events WHERE project_id=? AND event_type='user.active' AND timestamp>?`,
 				since(1),
@@ -928,8 +942,8 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 				since(30),
 			),
 			bind(
-				`SELECT timestamp FROM auth_events WHERE project_id=? AND event_type='user.created' AND timestamp>?`,
-				since(7),
+				`SELECT timestamp, event_type FROM auth_events WHERE project_id=? AND event_type IN ('user.created','session.created') AND timestamp>?`,
+				since(90),
 			),
 			bind(
 				`SELECT COUNT(DISTINCT subject_id) users FROM auth_events WHERE project_id=? AND event_type='user.created' AND email_domain='gmail.com'`,
@@ -941,19 +955,25 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 		]);
 		const rows = <T>(result: D1Result<unknown>) => (result.results ?? []) as T[];
 		const scalar = (result: D1Result) => Number(rows<{ users: number }>(result)[0]?.users ?? 0);
-		// D1's SQLite cannot group by an IANA-timezone day, so bucket sign-up
+		// D1's SQLite cannot group by an IANA-timezone day, so bucket activity
 		// timestamps here in the viewer's timezone, matching the remote
-		// formatDateTime(timestamp, '%Y-%m-%d', timeZone) query.
+		// formatDateTime(timestamp, '%Y-%m-%d', timeZone) queries.
 		const dayFormatter = new Intl.DateTimeFormat('en-CA', {
 			timeZone,
 			year: 'numeric',
 			month: '2-digit',
 			day: '2-digit',
 		});
-		const signupsByDay = new Map<string, number>();
-		for (const { timestamp } of rows<{ timestamp: number }>(signups)) {
-			const day = dayFormatter.format(timestamp);
-			signupsByDay.set(day, (signupsByDay.get(day) ?? 0) + 1);
+		const activityByDay = new Map<string, { day: string; signups: number; signins: number }>();
+		for (const row of rows<{ timestamp: number; event_type: string }>(activity)) {
+			const day = dayFormatter.format(row.timestamp);
+			let entry = activityByDay.get(day);
+			if (!entry) {
+				entry = { day, signups: 0, signins: 0 };
+				activityByDay.set(day, entry);
+			}
+			if (row.event_type === 'user.created') entry.signups += 1;
+			else entry.signins += 1;
 		}
 		return {
 			dau: scalar(dau),
@@ -962,9 +982,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 			gmailUsers: scalar(gmail),
 			providers: rows(providers),
 			countries: rows(countries),
-			signupsLast7Days: [...signupsByDay]
-				.map(([day, count]) => ({ day, count }))
-				.sort((a, b) => a.day.localeCompare(b.day)),
+			activityByDay: [...activityByDay.values()].sort((a, b) => a.day.localeCompare(b.day)),
 			eventsLast24h: rows(events),
 		};
 	}

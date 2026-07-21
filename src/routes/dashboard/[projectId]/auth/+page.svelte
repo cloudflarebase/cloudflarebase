@@ -41,7 +41,7 @@
 		X
 	} from '@lucide/svelte';
 	import { AgentClient } from 'agents/client';
-	import { AreaChart } from 'layerchart';
+	import { Area, AreaChart, Points } from 'layerchart';
 	import { onMount, tick } from 'svelte';
 	import { SvelteDate } from 'svelte/reactivity';
 	import { superForm } from 'sveltekit-superforms';
@@ -685,35 +685,42 @@ curl ${url}/get-session \\
 		}
 	]);
 
+	const activityRangeOptions = [
+		{ value: '7', label: 'Last week' },
+		{ value: '30', label: 'Last month' },
+		{ value: '90', label: 'Last 90 days' }
+	];
+	let activityRange = $state('7');
 	const activityChart = $derived.by(() => {
-		const counts = new Map(analytics.signupsLast7Days.map((point) => [point.day, point.count]));
-		return Array.from({ length: 7 }, (_, index) => {
+		const days = Number(activityRange);
+		const byDay = new Map(analytics.activityByDay.map((point) => [point.day, point]));
+		return Array.from({ length: days }, (_, index) => {
 			const date = new SvelteDate();
-			date.setDate(date.getDate() - (6 - index));
+			date.setDate(date.getDate() - (days - 1 - index));
 			const key = [
 				date.getFullYear(),
 				String(date.getMonth() + 1).padStart(2, '0'),
 				String(date.getDate()).padStart(2, '0')
 			].join('-');
+			const point = byDay.get(key);
 			return {
-				day: date.toLocaleDateString(undefined, { weekday: 'short' }),
+				date,
 				dateLabel: date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-				fullDate: date.toLocaleDateString(undefined, {
-					weekday: 'long',
-					month: 'long',
-					day: 'numeric'
-				}),
-				count: counts.get(key) ?? 0
+				signups: point?.signups ?? 0,
+				signins: point?.signins ?? 0
 			};
 		});
 	});
-	const activityTotal = $derived(activityChart.reduce((sum, point) => sum + point.count, 0));
+	const activitySignups = $derived(activityChart.reduce((sum, point) => sum + point.signups, 0));
+	const activitySignins = $derived(activityChart.reduce((sum, point) => sum + point.signins, 0));
 	const activityDateRange = $derived(
-		activityChart.length
-			? `${activityChart[0].dateLabel} – ${activityChart.at(-1)?.dateLabel}`
-			: 'Last 7 days'
+		activityChart.length ? `${activityChart[0].dateLabel} – ${activityChart.at(-1)?.dateLabel}` : ''
 	);
-	const activityChartConfig = { count: { label: 'Sign-ups', color: 'var(--color-primary)' } };
+	// Sign-ups are a subset of sign-ins (creating an account signs you in), so
+	// the chart plots one series and the header shows both totals.
+	const activityChartConfig = {
+		signins: { label: 'Sign-ins', color: 'var(--chart-1)' }
+	};
 </script>
 
 <svelte:head>
@@ -753,14 +760,18 @@ curl ${url}/get-session \\
 			<Card.Header class="pb-2">
 				<div>
 					<Card.Title>Authentication activity</Card.Title>
-					<Card.Description
-						>New users over the last seven days from Analytics Engine.</Card.Description
-					>
+					<Card.Description>Sign-ups and sign-ins per day from Analytics Engine.</Card.Description>
 					{#if activityTimeZone}
 						<div class="mt-4 flex flex-wrap items-end gap-3">
 							<p class="flex items-baseline gap-1.5">
-								<span class="text-2xl leading-none font-semibold tabular-nums">{activityTotal}</span
+								<span class="text-2xl leading-none font-semibold tabular-nums"
+									>{activitySignups}</span
 								><span class="text-xs font-medium text-muted-foreground">sign-ups</span>
+							</p>
+							<p class="flex items-baseline gap-1.5 border-l pl-3">
+								<span class="text-2xl leading-none font-semibold tabular-nums"
+									>{activitySignins}</span
+								><span class="text-xs font-medium text-muted-foreground">sign-ins</span>
 							</p>
 							<p class="border-l pl-3 text-xs text-muted-foreground">{activityDateRange}</p>
 						</div>
@@ -770,6 +781,23 @@ curl ${url}/get-session \\
 						</p>
 					{/if}
 				</div>
+				<Card.Action class="self-start">
+					<Select.Root type="single" bind:value={activityRange}>
+						<Select.Trigger
+							size="sm"
+							class="w-36"
+							aria-label="Activity range"
+							data-testid="activity-range"
+						>
+							{activityRangeOptions.find((option) => option.value === activityRange)?.label}
+						</Select.Trigger>
+						<Select.Content>
+							{#each activityRangeOptions as option (option.value)}
+								<Select.Item value={option.value} label={option.label} />
+							{/each}
+						</Select.Content>
+					</Select.Root>
+				</Card.Action>
 			</Card.Header>
 			<Card.Content>
 				{#if !activityTimeZone}
@@ -782,17 +810,53 @@ curl ${url}/get-session \\
 					>
 						<AreaChart
 							data={activityChart}
-							x="day"
-							y="count"
-							series={[{ key: 'count', label: 'Sign-ups', color: 'var(--color-count)' }]}
+							x="date"
+							series={[
+								{ key: 'signins', label: 'Sign-ins', color: activityChartConfig.signins.color }
+							]}
 							props={{
-								area: { fillOpacity: 0.18 },
-								line: { strokeWidth: 2.5 },
-								yAxis: { ticks: 4 }
+								yAxis: { ticks: 4 },
+								xAxis: {
+									// One tick per data point on the weekly view; a time scale
+									// otherwise subdivides days and repeats weekday labels.
+									ticks: activityRange === '7' ? activityChart.map((point) => point.date) : 6,
+									format: (value: Date) =>
+										value.toLocaleDateString(
+											undefined,
+											activityRange === '7'
+												? { weekday: 'short' }
+												: { month: 'short', day: 'numeric' }
+										)
+								}
 							}}
 						>
+							{#snippet marks()}
+								<Area
+									seriesKey="signins"
+									fill={activityChartConfig.signins.color}
+									fillOpacity={0.18}
+									line={{ strokeWidth: 2.5, stroke: activityChartConfig.signins.color }}
+								/>
+								<Points
+									seriesKey="signins"
+									r={activityRange === '7' ? 3.5 : 2.5}
+									fill="var(--background)"
+									stroke={activityChartConfig.signins.color}
+									strokeWidth={1.5}
+								/>
+							{/snippet}
 							{#snippet tooltip()}
-								<Chart.Tooltip indicator="line" />
+								<Chart.Tooltip
+									indicator="line"
+									labelFormatter={(value: unknown) =>
+										value instanceof Date
+											? value.toLocaleDateString(undefined, {
+													weekday: 'long',
+													month: 'long',
+													day: 'numeric'
+												})
+											: String(value)}
+								/>
 							{/snippet}
 						</AreaChart>
 					</Chart.Container>
@@ -804,7 +868,7 @@ curl ${url}/get-session \\
 							? 'Events are flowing. Add Analytics Engine read credentials to visualize activity.'
 							: analytics.engine.status === 'error'
 								? 'Analytics Engine reads are temporarily unavailable.'
-								: 'No sign-ups recorded in the last seven days.'}
+								: 'No auth activity recorded in this period.'}
 					</div>
 				{/if}
 			</Card.Content>

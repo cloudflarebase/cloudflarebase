@@ -81,7 +81,7 @@ export interface AuthAnalytics {
 	activeSessions: number;
 	providers: { provider: string; users: number }[];
 	countries: { country: string; sessions: number }[];
-	signupsLast7Days: { day: string; count: number }[];
+	activityByDay: { day: string; signups: number; signins: number }[];
 	/** Workers Analytics Engine metrics pipeline. */
 	engine: {
 		dataset: string;
