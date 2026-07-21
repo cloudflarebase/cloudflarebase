@@ -309,6 +309,15 @@ test.describe('authentication page (frontend)', () => {
 		await expect(page.getByTestId('users-card').getByText('No users yet')).toBeVisible();
 	});
 
+	test('view integration guide opens the integration tab', async ({ page }) => {
+		const project = 'e2e-ui-deeplink';
+		await page.goto(`/dashboard/${project}`);
+		await page.getByRole('link', { name: 'View integration guide' }).click();
+
+		await expect(page.getByTestId('auth-page')).toHaveAttribute('data-hydrated', 'true');
+		await expect(page.getByTestId('connect-card')).toContainText(`/api/projects/${project}/auth`);
+	});
+
 	test('project switcher rejects HTML and script payloads', async ({ page }) => {
 		await gotoAuthPage(page, SEED_PROJECT);
 		await page.evaluate(
