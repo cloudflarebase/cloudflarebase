@@ -42,6 +42,9 @@
 	let copilotMessages = $state<CopilotMessage[]>([]);
 	let copilotMessagesEl = $state<HTMLDivElement>();
 	let pendingHistoryScroll = $state(false);
+	// Starts true so the first paint shows the skeleton, not a flash of the
+	// empty state, while the initial history request is in flight.
+	let copilotHistoryLoading = $state(true);
 
 	const overviewHref = $derived(resolve('/dashboard/[projectId]', { projectId }));
 	const authHref = $derived(resolve('/dashboard/[projectId]/auth', { projectId }));
@@ -89,6 +92,7 @@
 		const currentProject = projectId;
 		copilotMessages = [];
 		pendingHistoryScroll = false;
+		copilotHistoryLoading = true;
 		void loadCopilotHistory(currentProject);
 	});
 
@@ -101,6 +105,7 @@
 	});
 
 	async function loadCopilotHistory(currentProject: string) {
+		copilotHistoryLoading = true;
 		try {
 			const response = await fetch(`/api/projects/${currentProject}/chat`);
 			if (currentProject !== projectId) return;
@@ -113,6 +118,8 @@
 			pendingHistoryScroll = copilotMessages.length > 0;
 		} catch {
 			// Keep chat usable when history cannot be loaded.
+		} finally {
+			if (currentProject === projectId) copilotHistoryLoading = false;
 		}
 	}
 
@@ -366,7 +373,13 @@
 				data-testid="copilot-messages"
 				bind:this={copilotMessagesEl}
 			>
-				{#if copilotMessages.length === 0}
+				{#if copilotHistoryLoading && copilotMessages.length === 0}
+					<div class="space-y-3" data-testid="copilot-history-loading" aria-hidden="true">
+						<div class="h-14 w-3/4 animate-pulse rounded-xl bg-muted/60"></div>
+						<div class="ml-auto h-9 w-1/2 animate-pulse rounded-xl bg-muted/60"></div>
+						<div class="h-14 w-2/3 animate-pulse rounded-xl bg-muted/60"></div>
+					</div>
+				{:else if copilotMessages.length === 0}
 					<div class="rounded-xl border bg-muted/40 p-4">
 						<div class="mb-2 flex items-center gap-2 text-sm font-medium">
 							<Bot class="h-4 w-4 text-primary" /> What can I help with?
@@ -397,17 +410,18 @@
 						<span class="h-2 w-2 animate-pulse rounded-full bg-primary"></span>Analyzing live data…
 					</p>
 				{/if}
-				<div class="grid gap-2" data-testid="copilot-suggestions">
-					{#each copilotSuggestions as suggestion (suggestion)}
-						<button
-							class="rounded-lg border px-3 py-2 text-left text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-foreground disabled:opacity-50"
-							disabled={copilotBusy}
-							onclick={() => askCopilot(suggestion)}
-						>
-							{suggestion}
-						</button>
-					{/each}
-				</div>
+				{#if !copilotHistoryLoading && !copilotBusy}
+					<div class="grid gap-2" data-testid="copilot-suggestions">
+						{#each copilotSuggestions as suggestion (suggestion)}
+							<button
+								class="rounded-lg border px-3 py-2 text-left text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-foreground"
+								onclick={() => askCopilot(suggestion)}
+							>
+								{suggestion}
+							</button>
+						{/each}
+					</div>
+				{/if}
 			</div>
 
 			<form
