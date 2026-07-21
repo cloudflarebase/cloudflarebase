@@ -5,63 +5,69 @@ import { migrate } from 'drizzle-orm/durable-sqlite/migrator';
 import migrations from '../drizzle/migrations';
 import { createProjectAuth, type AuthDatabase, type ProjectAuth } from './auth';
 import * as schema from './db/schema';
+import {
+	analyticsApiResponseSchema,
+	chatRequestSchema,
+	projectIdSchema,
+	resourceIdSchema,
+	roleRequestSchema,
+	rolesRequestSchema,
+	sessionActivityResponseSchema,
+	settingsRequestSchema,
+	socialCredentialsSchema,
+	timeZoneSchema,
+	workersAiResponseSchema,
+	type ProviderUpdates,
+	type SocialCredentials,
+} from './schemas';
 
 const MAX_EVENTS = 50;
 // Analytics Engine ingestion is asynchronous. Keep this short so a query that
 // races a new write is retried quickly instead of holding stale graph data.
 const ANALYTICS_CACHE_MS = 5_000;
-const TIME_ZONE_PATTERN = /^(?:Etc\/UTC|[A-Za-z_]+(?:\/[A-Za-z0-9_+-]+)+)$/;
-
-type SocialCredentials = Partial<
-	Record<'google' | 'github', { clientId: string; clientSecret: string }>
->;
-
-function parseSocialCredentials(
-	value: unknown,
+function applySocialCredentials(
+	value: ProviderUpdates,
 	existing: SocialCredentials,
-): { credentials: SocialCredentials } | { error: string } {
-	if (!value || typeof value !== 'object' || Array.isArray(value)) {
-		return { error: 'socialProviders must be an object' };
-	}
+): SocialCredentials {
 	const credentials: SocialCredentials = {};
 	for (const provider of ['google', 'github'] as const) {
-		const entry = (value as Record<string, unknown>)[provider];
-		if (entry === undefined || entry === null || entry === false) continue;
-		if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
-			return { error: `${provider} credentials are invalid` };
-		}
-		if ((entry as Record<string, unknown>).preserve === true && existing[provider]) {
+		const entry = value[provider];
+		if (!entry) continue;
+		if ('preserve' in entry) {
+			if (!existing[provider]) continue;
 			credentials[provider] = existing[provider];
 			continue;
 		}
-		const { clientId, clientSecret } = entry as Record<string, unknown>;
-		if (
-			typeof clientId !== 'string' ||
-			typeof clientSecret !== 'string' ||
-			!clientId.trim() ||
-			!clientSecret.trim() ||
-			clientId.length > 512 ||
-			clientSecret.length > 512
-		) {
-			return { error: `${provider} requires a client ID and client secret` };
-		}
-		credentials[provider] = { clientId: clientId.trim(), clientSecret: clientSecret.trim() };
+		credentials[provider] = entry;
 	}
-	return { credentials };
+	return credentials;
 }
 
 export interface AuthActivityEvent {
 	id: string;
 	type:
-		'project.provisioned' | 'user.created' | 'user.deleted' | 'session.created' | 'session.revoked';
+		| 'project.provisioned'
+		| 'user.created'
+		| 'user.deleted'
+		| 'user.role-changed'
+		| 'session.created'
+		| 'session.revoked';
 	message: string;
 	at: string;
+}
+
+/** An assignable RBAC role and the permission keys it grants. */
+export interface RoleDefinition {
+	name: string;
+	permissions: string[];
 }
 
 /** Synced in realtime to every dashboard connected to this agent. */
 export interface AuthAgentState {
 	projectId: string;
 	provisionedAt: string | null;
+	/** Role registry; always contains the built-in `user` and `admin`. */
+	roles: RoleDefinition[];
 	allowedOrigins: string[];
 	enabledSocialProviders: string[];
 	users: number;
@@ -77,6 +83,7 @@ export interface OverviewUser {
 	email: string;
 	emailVerified: boolean;
 	isAnonymous: boolean;
+	role: string;
 	providers: string[];
 	createdAt: string;
 }
@@ -111,7 +118,7 @@ export interface AuthAnalytics {
 	activeSessions: number;
 	providers: { provider: string; users: number }[];
 	countries: { country: string; sessions: number }[];
-	signupsLast7Days: { day: string; count: number }[];
+	activityByDay: { day: string; signups: number; signins: number }[];
 	/** Workers Analytics Engine metrics pipeline. */
 	engine: {
 		dataset: string;
@@ -147,7 +154,7 @@ interface BehavioralAnalytics {
 	gmailUsers: number;
 	providers: { provider: string; users: number }[];
 	countries: { country: string; sessions: number }[];
-	signupsLast7Days: { day: string; count: number }[];
+	activityByDay: { day: string; signups: number; signins: number }[];
 	eventsLast24h?: { eventType: string; count: number }[];
 }
 
@@ -163,10 +170,16 @@ const DEFAULT_CHAT_MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
  *
  * Addressed as /agents/auth-agent/<projectId>/...
  */
+const DEFAULT_ROLES: RoleDefinition[] = [
+	{ name: 'user', permissions: [] },
+	{ name: 'admin', permissions: ['*'] },
+];
+
 export class AuthAgent extends Agent<Env, AuthAgentState> {
 	initialState: AuthAgentState = {
 		projectId: '',
 		provisionedAt: null,
+		roles: DEFAULT_ROLES,
 		allowedOrigins: [],
 		enabledSocialProviders: [],
 		users: 0,
@@ -204,6 +217,8 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 			trustedOrigins: this.trustedOrigins,
 			disableRateLimit: this.env.DISABLE_RATE_LIMIT === 'true',
 			getRequestCountry: () => this.requestCountry,
+			getRolePermissions: (role) =>
+				(this.state.roles ?? DEFAULT_ROLES).find((entry) => entry.name === role)?.permissions ?? [],
 			google:
 				this.socialCredentials.google ??
 				(this.env.GOOGLE_CLIENT_ID && this.env.GOOGLE_CLIENT_SECRET
@@ -271,14 +286,21 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 				),
 			]);
 		}
-		this.socialCredentials =
-			(await this.ctx.storage.get<SocialCredentials>('social-provider-credentials')) ?? {};
+		this.socialCredentials = socialCredentialsSchema.parse(
+			await this.ctx.storage.get('social-provider-credentials'),
+		);
 
+		const rolesValid =
+			Array.isArray(this.state.roles) &&
+			this.state.roles.every(
+				(entry) => entry && typeof entry === 'object' && typeof entry.name === 'string',
+			);
 		if (!this.state.projectId) {
 			this.setState({
 				...this.state,
 				projectId: this.name,
 				provisionedAt: new Date().toISOString(),
+				roles: DEFAULT_ROLES,
 				allowedOrigins: [],
 				enabledSocialProviders: this.configuredSocialProviders,
 			});
@@ -286,11 +308,13 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 			await this.recordEvent('project.provisioned', `auth provisioned for project "${this.name}"`);
 		} else if (
 			!Array.isArray(this.state.allowedOrigins) ||
-			!Array.isArray(this.state.enabledSocialProviders)
+			!Array.isArray(this.state.enabledSocialProviders) ||
+			!rolesValid
 		) {
-			// State schema upgrade for agents provisioned before origin settings.
+			// State schema upgrade for agents provisioned before origin/role settings.
 			this.setState({
 				...this.state,
+				roles: rolesValid ? this.state.roles : DEFAULT_ROLES,
 				allowedOrigins: this.state.allowedOrigins ?? [],
 				enabledSocialProviders: this.configuredSocialProviders,
 			});
@@ -417,6 +441,9 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 
 	async onRequest(request: Request): Promise<Response> {
 		const url = new URL(request.url);
+		if (!projectIdSchema.safeParse(this.name).success) {
+			return Response.json({ error: 'invalid project id' }, { status: 400 });
+		}
 		// Requests arrive with the full /agents/auth-agent/<name>/... path.
 		const subPath = url.pathname.match(/\/agents\/[^/]+\/[^/]+(\/.*)?$/)?.[1] ?? '/';
 
@@ -426,8 +453,11 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 
 		if (subPath === '/analytics') {
 			const requestedTimeZone = url.searchParams.get('timeZone') ?? 'Etc/UTC';
-			const timeZone = TIME_ZONE_PATTERN.test(requestedTimeZone) ? requestedTimeZone : 'Etc/UTC';
-			return Response.json(await this.getAnalytics(timeZone));
+			const timeZone = timeZoneSchema.safeParse(requestedTimeZone);
+			if (!timeZone.success) {
+				return Response.json({ error: 'invalid timeZone' }, { status: 400 });
+			}
+			return Response.json(await this.getAnalytics(timeZone.data));
 		}
 
 		if (subPath === '/config' && request.method === 'GET') {
@@ -446,14 +476,13 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 		}
 
 		if (subPath === '/chat' && request.method === 'POST') {
-			const body = (await request.json().catch(() => null)) as { question?: string } | null;
-			const question = body?.question?.trim().slice(0, 500);
-			if (!question) {
+			const body = chatRequestSchema.safeParse(await request.json().catch(() => null));
+			if (!body.success) {
 				return Response.json({ error: 'question is required' }, { status: 400 });
 			}
 			const clientKey = await this.chatClientKey(request);
 			try {
-				return Response.json(await this.answerQuestion(question, clientKey));
+				return Response.json(await this.answerQuestion(body.data.question, clientKey));
 			} catch (error) {
 				console.error('AuthAgent AI request failed', error);
 				return Response.json(
@@ -463,14 +492,23 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 			}
 		}
 
+		const roleUpdate = subPath.match(/^\/admin\/users\/([^/]+)\/role$/);
+		if (roleUpdate && request.method === 'PUT') {
+			return this.setUserRole(this.decodeResourceId(roleUpdate[1]), request);
+		}
+
 		const userDelete = subPath.match(/^\/admin\/users\/([^/]+)$/);
 		if (userDelete && request.method === 'DELETE') {
-			return this.deleteUser(decodeURIComponent(userDelete[1]));
+			return this.deleteUser(this.decodeResourceId(userDelete[1]));
 		}
 
 		const sessionDelete = subPath.match(/^\/admin\/sessions\/([^/]+)$/);
 		if (sessionDelete && request.method === 'DELETE') {
-			return this.revokeSession(decodeURIComponent(sessionDelete[1]));
+			return this.revokeSession(this.decodeResourceId(sessionDelete[1]));
+		}
+
+		if (subPath === '/admin/roles' && request.method === 'PUT') {
+			return this.updateRoles(request);
 		}
 
 		if (subPath === '/admin/settings' && request.method === 'PUT') {
@@ -511,15 +549,14 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 				});
 				await this.recordEvent('session.revoked', 'user signed out');
 			} else if (response.ok && request.method === 'GET' && /\/get-session$/.test(subPath)) {
-				const session = (await response
-					.clone()
-					.json()
-					.catch(() => null)) as {
-					user?: { id?: string };
-					session?: { id?: string };
-				} | null;
-				if (session?.user?.id && session.session?.id) {
-					await this.trackSessionActivity(session.user.id, session.session.id);
+				const session = sessionActivityResponseSchema.safeParse(
+					await response
+						.clone()
+						.json()
+						.catch(() => null),
+				);
+				if (session.success && session.data) {
+					await this.trackSessionActivity(session.data.user.id, session.data.session.id);
 				}
 			} else if (request.method !== 'GET') {
 				await this.syncCounters();
@@ -537,6 +574,15 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 		return Response.json({ error: 'not found' }, { status: 404 });
 	}
 
+	private decodeResourceId(encoded: string): string {
+		try {
+			const parsed = resourceIdSchema.safeParse(decodeURIComponent(encoded));
+			return parsed.success ? parsed.data : '';
+		} catch {
+			return '';
+		}
+	}
+
 	private async deleteUser(userId: string): Promise<Response> {
 		if (!userId || userId.length > 128) {
 			return Response.json({ error: 'invalid user id' }, { status: 400 });
@@ -551,6 +597,53 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 		this.writeAuthEvent('user.deleted', { subjectId: userId });
 		await this.recordEvent('user.deleted', 'user deleted by project administrator');
 		return Response.json({ ok: true });
+	}
+
+	/** Replaces the assignable-role registry; built-in roles always remain. */
+	private async updateRoles(request: Request): Promise<Response> {
+		const body = rolesRequestSchema.safeParse(await request.json().catch(() => null));
+		if (!body.success) {
+			return Response.json(
+				{ error: 'invalid roles — use 1-32 lowercase letters, digits or dashes' },
+				{ status: 400 },
+			);
+		}
+		this.setState({ ...this.state, roles: body.data.roles });
+		return Response.json({ roles: body.data.roles });
+	}
+
+	private async setUserRole(userId: string, request: Request): Promise<Response> {
+		if (!userId) {
+			return Response.json({ error: 'invalid user id' }, { status: 400 });
+		}
+		const body = roleRequestSchema.safeParse(await request.json().catch(() => null));
+		if (!body.success) {
+			return Response.json(
+				{ error: 'invalid role — use 1-32 lowercase letters, digits or dashes' },
+				{ status: 400 },
+			);
+		}
+		const knownRoles = this.state.roles ?? DEFAULT_ROLES;
+		if (!knownRoles.some((entry) => entry.name === body.data.role)) {
+			return Response.json(
+				{ error: `unknown role "${body.data.role}" — define it in the Roles tab first` },
+				{ status: 400 },
+			);
+		}
+		const [existing] = await this.db
+			.select({ id: schema.user.id, role: schema.user.role })
+			.from(schema.user)
+			.where(eq(schema.user.id, userId))
+			.limit(1);
+		if (!existing) return Response.json({ error: 'user not found' }, { status: 404 });
+		if (existing.role !== body.data.role) {
+			await this.db
+				.update(schema.user)
+				.set({ role: body.data.role, updatedAt: new Date() })
+				.where(eq(schema.user.id, userId));
+			await this.recordEvent('user.role-changed', `role "${body.data.role}" assigned`);
+		}
+		return Response.json({ id: userId, role: body.data.role });
 	}
 
 	private async revokeSession(sessionId: string): Promise<Response> {
@@ -573,45 +666,31 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 	}
 
 	private async updateSettings(request: Request): Promise<Response> {
-		const body = (await request.json().catch(() => null)) as {
-			allowedOrigins?: unknown;
-			socialProviders?: unknown;
-		} | null;
-		if (!Array.isArray(body?.allowedOrigins) || body.allowedOrigins.length > 10) {
+		const body = settingsRequestSchema.safeParse(await request.json().catch(() => null));
+		if (!body.success) {
 			return Response.json(
-				{ error: 'allowedOrigins must be an array with at most 10 entries' },
+				{ error: 'invalid settings', issues: body.error.flatten().fieldErrors },
 				{ status: 400 },
 			);
 		}
-		const origins: string[] = [];
-		for (const value of body.allowedOrigins) {
-			if (typeof value !== 'string') {
-				return Response.json({ error: 'every allowed origin must be a string' }, { status: 400 });
-			}
-			try {
-				const url = new URL(value);
-				const local = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
-				if (
-					(url.protocol !== 'https:' && !(local && url.protocol === 'http:')) ||
-					url.origin !== value
-				) {
-					throw new Error('invalid origin');
-				}
-				if (!origins.includes(url.origin)) origins.push(url.origin);
-			} catch {
-				return Response.json({ error: `invalid origin: ${value}` }, { status: 400 });
-			}
-		}
-		if (body.socialProviders !== undefined) {
-			const parsed = parseSocialCredentials(body.socialProviders, this.socialCredentials);
-			if ('error' in parsed) return Response.json({ error: parsed.error }, { status: 400 });
-			this.socialCredentials = parsed.credentials;
+		if (body.data.socialProviders !== undefined) {
+			this.socialCredentials = applySocialCredentials(
+				body.data.socialProviders,
+				this.socialCredentials,
+			);
 			await this.ctx.storage.put('social-provider-credentials', this.socialCredentials);
 		}
 		const enabledSocialProviders = this.configuredSocialProviders;
-		this.setState({ ...this.state, allowedOrigins: origins, enabledSocialProviders });
+		this.setState({
+			...this.state,
+			allowedOrigins: body.data.allowedOrigins,
+			enabledSocialProviders,
+		});
 		this._auth = null;
-		return Response.json({ allowedOrigins: origins, enabledSocialProviders });
+		return Response.json({
+			allowedOrigins: body.data.allowedOrigins,
+			enabledSocialProviders,
+		});
 	}
 
 	/** Snapshot used by the dashboard's initial server-side load and polling. */
@@ -624,6 +703,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 				email: schema.user.email,
 				emailVerified: schema.user.emailVerified,
 				isAnonymous: schema.user.isAnonymous,
+				role: schema.user.role,
 				createdAt: schema.user.createdAt,
 			})
 			.from(schema.user)
@@ -708,7 +788,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 			activeSessions: activeSessions?.n ?? 0,
 			providers: behavioral.providers,
 			countries: behavioral.countries,
-			signupsLast7Days: behavioral.signupsLast7Days,
+			activityByDay: behavioral.activityByDay,
 			engine: {
 				dataset: this.env.WAE_DATASET ?? 'cloudflarebase_auth_events',
 				enabled: this.waeConfig !== null || !!this.env.LOCAL_ANALYTICS,
@@ -733,7 +813,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 			gmailUsers: 0,
 			providers: [],
 			countries: [],
-			signupsLast7Days: [],
+			activityByDay: [],
 			eventsLast24h: undefined,
 		};
 	}
@@ -752,8 +832,8 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 		if (!response.ok) {
 			throw new Error(`Analytics Engine query failed (${response.status})`);
 		}
-		const result = (await response.json()) as { data?: T[] };
-		return result.data ?? [];
+		const result = analyticsApiResponseSchema.parse(await response.json());
+		return (result.data ?? []) as T[];
 	}
 
 	/** Behavioral analytics are exclusively sourced from Analytics Engine. */
@@ -766,7 +846,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 			return this.behavioralCache.data;
 		}
 		const config = this.waeConfig;
-		if (!config && this.env.LOCAL_ANALYTICS) return this.queryLocalBehavioralAnalytics();
+		if (!config && this.env.LOCAL_ANALYTICS) return this.queryLocalBehavioralAnalytics(timeZone);
 		const empty = this.emptyBehavioralAnalytics();
 		if (!config) {
 			this.behavioralCache = {
@@ -785,26 +865,43 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 			this.analyticsSql<{ users: number | string }>(
 				`SELECT count(DISTINCT blob4) AS users ${from} AND blob1 = 'user.active' AND timestamp > NOW() - INTERVAL '${days}' DAY`,
 			);
-		const [dau, wau, mau, providers, countries, signups, gmail, events] = await Promise.all([
-			activeUsers(1),
-			activeUsers(7),
-			activeUsers(30),
-			this.analyticsSql<{ provider: string; users: number | string }>(
-				`SELECT blob3 AS provider, count(DISTINCT blob4) AS users ${from} AND blob1 = 'user.active' AND timestamp > NOW() - INTERVAL '30' DAY GROUP BY provider ORDER BY users DESC`,
-			),
-			this.analyticsSql<{ country: string; sessions: number | string }>(
-				`SELECT blob2 AS country, SUM(_sample_interval) AS sessions ${from} AND blob1 = 'session.created' AND timestamp > NOW() - INTERVAL '30' DAY GROUP BY country ORDER BY sessions DESC LIMIT 10`,
-			),
+		// Day buckets in the viewer's timezone; the dashboard filters 7/30/90-day
+		// windows client-side from this 90-day series.
+		const dailyCounts = (eventType: string) =>
 			this.analyticsSql<{ day: string; count: number | string }>(
-				`SELECT formatDateTime(timestamp, '%Y-%m-%d', '${timeZone}') AS day, SUM(_sample_interval) AS count ${from} AND blob1 = 'user.created' AND timestamp > NOW() - INTERVAL '7' DAY GROUP BY day ORDER BY day`,
-			),
-			this.analyticsSql<{ users: number | string }>(
-				`SELECT count(DISTINCT blob4) AS users ${from} AND blob1 = 'user.created' AND blob6 = 'gmail.com'`,
-			),
-			this.analyticsSql<{ eventType: string; count: number | string }>(
-				`SELECT blob1 AS eventType, SUM(_sample_interval) AS count ${from} AND timestamp > NOW() - INTERVAL '1' DAY GROUP BY eventType ORDER BY count DESC`,
-			),
-		]);
+				`SELECT formatDateTime(timestamp, '%Y-%m-%d', '${timeZone}') AS day, SUM(_sample_interval) AS count ${from} AND blob1 = '${eventType}' AND timestamp > NOW() - INTERVAL '90' DAY GROUP BY day ORDER BY day`,
+			);
+		const [dau, wau, mau, providers, countries, signups, signins, gmail, events] =
+			await Promise.all([
+				activeUsers(1),
+				activeUsers(7),
+				activeUsers(30),
+				this.analyticsSql<{ provider: string; users: number | string }>(
+					`SELECT blob3 AS provider, count(DISTINCT blob4) AS users ${from} AND blob1 = 'user.active' AND timestamp > NOW() - INTERVAL '30' DAY GROUP BY provider ORDER BY users DESC`,
+				),
+				this.analyticsSql<{ country: string; sessions: number | string }>(
+					`SELECT blob2 AS country, SUM(_sample_interval) AS sessions ${from} AND blob1 = 'session.created' AND timestamp > NOW() - INTERVAL '30' DAY GROUP BY country ORDER BY sessions DESC LIMIT 10`,
+				),
+				dailyCounts('user.created'),
+				dailyCounts('session.created'),
+				this.analyticsSql<{ users: number | string }>(
+					`SELECT count(DISTINCT blob4) AS users ${from} AND blob1 = 'user.created' AND blob6 = 'gmail.com'`,
+				),
+				this.analyticsSql<{ eventType: string; count: number | string }>(
+					`SELECT blob1 AS eventType, SUM(_sample_interval) AS count ${from} AND timestamp > NOW() - INTERVAL '1' DAY GROUP BY eventType ORDER BY count DESC`,
+				),
+			]);
+		const activityByDay = new Map<string, { day: string; signups: number; signins: number }>();
+		const dayEntry = (day: string) => {
+			let entry = activityByDay.get(day);
+			if (!entry) {
+				entry = { day, signups: 0, signins: 0 };
+				activityByDay.set(day, entry);
+			}
+			return entry;
+		};
+		for (const row of signups) dayEntry(row.day.slice(0, 10)).signups += Number(row.count);
+		for (const row of signins) dayEntry(row.day.slice(0, 10)).signins += Number(row.count);
 		const data: BehavioralAnalytics = {
 			dau: Number(dau[0]?.users ?? 0),
 			wau: Number(wau[0]?.users ?? 0),
@@ -812,21 +909,18 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 			gmailUsers: Number(gmail[0]?.users ?? 0),
 			providers: providers.map((row) => ({ ...row, users: Number(row.users) })),
 			countries: countries.map((row) => ({ ...row, sessions: Number(row.sessions) })),
-			signupsLast7Days: signups.map((row) => ({
-				day: row.day.slice(0, 10),
-				count: Number(row.count),
-			})),
+			activityByDay: [...activityByDay.values()].sort((a, b) => a.day.localeCompare(b.day)),
 			eventsLast24h: events.map((row) => ({ ...row, count: Number(row.count) })),
 		};
 		this.behavioralCache = { expiresAt: Date.now() + ANALYTICS_CACHE_MS, timeZone, data };
 		return data;
 	}
 
-	private async queryLocalBehavioralAnalytics(): Promise<BehavioralAnalytics> {
+	private async queryLocalBehavioralAnalytics(timeZone: string): Promise<BehavioralAnalytics> {
 		const db = this.env.LOCAL_ANALYTICS!;
 		const since = (days: number) => Date.now() - days * 86_400_000;
 		const bind = (sql: string, ...values: unknown[]) => db.prepare(sql).bind(this.name, ...values);
-		const [dau, wau, mau, providers, countries, signups, gmail, events] = await db.batch([
+		const [dau, wau, mau, providers, countries, activity, gmail, events] = await db.batch([
 			bind(
 				`SELECT COUNT(DISTINCT subject_id) users FROM auth_events WHERE project_id=? AND event_type='user.active' AND timestamp>?`,
 				since(1),
@@ -848,8 +942,8 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 				since(30),
 			),
 			bind(
-				`SELECT date(timestamp / 1000, 'unixepoch') day, COUNT(*) count FROM auth_events WHERE project_id=? AND event_type='user.created' AND timestamp>? GROUP BY day ORDER BY day`,
-				since(7),
+				`SELECT timestamp, event_type FROM auth_events WHERE project_id=? AND event_type IN ('user.created','session.created') AND timestamp>?`,
+				since(90),
 			),
 			bind(
 				`SELECT COUNT(DISTINCT subject_id) users FROM auth_events WHERE project_id=? AND event_type='user.created' AND email_domain='gmail.com'`,
@@ -861,6 +955,26 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 		]);
 		const rows = <T>(result: D1Result<unknown>) => (result.results ?? []) as T[];
 		const scalar = (result: D1Result) => Number(rows<{ users: number }>(result)[0]?.users ?? 0);
+		// D1's SQLite cannot group by an IANA-timezone day, so bucket activity
+		// timestamps here in the viewer's timezone, matching the remote
+		// formatDateTime(timestamp, '%Y-%m-%d', timeZone) queries.
+		const dayFormatter = new Intl.DateTimeFormat('en-CA', {
+			timeZone,
+			year: 'numeric',
+			month: '2-digit',
+			day: '2-digit',
+		});
+		const activityByDay = new Map<string, { day: string; signups: number; signins: number }>();
+		for (const row of rows<{ timestamp: number; event_type: string }>(activity)) {
+			const day = dayFormatter.format(row.timestamp);
+			let entry = activityByDay.get(day);
+			if (!entry) {
+				entry = { day, signups: 0, signins: 0 };
+				activityByDay.set(day, entry);
+			}
+			if (row.event_type === 'user.created') entry.signups += 1;
+			else entry.signins += 1;
+		}
 		return {
 			dau: scalar(dau),
 			wau: scalar(wau),
@@ -868,7 +982,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 			gmailUsers: scalar(gmail),
 			providers: rows(providers),
 			countries: rows(countries),
-			signupsLast7Days: rows(signups),
+			activityByDay: [...activityByDay.values()].sort((a, b) => a.day.localeCompare(b.day)),
 			eventsLast24h: rows(events),
 		};
 	}
@@ -928,28 +1042,30 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 
 		const history = await this.getChatMessages(clientKey, 20);
 		const model = this.env.CHAT_MODEL ?? DEFAULT_CHAT_MODEL;
-		const result = (await this.env.AI.run(model as keyof AiModels, {
-			messages: [
-				{
-					role: 'system',
-					content:
-						`You are the Cloudflarebase auth analytics agent for project "${this.name}". ` +
-						'Answer only from the aggregated JSON supplied by the user. Never invent metrics. ' +
-						'Be concise, explain useful ratios or trends when the data supports them, and say when there is not enough data. ' +
-						'Do not claim you can modify users, sessions, or configuration.',
-				},
-				...history.map((message) => ({
-					role: message.role === 'agent' ? ('assistant' as const) : ('user' as const),
-					content: message.content,
-				})),
-				{
-					role: 'user',
-					content: `Question: ${question}\n\nAggregated auth analytics:\n${JSON.stringify(a)}`,
-				},
-			],
-			max_tokens: 350,
-			temperature: 0.2,
-		})) as { response?: string };
+		const result = workersAiResponseSchema.parse(
+			await this.env.AI.run(model as keyof AiModels, {
+				messages: [
+					{
+						role: 'system',
+						content:
+							`You are the Cloudflarebase auth analytics agent for project "${this.name}". ` +
+							'Answer only from the aggregated JSON supplied by the user. Never invent metrics. ' +
+							'Be concise, explain useful ratios or trends when the data supports them, and say when there is not enough data. ' +
+							'Do not claim you can modify users, sessions, or configuration.',
+					},
+					...history.map((message) => ({
+						role: message.role === 'agent' ? ('assistant' as const) : ('user' as const),
+						content: message.content,
+					})),
+					{
+						role: 'user',
+						content: `Question: ${question}\n\nAggregated auth analytics:\n${JSON.stringify(a)}`,
+					},
+				],
+				max_tokens: 350,
+				temperature: 0.2,
+			}),
+		);
 
 		const answer = result.response?.trim();
 		if (!answer) throw new Error('Workers AI returned an empty response');

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { resolve } from '$app/paths';
 	import { scrollY } from 'svelte/reactivity/window';
 	import { fly } from 'svelte/transition';
 	import { flip } from 'svelte/animate';
@@ -881,7 +882,11 @@ await fetch(<span class="text-primary">'/api/projects/PROJECT_ID/auth/get-sessio
 					class="relative flex flex-wrap items-center justify-between gap-6 py-3 lg:gap-0 lg:py-4"
 				>
 					<div class="flex w-full justify-between lg:w-auto">
-						<a href="/" aria-label="home" class="flex items-center gap-2 text-lg font-bold">
+						<a
+							href={resolve('/')}
+							aria-label="home"
+							class="flex items-center gap-2 text-lg font-bold"
+						>
 							<img src="/brand/mark.svg" alt="" class="h-[22px] w-[22px]" />
 							Cloudflarebase
 						</a>
@@ -913,12 +918,14 @@ await fetch(<span class="text-primary">'/api/projects/PROJECT_ID/auth/get-sessio
 						<ul class="flex gap-8 text-sm">
 							{#each menuItems as item (item.href)}
 								<li>
+									<!-- eslint-disable svelte/no-navigation-without-resolve -- same-page hash link -->
 									<a
 										href={item.href}
 										class="block text-muted-foreground duration-150 hover:text-accent-foreground"
 									>
 										<span>{item.name}</span>
 									</a>
+									<!-- eslint-enable svelte/no-navigation-without-resolve -->
 								</li>
 							{/each}
 						</ul>
@@ -939,6 +946,7 @@ await fetch(<span class="text-primary">'/api/projects/PROJECT_ID/auth/get-sessio
 							<ul class="space-y-4 text-base">
 								{#each menuItems as item (item.href)}
 									<li>
+										<!-- eslint-disable svelte/no-navigation-without-resolve -- same-page hash link -->
 										<a
 											href={item.href}
 											onclick={() => (menuState = false)}
@@ -946,6 +954,7 @@ await fetch(<span class="text-primary">'/api/projects/PROJECT_ID/auth/get-sessio
 										>
 											<span>{item.name}</span>
 										</a>
+										<!-- eslint-enable svelte/no-navigation-without-resolve -->
 									</li>
 								{/each}
 							</ul>

@@ -98,6 +98,110 @@ test.describe('project agents (backend)', () => {
 		expect(invalid.status()).toBe(400);
 	});
 
+	test('assigns roles that flow into sessions and JWT claims', async ({ request }) => {
+		const project = 'e2e-api-rbac';
+		const email = uniqueEmail('rbac');
+		const rolePath = (userId: string) =>
+			`/api/projects/${project}/admin/users/${encodeURIComponent(userId)}/role`;
+
+		const signUp = await request.post(authPath(project, 'sign-up/email'), {
+			data: { name: 'RBAC User', email, password: 'rbac-password-1' }
+		});
+		expect(signUp.ok()).toBe(true);
+		const bearer = signUp.headers()['set-auth-token'];
+		expect(bearer).toBeTruthy();
+
+		const overview = await (await request.get(overviewPath(project))).json();
+		const created = overview.users.find((u: { email: string }) => u.email === email);
+		expect(created.role).toBe('user');
+
+		const invalid = await request.put(rolePath(created.id), { data: { role: 'Not Valid!' } });
+		expect(invalid.status()).toBe(400);
+
+		const promoted = await request.put(rolePath(created.id), { data: { role: 'admin' } });
+		expect(promoted.ok()).toBe(true);
+		await expect(promoted.json()).resolves.toMatchObject({ id: created.id, role: 'admin' });
+
+		const session = await (
+			await request.get(authPath(project, 'get-session'), {
+				headers: { authorization: `Bearer ${bearer}` }
+			})
+		).json();
+		expect(session.user.role).toBe('admin');
+
+		const tokenResponse = await request.get(authPath(project, 'token'), {
+			headers: { authorization: `Bearer ${bearer}` }
+		});
+		expect(tokenResponse.ok()).toBe(true);
+		const { token } = (await tokenResponse.json()) as { token: string };
+		const claims = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString());
+		expect(claims.role).toBe('admin');
+		expect(claims.email).toBe(email);
+
+		// Custom roles must be defined in the project registry before assignment.
+		const unknownRole = await request.put(rolePath(created.id), { data: { role: 'editor' } });
+		expect(unknownRole.status()).toBe(400);
+
+		const defineRole = await request.put(`/api/projects/${project}/admin/roles`, {
+			data: { roles: [{ name: 'editor', permissions: ['posts:write', 'posts:read'] }] }
+		});
+		expect(defineRole.ok()).toBe(true);
+		const registry = (await defineRole.json()) as {
+			roles: { name: string; permissions: string[] }[];
+		};
+		expect(registry.roles.map((role) => role.name)).toEqual(['user', 'admin', 'editor']);
+		expect(registry.roles.find((role) => role.name === 'editor')?.permissions).toEqual([
+			'posts:write',
+			'posts:read'
+		]);
+
+		const assignEditor = await request.put(rolePath(created.id), { data: { role: 'editor' } });
+		expect(assignEditor.ok()).toBe(true);
+
+		const finalSession = await (
+			await request.get(authPath(project, 'get-session'), {
+				headers: { authorization: `Bearer ${bearer}` }
+			})
+		).json();
+		expect(finalSession.user.role).toBe('editor');
+
+		// A fresh JWT reflects the new role and its permissions.
+		const editorToken = await request.get(authPath(project, 'token'), {
+			headers: { authorization: `Bearer ${bearer}` }
+		});
+		expect(editorToken.ok()).toBe(true);
+		const editorJwt = ((await editorToken.json()) as { token: string }).token;
+		const editorClaims = JSON.parse(Buffer.from(editorJwt.split('.')[1], 'base64url').toString());
+		expect(editorClaims.role).toBe('editor');
+		expect(editorClaims.permissions).toEqual(['posts:write', 'posts:read']);
+	});
+
+	test('rejects malformed settings payloads at the web API boundary', async ({ request }) => {
+		const project = 'e2e-api-invalid-settings';
+		const cases = [
+			{},
+			{ allowedOrigins: 'https://app.example.com' },
+			{ allowedOrigins: ['not-a-url'] },
+			{ allowedOrigins: [], socialProviders: { unknown: { preserve: true } } },
+			{
+				allowedOrigins: [],
+				socialProviders: { github: { clientId: 'id', clientSecret: '' } }
+			}
+		];
+
+		for (const data of cases) {
+			const response = await request.put(settingsPath(project), { data });
+			expect(response.status()).toBe(400);
+			await expect(response.json()).resolves.toMatchObject({ error: 'Invalid settings' });
+		}
+
+		const invalidJson = await request.put(settingsPath(project), {
+			headers: { 'content-type': 'application/json' },
+			data: '{broken'
+		});
+		expect(invalidJson.status()).toBe(400);
+	});
+
 	test('configures social providers without exposing their secrets', async ({ request }) => {
 		const project = 'e2e-api-social';
 		const saved = await request.put(settingsPath(project), {

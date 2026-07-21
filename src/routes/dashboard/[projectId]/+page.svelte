@@ -7,7 +7,7 @@
 		ArrowRight,
 		Bot,
 		Clock,
-		Code2,
+		CodeXml,
 		Database,
 		HardDrive,
 		KeyRound,
@@ -63,7 +63,7 @@
 			<Card.Content class="flex flex-wrap gap-2"
 				><Button href={authHref}><KeyRound class="mr-1.5 h-4 w-4" /> Open Auth Agent</Button><Button
 					href={authHref}
-					variant="outline"><Code2 class="mr-1.5 h-4 w-4" /> View integration guide</Button
+					variant="outline"><CodeXml class="mr-1.5 h-4 w-4" /> View integration guide</Button
 				></Card.Content
 			>
 		</Card.Root>

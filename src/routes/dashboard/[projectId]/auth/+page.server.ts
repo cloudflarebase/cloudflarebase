@@ -1,6 +1,9 @@
 import type { AuthAnalytics, AuthOverview } from '$lib/agents';
+import { signInSchema, signUpSchema } from '$lib/schemas/auth';
 import { agentUrl, assertProjectId, requireAuthAgent } from '$lib/server/auth-agent';
 import { error } from '@sveltejs/kit';
+import { superValidate } from 'sveltekit-superforms';
+import { zod4 } from 'sveltekit-superforms/adapters';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, url, platform }) => {
@@ -18,6 +21,9 @@ export const load: PageServerLoad = async ({ params, url, platform }) => {
 	return {
 		projectId,
 		overview: (await overviewRes.json()) as AuthOverview,
-		analytics: (await analyticsRes.json()) as AuthAnalytics
+		analytics: (await analyticsRes.json()) as AuthAnalytics,
+		// Forms start empty; the playground's "New identity" dice fills demo values.
+		signUpForm: await superValidate(zod4(signUpSchema), { id: 'sign-up' }),
+		signInForm: await superValidate(zod4(signInSchema), { id: 'sign-in' })
 	};
 };

@@ -1,12 +1,6 @@
 <script lang="ts">
 	import { dev } from '$app/environment';
-	import type {
-		AgentChatMessage,
-		AgentChatReply,
-		AuthAgentState,
-		AuthAnalytics,
-		AuthOverview
-	} from '$lib/agents';
+	import type { AuthAgentState, AuthAnalytics, AuthOverview, RoleDefinition } from '$lib/agents';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
 	import * as Card from '$lib/components/ui/card';
@@ -14,28 +8,44 @@
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
+	import * as Select from '$lib/components/ui/select';
+	import {
+		allowedOriginSchema,
+		permissionKeySchema,
+		roleSlugSchema,
+		signInSchema,
+		signUpSchema
+	} from '$lib/schemas/auth';
 	import * as Table from '$lib/components/ui/table';
-	import * as Tabs from '$lib/components/ui/tabs';
+	import CountryFlag from '$lib/components/country-flag.svelte';
+	import GithubLogo from '$lib/components/github-logo.svelte';
+	import GoogleLogo from '$lib/components/google-logo.svelte';
 	import {
 		Activity,
-		Bot,
-		Code2,
+		Check,
+		CodeXml,
+		Copy,
+		Dices,
 		Globe,
 		KeyRound,
+		LoaderCircle,
 		LogIn,
 		LogOut,
 		Radio,
 		Rocket,
-		SendHorizontal,
-		Settings,
+		ShieldCheck,
 		Trash2,
 		UserPlus,
 		UserRound,
-		Users
+		Users,
+		X
 	} from '@lucide/svelte';
 	import { AgentClient } from 'agents/client';
-	import { AreaChart } from 'layerchart';
+	import { Area, AreaChart, Points } from 'layerchart';
 	import { onMount, tick } from 'svelte';
+	import { SvelteDate } from 'svelte/reactivity';
+	import { superForm } from 'sveltekit-superforms';
+	import { zod4Client } from 'sveltekit-superforms/adapters';
 
 	let { data } = $props();
 	let hydrated = $state(false);
@@ -76,17 +86,50 @@
 	} | null;
 	let session = $state<SessionInfo>(null);
 
-	// Playground form state
-	let email = $state('ada@example.com');
-	let password = $state('correct-horse-battery');
-	let name = $state('Ada Lovelace');
+	// Form instances intentionally initialize once; the route is keyed by project path.
+	// svelte-ignore state_referenced_locally
+	const signUp = superForm(data.signUpForm, {
+		validators: zod4Client(signUpSchema),
+		validationMethod: 'onblur'
+	});
+	// svelte-ignore state_referenced_locally
+	const signIn = superForm(data.signInForm, {
+		validators: zod4Client(signInSchema),
+		validationMethod: 'onblur'
+	});
+	const { form: signUpForm, errors: signUpErrors, validateForm: validateSignUp } = signUp;
+	const { form: signInForm, errors: signInErrors, validateForm: validateSignIn } = signIn;
 	let busy = $state(false);
 	let authError = $state<string | null>(null);
+	let authSuccess = $state<string | null>(null);
+	const authErrorHint = $derived(
+		authError && /already exist/i.test(authError)
+			? ' — switch to “Sign in”, or roll a new identity with the dice.'
+			: ''
+	);
 
-	// Agent chat state
-	let chatMessages = $state<AgentChatMessage[]>([]);
-	let chatInput = $state('');
-	let chatBusy = $state(false);
+	const demoNames = [
+		'Grace Hopper',
+		'Alan Turing',
+		'Radia Perlman',
+		'Katherine Johnson',
+		'Margaret Hamilton',
+		'Barbara Liskov',
+		'Ken Thompson',
+		'Donald Knuth'
+	];
+
+	/** Fresh sign-up identity so repeat sign-ups don't collide on the same email. */
+	function randomizeIdentity() {
+		const name = demoNames[Math.floor(Math.random() * demoNames.length)];
+		const suffix = Math.random().toString(36).slice(2, 6);
+		$signUpForm.name = name;
+		$signUpForm.email = `${name.toLowerCase().replace(/[^a-z]+/g, '.')}-${suffix}@example.com`;
+		$signUpForm.password = 'correct-horse-battery';
+		authError = null;
+		authSuccess = null;
+	}
+
 	// svelte-ignore state_referenced_locally
 	let allowedOriginsInput = $state((data.overview.state.allowedOrigins ?? []).join('\n'));
 	let settingsSaved = $state(false);
@@ -99,14 +142,151 @@
 	let githubClientId = $state('');
 	let githubClientSecret = $state('');
 
-	const suggestedQuestions = [
-		"What's our DAU/MAU?",
-		'How many anonymous users do we have?',
-		'Which providers do users sign in with?',
-		'What countries are users from?'
-	];
-
 	const authBase = $derived(`/api/projects/${data.projectId}/auth`);
+
+	let integrationTab = $state('js');
+	let integrationCopied = $state(false);
+	let copyResetTimer: ReturnType<typeof setTimeout> | undefined;
+	const integrationExamples = $derived.by(() => {
+		const origin = typeof window === 'undefined' ? '' : window.location.origin;
+		const url = `${origin}/api/projects/${data.projectId}/auth`;
+		return [
+			{
+				id: 'js',
+				label: 'JavaScript',
+				lang: 'javascript',
+				code: `const res = await fetch('${url}/sign-up/email', {
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({ name, email, password })
+});
+
+// Same-origin apps get a cookie; external clients use the bearer token:
+const token = res.headers.get('set-auth-token');
+
+await fetch('${url}/get-session', {
+  headers: { authorization: \`Bearer \${token}\` }
+});`
+			},
+			{
+				id: 'ts',
+				label: 'Better Auth client',
+				lang: 'typescript',
+				code: `import { createAuthClient } from 'better-auth/client';
+
+const authClient = createAuthClient({
+  baseURL: '${url}'
+});
+
+await authClient.signUp.email({ name, email, password });
+const { data: session } = await authClient.getSession();`
+			},
+			{
+				id: 'react',
+				label: 'React',
+				lang: 'tsx',
+				code: `import { createAuthClient } from 'better-auth/react';
+
+const { useSession, signIn } = createAuthClient({
+  baseURL: '${url}'
+});
+
+export function Profile() {
+  const { data: session, isPending } = useSession();
+  if (isPending) return <p>Loading…</p>;
+  if (!session) {
+    return <button onClick={() => signIn.email({ email, password })}>Sign in</button>;
+  }
+  return <p>Signed in as {session.user.name}</p>;
+}`
+			},
+			{
+				id: 'svelte',
+				label: 'Svelte',
+				lang: 'svelte',
+				code: `<script>
+  import { createAuthClient } from 'better-auth/svelte';
+
+  const authClient = createAuthClient({
+    baseURL: '${url}'
+  });
+  const session = authClient.useSession();
+${'<'}/script>
+
+{#if $session.data}
+  <p>Signed in as {$session.data.user.name}</p>
+{:else}
+  <button onclick={() => authClient.signIn.email({ email, password })}>
+    Sign in
+  </button>
+{/if}`
+			},
+			{
+				id: 'python',
+				label: 'Python',
+				lang: 'python',
+				code: `import requests
+
+BASE = "${url}"
+
+res = requests.post(f"{BASE}/sign-up/email", json={
+    "name": "Jane Doe",
+    "email": "jane@example.com",
+    "password": "correct-horse-battery",
+})
+token = res.headers["set-auth-token"]
+
+session = requests.get(
+    f"{BASE}/get-session",
+    headers={"Authorization": f"Bearer {token}"},
+).json()`
+			},
+			{
+				id: 'curl',
+				label: 'cURL',
+				lang: 'bash',
+				code: `# -i prints headers; set-auth-token carries the bearer token
+curl -i -X POST ${url}/sign-up/email \\
+  -H 'content-type: application/json' \\
+  -d '{"name":"Jane","email":"jane@example.com","password":"correct-horse-battery"}'
+
+curl ${url}/get-session \\
+  -H 'authorization: Bearer <token>'`
+			}
+		];
+	});
+	const activeIntegration = $derived(
+		integrationExamples.find((example) => example.id === integrationTab) ?? integrationExamples[0]
+	);
+
+	// Highlighting is client-only and lazy: shiki stays out of the SSR pass and
+	// the initial bundle, and the plain <pre> renders until it resolves.
+	let highlightedIntegration = $state<string | null>(null);
+	$effect(() => {
+		const { code, lang } = activeIntegration;
+		highlightedIntegration = null;
+		let cancelled = false;
+		void import('shiki')
+			.then(({ codeToHtml }) => codeToHtml(code, { lang, theme: 'github-dark-default' }))
+			.then((html) => {
+				if (!cancelled) highlightedIntegration = html;
+			})
+			.catch(() => {});
+		return () => {
+			cancelled = true;
+		};
+	});
+
+	async function copyIntegration() {
+		try {
+			await navigator.clipboard.writeText(activeIntegration.code);
+			integrationCopied = true;
+			clearTimeout(copyResetTimer);
+			copyResetTimer = setTimeout(() => (integrationCopied = false), 1500);
+		} catch {
+			// clipboard unavailable — the code stays selectable
+		}
+	}
 
 	// Reset local state when navigating between projects.
 	$effect(() => {
@@ -114,8 +294,6 @@
 		agentState = data.overview.state;
 		analytics = data.analytics;
 		activityTimeZone = null;
-		chatMessages = [];
-		void loadChatHistory(data.projectId);
 		allowedOriginsInput = (data.overview.state.allowedOrigins ?? []).join('\n');
 		googleEnabled = (data.overview.state.enabledSocialProviders ?? []).includes('google');
 		githubEnabled = (data.overview.state.enabledSocialProviders ?? []).includes('github');
@@ -177,24 +355,14 @@
 		}
 	}
 
-	async function loadChatHistory(projectId: string) {
-		try {
-			const response = await fetch(`/api/projects/${projectId}/chat`);
-			if (projectId !== data.projectId) return;
-			if (!response.ok) {
-				chatMessages = [];
-				return;
-			}
-			const history = (await response.json()) as { messages: AgentChatMessage[] };
-			chatMessages = history.messages;
-		} catch {
-			// Keep the panel usable if history is temporarily unavailable.
-		}
-	}
-
-	async function authPost(path: string, body: Record<string, unknown> = {}) {
+	async function authPost(
+		path: string,
+		body: Record<string, unknown> = {},
+		successMessage?: string
+	): Promise<boolean> {
 		busy = true;
 		authError = null;
+		authSuccess = null;
 		try {
 			const res = await fetch(`${authBase}/${path}`, {
 				method: 'POST',
@@ -202,25 +370,48 @@
 				body: JSON.stringify(body)
 			});
 			const text = await res.text();
-			const json = text ? JSON.parse(text) : null;
+			let json: { message?: string } | null = null;
+			try {
+				json = text ? JSON.parse(text) : null;
+			} catch {
+				// non-JSON body — fall through to the status-based error
+			}
 			if (!res.ok) {
 				throw new Error(json?.message ?? `request failed (HTTP ${res.status})`);
 			}
-			await Promise.all([
-				refreshSession(data.projectId),
-				refreshData(data.projectId),
-				loadChatHistory(data.projectId)
-			]);
+			authSuccess = successMessage ?? null;
+			await Promise.all([refreshSession(data.projectId), refreshData(data.projectId)]);
+			return true;
 		} catch (err) {
 			authError = err instanceof Error ? err.message : String(err);
+			return false;
 		} finally {
 			busy = false;
 		}
 	}
 
+	async function submitSignUp() {
+		const result = await validateSignUp({ update: true });
+		if (!result.valid) return;
+		const created = await authPost(
+			'sign-up/email',
+			$signUpForm,
+			`Account created — you're signed in as ${$signUpForm.email}.`
+		);
+		// Carry the identity over so switching to “Sign in” just works.
+		if (created) $signInForm.email = $signUpForm.email;
+	}
+
+	async function submitSignIn() {
+		const result = await validateSignIn({ update: true });
+		if (!result.valid) return;
+		await authPost('sign-in/email', $signInForm, `Signed in as ${$signInForm.email}.`);
+	}
+
 	async function socialSignIn(provider: 'google' | 'github') {
 		busy = true;
 		authError = null;
+		authSuccess = null;
 		try {
 			const response = await fetch(`${authBase}/sign-in/social`, {
 				method: 'POST',
@@ -242,60 +433,12 @@
 		}
 	}
 
-	async function askAgent(question: string) {
-		const trimmed = question.trim();
-		if (!trimmed || chatBusy) return;
-		chatBusy = true;
-		chatInput = '';
-		const pendingId = crypto.randomUUID();
-		chatMessages = [
-			...chatMessages,
-			{ id: pendingId, role: 'user', content: trimmed, createdAt: new Date().toISOString() }
-		];
-		try {
-			const res = await fetch(`/api/projects/${data.projectId}/chat`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ question: trimmed })
-			});
-			const reply = (await res.json()) as AgentChatReply & { error?: string };
-			if (res.ok) {
-				chatMessages = [
-					...chatMessages.filter((message) => message.id !== pendingId),
-					reply.userMessage,
-					reply.agentMessage
-				];
-			} else {
-				chatMessages = [
-					...chatMessages,
-					{
-						id: crypto.randomUUID(),
-						role: 'agent',
-						content: reply.error ?? 'The agent could not answer that.',
-						createdAt: new Date().toISOString()
-					}
-				];
-			}
-		} catch {
-			chatMessages = [
-				...chatMessages,
-				{
-					id: crypto.randomUUID(),
-					role: 'agent',
-					content: 'The agent is unreachable right now.',
-					createdAt: new Date().toISOString()
-				}
-			];
-		} finally {
-			chatBusy = false;
-		}
-	}
-
 	async function adminDelete(kind: 'users' | 'sessions', id: string) {
 		const label = kind === 'users' ? 'user and all of their sessions' : 'session';
 		if (!confirm(`Delete this ${label}? This cannot be undone.`)) return;
 		busy = true;
 		authError = null;
+		authSuccess = null;
 		try {
 			const response = await fetch(
 				`/api/projects/${data.projectId}/admin/${kind}/${encodeURIComponent(id)}`,
@@ -316,14 +459,41 @@
 	}
 
 	async function saveSettings() {
-		busy = true;
 		authError = null;
 		settingsSaved = false;
+		const allowedOrigins = allowedOriginsInput
+			.split(/\r?\n|,/)
+			.map((value) => value.trim())
+			.filter(Boolean);
+
+		// Validate locally so users see which entry is wrong instead of a generic
+		// 400 from the API. The same rules run in the agent.
+		if (allowedOrigins.length > 10) {
+			authError = 'Add at most 10 origins.';
+			return;
+		}
+		for (const origin of allowedOrigins) {
+			const parsed = allowedOriginSchema.safeParse(origin);
+			if (!parsed.success) {
+				authError = `${origin}: ${parsed.error.issues[0]?.message ?? 'invalid origin'}`;
+				return;
+			}
+		}
+		for (const [label, key, enabled, clientId, clientSecret] of [
+			['Google', 'google', googleEnabled, googleClientId, googleClientSecret],
+			['GitHub', 'github', githubEnabled, githubClientId, githubClientSecret]
+		] as const) {
+			if (!enabled || (clientId.trim() && clientSecret.trim())) continue;
+			const configured = agentState.enabledSocialProviders?.includes(key);
+			if (!clientId.trim() && !clientSecret.trim() && configured) continue; // keeps stored credentials
+			authError = configured
+				? `Enter both the ${label} client ID and client secret to replace the stored ones.`
+				: `Enter a ${label} client ID and client secret, or turn ${label} off.`;
+			return;
+		}
+
+		busy = true;
 		try {
-			const allowedOrigins = allowedOriginsInput
-				.split(/\r?\n|,/)
-				.map((value) => value.trim())
-				.filter(Boolean);
 			const response = await fetch(`/api/projects/${data.projectId}/admin/settings`, {
 				method: 'PUT',
 				headers: { 'content-type': 'application/json' },
@@ -384,9 +554,119 @@
 		'project.provisioned': Rocket,
 		'user.created': UserPlus,
 		'user.deleted': Trash2,
+		'user.role-changed': ShieldCheck,
 		'session.created': LogIn,
 		'session.revoked': LogOut
 	} as const;
+
+	const BUILT_IN_ROLES = ['user', 'admin'];
+	const DEFAULT_ROLE_DEFINITIONS: RoleDefinition[] = [
+		{ name: 'user', permissions: [] },
+		{ name: 'admin', permissions: ['*'] }
+	];
+	let newRoleInput = $state('');
+	let rolesError = $state<string | null>(null);
+	let permissionInputs = $state<Record<string, string>>({});
+	const projectRoles = $derived(agentState.roles ?? DEFAULT_ROLE_DEFINITIONS);
+	const roleNames = $derived(projectRoles.map((role) => role.name));
+
+	/** Registry roles plus the user's current one (it may have been removed). */
+	function roleOptions(current: string): string[] {
+		return [...new Set([...roleNames, current])];
+	}
+
+	async function saveRoles(roles: RoleDefinition[]) {
+		busy = true;
+		rolesError = null;
+		try {
+			const response = await fetch(`/api/projects/${data.projectId}/admin/roles`, {
+				method: 'PUT',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ roles })
+			});
+			const result = (await response.json().catch(() => null)) as { error?: string } | null;
+			if (!response.ok) {
+				throw new Error(result?.error ?? `request failed (HTTP ${response.status})`);
+			}
+			await refreshData(data.projectId);
+		} catch (error) {
+			rolesError = error instanceof Error ? error.message : String(error);
+		} finally {
+			busy = false;
+		}
+	}
+
+	async function addRole(event: SubmitEvent) {
+		event.preventDefault();
+		const parsed = roleSlugSchema.safeParse(newRoleInput.toLowerCase());
+		if (!parsed.success) {
+			rolesError = parsed.error.issues[0]?.message ?? 'Invalid role name.';
+			return;
+		}
+		if (roleNames.includes(parsed.data)) {
+			rolesError = `Role "${parsed.data}" already exists.`;
+			return;
+		}
+		await saveRoles([...projectRoles, { name: parsed.data, permissions: [] }]);
+		if (!rolesError) newRoleInput = '';
+	}
+
+	function removeRole(name: string) {
+		void saveRoles(projectRoles.filter((role) => role.name !== name));
+	}
+
+	async function addPermission(event: SubmitEvent, roleName: string) {
+		event.preventDefault();
+		const parsed = permissionKeySchema.safeParse((permissionInputs[roleName] ?? '').toLowerCase());
+		if (!parsed.success) {
+			rolesError = parsed.error.issues[0]?.message ?? 'Invalid permission key.';
+			return;
+		}
+		await saveRoles(
+			projectRoles.map((role) =>
+				role.name === roleName
+					? { ...role, permissions: [...new Set([...role.permissions, parsed.data])] }
+					: role
+			)
+		);
+		if (!rolesError) permissionInputs[roleName] = '';
+	}
+
+	function removePermission(roleName: string, permission: string) {
+		void saveRoles(
+			projectRoles.map((role) =>
+				role.name === roleName
+					? { ...role, permissions: role.permissions.filter((entry) => entry !== permission) }
+					: role
+			)
+		);
+	}
+
+	async function setUserRole(userId: string, role: string, previous: string) {
+		if (role === previous) return;
+		busy = true;
+		authError = null;
+		authSuccess = null;
+		try {
+			const response = await fetch(
+				`/api/projects/${data.projectId}/admin/users/${encodeURIComponent(userId)}/role`,
+				{
+					method: 'PUT',
+					headers: { 'content-type': 'application/json' },
+					body: JSON.stringify({ role })
+				}
+			);
+			if (!response.ok) {
+				const result = (await response.json().catch(() => null)) as { error?: string } | null;
+				throw new Error(result?.error ?? `request failed (HTTP ${response.status})`);
+			}
+			await refreshData(data.projectId);
+		} catch (error) {
+			authError = error instanceof Error ? error.message : String(error);
+		} finally {
+			busy = false;
+		}
+	}
 
 	const stats = $derived([
 		{ id: 'users', label: 'Users', value: agentState.users, icon: Users },
@@ -405,35 +685,42 @@
 		}
 	]);
 
+	const activityRangeOptions = [
+		{ value: '7', label: 'Last week' },
+		{ value: '30', label: 'Last month' },
+		{ value: '90', label: 'Last 90 days' }
+	];
+	let activityRange = $state('7');
 	const activityChart = $derived.by(() => {
-		const counts = new Map(analytics.signupsLast7Days.map((point) => [point.day, point.count]));
-		return Array.from({ length: 7 }, (_, index) => {
-			const date = new Date();
-			date.setDate(date.getDate() - (6 - index));
+		const days = Number(activityRange);
+		const byDay = new Map(analytics.activityByDay.map((point) => [point.day, point]));
+		return Array.from({ length: days }, (_, index) => {
+			const date = new SvelteDate();
+			date.setDate(date.getDate() - (days - 1 - index));
 			const key = [
 				date.getFullYear(),
 				String(date.getMonth() + 1).padStart(2, '0'),
 				String(date.getDate()).padStart(2, '0')
 			].join('-');
+			const point = byDay.get(key);
 			return {
-				day: date.toLocaleDateString(undefined, { weekday: 'short' }),
+				date,
 				dateLabel: date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-				fullDate: date.toLocaleDateString(undefined, {
-					weekday: 'long',
-					month: 'long',
-					day: 'numeric'
-				}),
-				count: counts.get(key) ?? 0
+				signups: point?.signups ?? 0,
+				signins: point?.signins ?? 0
 			};
 		});
 	});
-	const activityTotal = $derived(activityChart.reduce((sum, point) => sum + point.count, 0));
+	const activitySignups = $derived(activityChart.reduce((sum, point) => sum + point.signups, 0));
+	const activitySignins = $derived(activityChart.reduce((sum, point) => sum + point.signins, 0));
 	const activityDateRange = $derived(
-		activityChart.length
-			? `${activityChart[0].dateLabel} – ${activityChart.at(-1)?.dateLabel}`
-			: 'Last 7 days'
+		activityChart.length ? `${activityChart[0].dateLabel} – ${activityChart.at(-1)?.dateLabel}` : ''
 	);
-	const activityChartConfig = { count: { label: 'Sign-ups', color: 'var(--color-primary)' } };
+	// Sign-ups are a subset of sign-ins (creating an account signs you in), so
+	// the chart plots one series and the header shows both totals.
+	const activityChartConfig = {
+		signins: { label: 'Sign-ins', color: 'var(--chart-1)' }
+	};
 </script>
 
 <svelte:head>
@@ -473,14 +760,18 @@
 			<Card.Header class="pb-2">
 				<div>
 					<Card.Title>Authentication activity</Card.Title>
-					<Card.Description
-						>New users over the last seven days from Analytics Engine.</Card.Description
-					>
+					<Card.Description>Sign-ups and sign-ins per day from Analytics Engine.</Card.Description>
 					{#if activityTimeZone}
 						<div class="mt-4 flex flex-wrap items-end gap-3">
 							<p class="flex items-baseline gap-1.5">
-								<span class="text-2xl leading-none font-semibold tabular-nums">{activityTotal}</span
+								<span class="text-2xl leading-none font-semibold tabular-nums"
+									>{activitySignups}</span
 								><span class="text-xs font-medium text-muted-foreground">sign-ups</span>
+							</p>
+							<p class="flex items-baseline gap-1.5 border-l pl-3">
+								<span class="text-2xl leading-none font-semibold tabular-nums"
+									>{activitySignins}</span
+								><span class="text-xs font-medium text-muted-foreground">sign-ins</span>
 							</p>
 							<p class="border-l pl-3 text-xs text-muted-foreground">{activityDateRange}</p>
 						</div>
@@ -490,6 +781,23 @@
 						</p>
 					{/if}
 				</div>
+				<Card.Action class="self-start">
+					<Select.Root type="single" bind:value={activityRange}>
+						<Select.Trigger
+							size="sm"
+							class="w-36"
+							aria-label="Activity range"
+							data-testid="activity-range"
+						>
+							{activityRangeOptions.find((option) => option.value === activityRange)?.label}
+						</Select.Trigger>
+						<Select.Content>
+							{#each activityRangeOptions as option (option.value)}
+								<Select.Item value={option.value} label={option.label} />
+							{/each}
+						</Select.Content>
+					</Select.Root>
+				</Card.Action>
 			</Card.Header>
 			<Card.Content>
 				{#if !activityTimeZone}
@@ -502,17 +810,53 @@
 					>
 						<AreaChart
 							data={activityChart}
-							x="day"
-							y="count"
-							series={[{ key: 'count', label: 'Sign-ups', color: 'var(--color-count)' }]}
+							x="date"
+							series={[
+								{ key: 'signins', label: 'Sign-ins', color: activityChartConfig.signins.color }
+							]}
 							props={{
-								area: { fillOpacity: 0.18 },
-								line: { strokeWidth: 2.5 },
-								axis: { y: { tickCount: 4 } }
+								yAxis: { ticks: 4 },
+								xAxis: {
+									// One tick per data point on the weekly view; a time scale
+									// otherwise subdivides days and repeats weekday labels.
+									ticks: activityRange === '7' ? activityChart.map((point) => point.date) : 6,
+									format: (value: Date) =>
+										value.toLocaleDateString(
+											undefined,
+											activityRange === '7'
+												? { weekday: 'short' }
+												: { month: 'short', day: 'numeric' }
+										)
+								}
 							}}
 						>
+							{#snippet marks()}
+								<Area
+									seriesKey="signins"
+									fill={activityChartConfig.signins.color}
+									fillOpacity={0.18}
+									line={{ strokeWidth: 2.5, stroke: activityChartConfig.signins.color }}
+								/>
+								<Points
+									seriesKey="signins"
+									r={activityRange === '7' ? 3.5 : 2.5}
+									fill="var(--background)"
+									stroke={activityChartConfig.signins.color}
+									strokeWidth={1.5}
+								/>
+							{/snippet}
 							{#snippet tooltip()}
-								<Chart.Tooltip indicator="line" />
+								<Chart.Tooltip
+									indicator="line"
+									labelFormatter={(value: unknown) =>
+										value instanceof Date
+											? value.toLocaleDateString(undefined, {
+													weekday: 'long',
+													month: 'long',
+													day: 'numeric'
+												})
+											: String(value)}
+								/>
 							{/snippet}
 						</AreaChart>
 					</Chart.Container>
@@ -524,7 +868,7 @@
 							? 'Events are flowing. Add Analytics Engine read credentials to visualize activity.'
 							: analytics.engine.status === 'error'
 								? 'Analytics Engine reads are temporarily unavailable.'
-								: 'No sign-ups recorded in the last seven days.'}
+								: 'No auth activity recorded in this period.'}
 					</div>
 				{/if}
 			</Card.Content>
@@ -591,7 +935,7 @@
 		<div class="min-w-0 lg:col-span-2">
 			<div>
 				<div class="flex h-10 max-w-full gap-1 overflow-x-auto border-b px-1" role="tablist">
-					{#each [['users', 'Users'], ['sessions', 'Sessions'], ['settings', 'Sign-in methods'], ['playground', 'Try auth'], ['setup', 'Integration']] as tab (tab[0])}
+					{#each [['users', 'Users'], ['sessions', 'Sessions'], ['roles', 'Roles'], ['settings', 'Sign-in methods'], ['playground', 'Try auth'], ['setup', 'Integration']] as tab (tab[0])}
 						<button
 							type="button"
 							role="tab"
@@ -637,6 +981,7 @@
 											<Table.Row>
 												<Table.Head>Identifier</Table.Head>
 												<Table.Head>Providers</Table.Head>
+												<Table.Head>Role</Table.Head>
 												<Table.Head>Status</Table.Head>
 												<Table.Head class="text-right">Created</Table.Head>
 												<Table.Head class="w-12"><span class="sr-only">Actions</span></Table.Head>
@@ -668,6 +1013,27 @@
 																</Badge>
 															{/each}
 														</div>
+													</Table.Cell>
+													<Table.Cell>
+														<Select.Root
+															type="single"
+															value={user.role}
+															onValueChange={(value) => setUserRole(user.id, value, user.role)}
+														>
+															<Select.Trigger
+																class="min-w-28 font-mono"
+																size="sm"
+																disabled={busy}
+																aria-label={`Role for ${user.email}`}
+															>
+																{user.role}
+															</Select.Trigger>
+															<Select.Content>
+																{#each roleOptions(user.role) as role (role)}
+																	<Select.Item value={role} label={role} class="font-mono" />
+																{/each}
+															</Select.Content>
+														</Select.Root>
 													</Table.Cell>
 													<Table.Cell>
 														{#if user.isAnonymous}
@@ -733,8 +1099,8 @@
 												<Table.Row>
 													<Table.Cell class="font-mono text-xs">{s.email ?? s.userId}</Table.Cell>
 													<Table.Cell>
-														<Badge variant="outline" class="font-mono text-[11px]">
-															{s.country ?? '—'}
+														<Badge variant="outline" class="gap-1.5 font-mono text-[11px]">
+															{#if s.country}<CountryFlag code={s.country} />{/if}{s.country ?? '—'}
 														</Badge>
 													</Table.Cell>
 													<Table.Cell
@@ -770,13 +1136,118 @@
 						</Card.Root>
 					</div>{/if}
 
+				<!-- ROLES -->
+				{#if activeTab === 'roles'}<div class="mt-4">
+						<Card.Root data-testid="roles-card">
+							<Card.Header>
+								<Card.Title>Roles & permissions</Card.Title>
+								<Card.Description>
+									Define roles and the permission keys they grant, then assign them on the Users
+									tab. Roles are returned by get-session; /token JWTs carry the role and its
+									permissions as claims.
+								</Card.Description>
+								<Card.Action class="self-center">
+									<form class="flex items-center gap-1.5" onsubmit={addRole}>
+										<Input
+											bind:value={newRoleInput}
+											oninput={() => (rolesError = null)}
+											placeholder="new-role"
+											aria-label="New role name"
+											class="h-8 w-36 font-mono text-xs"
+											autocomplete="off"
+											spellcheck="false"
+										/>
+										<Button type="submit" size="sm" variant="outline" class="h-8" disabled={busy}>
+											Add role
+										</Button>
+									</form>
+								</Card.Action>
+							</Card.Header>
+							<Card.Content class="space-y-3">
+								{#if rolesError}
+									<p class="text-sm text-destructive" role="alert">{rolesError}</p>
+								{/if}
+								<div class="divide-y rounded-xl border bg-card">
+									{#each projectRoles as role (role.name)}
+										<div class="space-y-3 p-4 sm:p-5" data-testid={`role-${role.name}`}>
+											<div class="flex items-center gap-2">
+												<ShieldCheck class="h-4 w-4 text-primary" />
+												<span class="font-mono text-sm font-medium">{role.name}</span>
+												{#if BUILT_IN_ROLES.includes(role.name)}
+													<Badge variant="secondary" class="text-[10px]">built-in</Badge>
+												{:else}
+													<Button
+														variant="ghost"
+														size="sm"
+														class="ml-auto h-7 px-2 text-xs text-muted-foreground hover:text-destructive"
+														disabled={busy}
+														onclick={() => removeRole(role.name)}
+													>
+														<Trash2 class="mr-1 h-3.5 w-3.5" /> Remove role
+													</Button>
+												{/if}
+											</div>
+											<div class="flex flex-wrap items-center gap-1.5">
+												{#if role.permissions.length === 0}
+													<span class="text-xs text-muted-foreground">No permissions granted.</span>
+												{/if}
+												{#each role.permissions as permission (permission)}
+													<Badge variant="outline" class="gap-1 font-mono text-[11px]">
+														{permission}
+														<button
+															type="button"
+															class="text-muted-foreground hover:text-destructive"
+															aria-label={`Remove ${permission} from ${role.name}`}
+															disabled={busy}
+															onclick={() => removePermission(role.name, permission)}
+														>
+															<X class="h-3 w-3" />
+														</button>
+													</Badge>
+												{/each}
+											</div>
+											<form
+												class="flex items-center gap-1.5"
+												onsubmit={(event) => addPermission(event, role.name)}
+											>
+												<Input
+													bind:value={permissionInputs[role.name]}
+													oninput={() => (rolesError = null)}
+													placeholder="posts:write"
+													aria-label={`New permission for ${role.name}`}
+													class="h-8 w-44 font-mono text-xs"
+													autocomplete="off"
+													spellcheck="false"
+												/>
+												<Button
+													type="submit"
+													size="sm"
+													variant="outline"
+													class="h-8"
+													disabled={busy}
+												>
+													Grant
+												</Button>
+											</form>
+										</div>
+									{/each}
+								</div>
+								<p class="text-xs text-muted-foreground">
+									Permission keys are free-form resource:action slugs (or * for everything).
+									Removing a role does not change users that already hold it.
+								</p>
+							</Card.Content>
+						</Card.Root>
+					</div>{/if}
+
 				<!-- PLAYGROUND -->
 				{#if activeTab === 'playground'}<div class="mt-4">
 						<Card.Root>
 							<Card.Header>
-								<Card.Title>Auth playground</Card.Title>
+								<Card.Title>Try authentication</Card.Title>
 								<Card.Description>
-									Exercise this project's Better Auth endpoints from the browser.
+									The form below is what your app's sign-in UI would call — every action hits this
+									project's live Better Auth endpoints, and the session panel shows the result.
 								</Card.Description>
 							</Card.Header>
 							<Card.Content class="grid gap-6 md:grid-cols-2">
@@ -805,51 +1276,120 @@
 											>
 										</div>
 										{#if playgroundTab === 'sign-up'}<div class="mt-4 space-y-3">
+												<div class="flex items-center justify-between">
+													<p class="text-xs text-muted-foreground">Prefilled demo identity</p>
+													<Button
+														variant="ghost"
+														size="sm"
+														class="h-7 gap-1.5 px-2 text-xs"
+														data-testid="randomize-identity"
+														onclick={randomizeIdentity}
+													>
+														<Dices class="h-3.5 w-3.5" /> New identity
+													</Button>
+												</div>
 												<div class="space-y-1.5">
 													<Label for="su-name">Name</Label>
-													<Input id="su-name" bind:value={name} placeholder="Ada Lovelace" />
+													<Input
+														id="su-name"
+														bind:value={$signUpForm.name}
+														placeholder="Jane Doe"
+														aria-invalid={$signUpErrors.name ? 'true' : undefined}
+													/>
+													{#if $signUpErrors.name}<p class="text-xs text-destructive">
+															{$signUpErrors.name}
+														</p>{/if}
 												</div>
 												<div class="space-y-1.5">
 													<Label for="su-email">Email</Label>
-													<Input id="su-email" type="email" bind:value={email} />
+													<Input
+														id="su-email"
+														type="email"
+														bind:value={$signUpForm.email}
+														aria-invalid={$signUpErrors.email ? 'true' : undefined}
+													/>
+													{#if $signUpErrors.email}<p class="text-xs text-destructive">
+															{$signUpErrors.email}
+														</p>{/if}
 												</div>
 												<div class="space-y-1.5">
 													<Label for="su-password">Password</Label>
-													<Input id="su-password" type="password" bind:value={password} />
+													<Input
+														id="su-password"
+														type="password"
+														bind:value={$signUpForm.password}
+														aria-invalid={$signUpErrors.password ? 'true' : undefined}
+													/>
+													{#if $signUpErrors.password}<p class="text-xs text-destructive">
+															{$signUpErrors.password}
+														</p>{/if}
 												</div>
-												<Button
-													class="w-full"
-													disabled={busy}
-													onclick={() => authPost('sign-up/email', { email, password, name })}
-												>
-													<UserPlus class="mr-1 h-4 w-4" /> Create account
+												<Button class="w-full" disabled={busy} onclick={submitSignUp}>
+													{#if busy}<LoaderCircle
+															class="mr-1 h-4 w-4 animate-spin"
+														/>{:else}<UserPlus class="mr-1 h-4 w-4" />{/if} Create account
 												</Button>
 												<Button
 													variant="outline"
 													class="w-full"
 													disabled={busy}
 													data-testid="guest-button"
-													onclick={() => authPost('sign-in/anonymous')}
+													onclick={() =>
+														authPost(
+															'sign-in/anonymous',
+															{},
+															'Guest session started — no email needed.'
+														)}
 												>
 													Continue as guest
 												</Button>
 											</div>{:else}<div class="mt-4 space-y-3">
 												<div class="space-y-1.5">
 													<Label for="si-email">Email</Label>
-													<Input id="si-email" type="email" bind:value={email} />
+													<Input
+														id="si-email"
+														type="email"
+														bind:value={$signInForm.email}
+														aria-invalid={$signInErrors.email ? 'true' : undefined}
+													/>
+													{#if $signInErrors.email}<p class="text-xs text-destructive">
+															{$signInErrors.email}
+														</p>{/if}
 												</div>
 												<div class="space-y-1.5">
 													<Label for="si-password">Password</Label>
-													<Input id="si-password" type="password" bind:value={password} />
+													<Input
+														id="si-password"
+														type="password"
+														bind:value={$signInForm.password}
+														aria-invalid={$signInErrors.password ? 'true' : undefined}
+													/>
+													{#if $signInErrors.password}<p class="text-xs text-destructive">
+															{$signInErrors.password}
+														</p>{/if}
 												</div>
-												<Button
-													class="w-full"
-													disabled={busy}
-													onclick={() => authPost('sign-in/email', { email, password })}
-												>
-													<LogIn class="mr-1 h-4 w-4" /> Sign in
+												<Button class="w-full" disabled={busy} onclick={submitSignIn}>
+													{#if busy}<LoaderCircle class="mr-1 h-4 w-4 animate-spin" />{:else}<LogIn
+															class="mr-1 h-4 w-4"
+														/>{/if} Sign in
 												</Button>
 											</div>{/if}
+										{#if authSuccess}
+											<p
+												class="mt-3 rounded-md bg-emerald-500/10 px-3 py-2 text-xs text-emerald-600 dark:text-emerald-400"
+												data-testid="auth-success"
+											>
+												{authSuccess}
+											</p>
+										{/if}
+										{#if authError}
+											<p
+												class="mt-3 rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive"
+												data-testid="auth-error"
+											>
+												{authError}{authErrorHint}
+											</p>
+										{/if}
 									</div>
 									{#if agentState.enabledSocialProviders?.length}
 										<div class="space-y-2 border-t pt-4">
@@ -861,21 +1401,7 @@
 														onclick={() => socialSignIn('google')}
 														disabled={busy}
 													>
-														<svg viewBox="0 0 24 24" class="mr-2 h-4 w-4" aria-hidden="true"
-															><path
-																fill="#4285F4"
-																d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.8 3-4.3 3-7.3Z"
-															/><path
-																fill="#34A853"
-																d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1a5.8 5.8 0 0 1-5.4-4H3.3v2.6A10 10 0 0 0 12 22Z"
-															/><path
-																fill="#FBBC05"
-																d="M6.6 14a6 6 0 0 1 0-4V7.4H3.3a10 10 0 0 0 0 9.2L6.6 14Z"
-															/><path
-																fill="#EA4335"
-																d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.9-2.8A9.7 9.7 0 0 0 3.3 7.4L6.6 10A5.8 5.8 0 0 1 12 6Z"
-															/></svg
-														> Google
+														<GoogleLogo class="mr-2 h-4 w-4" /> Google
 													</Button>
 												{/if}
 												{#if agentState.enabledSocialProviders.includes('github')}
@@ -884,14 +1410,7 @@
 														onclick={() => socialSignIn('github')}
 														disabled={busy}
 													>
-														<svg
-															viewBox="0 0 24 24"
-															class="mr-2 h-4 w-4 fill-current"
-															aria-hidden="true"
-															><path
-																d="M12 .7a11.5 11.5 0 0 0-3.6 22.4c.6.1.8-.2.8-.5v-2c-3.3.7-4-1.4-4-1.4-.5-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.4 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.6.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0C15.2 5 16.2 5.3 16.2 5.3c.6 1.5.2 2.8.1 3.1.8.8 1.2 1.9 1.2 3.1 0 4.4-2.7 5.4-5.5 5.7.4.4.8 1.1.8 2.3v3.1c0 .3.2.7.8.5A11.5 11.5 0 0 0 12 .7Z"
-															/></svg
-														> GitHub
+														<GithubLogo class="mr-2 h-4 w-4" /> GitHub
 													</Button>
 												{/if}
 											</div>
@@ -906,33 +1425,38 @@
 									<p class="text-xs tracking-wide text-muted-foreground uppercase">
 										Current session
 									</p>
+									<p class="mt-1 text-[11px] text-muted-foreground/70">
+										What <code class="font-mono">get-session</code> returns for this browser.
+									</p>
 									{#if session?.user}
-										<div class="mt-3 space-y-1.5 text-sm">
-											<p class="font-medium">{session.user.name}</p>
-											<p class="font-mono text-xs break-all text-muted-foreground">
-												{session.user.email}
-											</p>
-											<p class="text-xs text-muted-foreground">
-												expires {new Date(session.session.expiresAt).toLocaleString()}
-											</p>
+										<div class="mt-3 flex items-center gap-2.5">
+											<span
+												class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+											>
+												<UserRound class="h-4 w-4" />
+											</span>
+											<div class="min-w-0 text-sm">
+												<p class="truncate font-medium">{session.user.name}</p>
+												<p class="truncate font-mono text-xs break-all text-muted-foreground">
+													{session.user.email}
+												</p>
+											</div>
 										</div>
+										<p class="mt-2 text-xs text-muted-foreground">
+											expires {new Date(session.session.expiresAt).toLocaleString()}
+										</p>
 										<Button
 											variant="outline"
 											size="sm"
 											class="mt-auto w-full"
 											disabled={busy}
-											onclick={() => authPost('sign-out')}
+											onclick={() => authPost('sign-out', {}, 'Signed out.')}
 										>
 											<LogOut class="mr-1 h-4 w-4" /> Sign out
 										</Button>
 									{:else}
 										<p class="mt-3 text-sm text-muted-foreground">
 											No active session on this browser. Sign up or sign in to create one.
-										</p>
-									{/if}
-									{#if authError}
-										<p class="mt-3 rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
-											{authError}
 										</p>
 									{/if}
 								</div>
@@ -959,20 +1483,54 @@
 									>
 								</div>
 								<div>
-									<Label>Sign up and capture a bearer token</Label>
-									<pre
-										class="mt-2 overflow-x-auto rounded-lg border bg-zinc-950 p-4 text-xs leading-relaxed text-zinc-100"><code
-											>{`const response = await fetch('${`/api/projects/${data.projectId}/auth/sign-up/email`}', {
-  method: 'POST',
-  headers: { 'content-type': 'application/json' },
-  body: JSON.stringify({ email, password, name })
-});
-const token = response.headers.get('set-auth-token');
-
-await fetch('${`/api/projects/${data.projectId}/auth/get-session`}', {
-  headers: { authorization: \`Bearer \${token}\` }
-});`}</code
-										></pre>
+									<Label>Sign up and read the session, in your stack</Label>
+									<div
+										class="mt-2 flex flex-wrap gap-1.5"
+										role="tablist"
+										aria-label="Integration examples"
+									>
+										{#each integrationExamples as example (example.id)}
+											<button
+												type="button"
+												role="tab"
+												aria-selected={integrationTab === example.id}
+												class={[
+													'rounded-full border px-3 py-1 font-mono text-xs transition-colors',
+													integrationTab === example.id
+														? 'border-primary bg-primary/10 text-primary'
+														: 'text-muted-foreground hover:border-primary/40 hover:text-foreground'
+												]}
+												onclick={() => (integrationTab = example.id)}>{example.label}</button
+											>
+										{/each}
+									</div>
+									<div class="relative mt-3">
+										<Button
+											variant="ghost"
+											size="icon"
+											class="absolute top-2 right-2 h-7 w-7 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+											aria-label="Copy example"
+											data-testid="copy-integration"
+											onclick={copyIntegration}
+										>
+											{#if integrationCopied}<Check class="h-3.5 w-3.5" />{:else}<Copy
+													class="h-3.5 w-3.5"
+												/>{/if}
+										</Button>
+										{#if highlightedIntegration}
+											<div
+												class="[&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:border [&_pre]:p-4 [&_pre]:text-xs [&_pre]:leading-relaxed"
+											>
+												<!-- eslint-disable-next-line svelte/no-at-html-tags -- shiki output over our own literals -->
+												{@html highlightedIntegration}
+											</div>
+										{:else}
+											<pre
+												class="overflow-x-auto rounded-lg border bg-zinc-950 p-4 text-xs leading-relaxed text-zinc-100"><code
+													>{activeIntegration.code}</code
+												></pre>
+										{/if}
+									</div>
 								</div>
 								<p class="text-xs text-muted-foreground">
 									External browser applications must be added under Settings → Allowed origins. Keep
@@ -1005,21 +1563,7 @@ await fetch('${`/api/projects/${data.projectId}/auth/get-session`}', {
 												<span class="flex items-center gap-2"
 													><span
 														class="flex h-8 w-8 items-center justify-center rounded-lg border bg-background"
-														><svg viewBox="0 0 24 24" class="h-4 w-4" aria-hidden="true"
-															><path
-																fill="#4285F4"
-																d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.8 3-4.3 3-7.3Z"
-															/><path
-																fill="#34A853"
-																d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1a5.8 5.8 0 0 1-5.4-4H3.3v2.6A10 10 0 0 0 12 22Z"
-															/><path
-																fill="#FBBC05"
-																d="M6.6 14a6 6 0 0 1 0-4V7.4H3.3a10 10 0 0 0 0 9.2L6.6 14Z"
-															/><path
-																fill="#EA4335"
-																d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.9-2.8A9.7 9.7 0 0 0 3.3 7.4L6.6 10A5.8 5.8 0 0 1 12 6Z"
-															/></svg
-														></span
+														><GoogleLogo class="h-4 w-4" /></span
 													>Google</span
 												>
 												<input
@@ -1051,14 +1595,7 @@ await fetch('${`/api/projects/${data.projectId}/auth/get-session`}', {
 												<span class="flex items-center gap-2"
 													><span
 														class="flex h-8 w-8 items-center justify-center rounded-lg border bg-background"
-														><svg
-															viewBox="0 0 24 24"
-															class="h-4 w-4 fill-current"
-															aria-hidden="true"
-															><path
-																d="M12 .7a11.5 11.5 0 0 0-3.6 22.4c.6.1.8-.2.8-.5v-2c-3.3.7-4-1.4-4-1.4-.5-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.4 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.6.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0C15.2 5 16.2 5.3 16.2 5.3c.6 1.5.2 2.8.1 3.1.8.8 1.2 1.9 1.2 3.1 0 4.4-2.7 5.4-5.5 5.7.4.4.8 1.1.8 2.3v3.1c0 .3.2.7.8.5A11.5 11.5 0 0 0 12 .7Z"
-															/></svg
-														></span
+														><GithubLogo class="h-4 w-4" /></span
 													>GitHub</span
 												>
 												<input
@@ -1089,7 +1626,7 @@ await fetch('${`/api/projects/${data.projectId}/auth/get-session`}', {
 									<div
 										class="flex min-w-0 items-start gap-2 rounded-lg border bg-muted/30 p-3 font-mono text-xs break-all text-muted-foreground"
 									>
-										<Code2 class="mt-0.5 h-3.5 w-3.5 shrink-0" />
+										<CodeXml class="mt-0.5 h-3.5 w-3.5 shrink-0" />
 										OAuth callback: {typeof window === 'undefined'
 											? ''
 											: window.location
@@ -1108,7 +1645,7 @@ await fetch('${`/api/projects/${data.projectId}/auth/get-session`}', {
 										bind:value={allowedOriginsInput}
 										rows="4"
 										class="w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-sm"
-										placeholder={'https://app.example.com\nhttp://localhost:3000'}
+										placeholder="https://app.example.com&#10;http://localhost:3000"
 									></textarea>
 									<p class="text-xs text-muted-foreground">
 										One exact origin per line. HTTPS is required except for localhost.
@@ -1123,80 +1660,6 @@ await fetch('${`/api/projects/${data.projectId}/auth/get-session`}', {
 										>{busy ? 'Saving…' : 'Save changes'}</Button
 									>
 								</div>
-							</Card.Content>
-						</Card.Root>
-					</div>{/if}
-
-				{#if false}<div class="mt-4">
-						<Card.Root data-testid="chat-panel">
-							<Card.Header>
-								<Card.Title class="flex items-center gap-2">
-									<Bot class="h-4 w-4 text-primary" /> Ask the Auth Agent
-								</Card.Title>
-								<Card.Description>
-									Workers AI reasons over authoritative auth totals and aggregated Analytics Engine
-									metrics.
-								</Card.Description>
-							</Card.Header>
-							<Card.Content class="space-y-4">
-								<div
-									class="flex h-80 flex-col gap-3 overflow-y-auto rounded-lg border border-border bg-card/50 p-4"
-									data-testid="chat-messages"
-								>
-									{#if chatMessages.length === 0}
-										<p class="m-auto max-w-sm text-center text-sm text-muted-foreground">
-											Ask something about this project's users — try one of the suggestions below.
-										</p>
-									{:else}
-										{#each chatMessages as message (message.id)}
-											<div
-												class={[
-													'max-w-[85%] rounded-lg px-3 py-2 text-sm',
-													message.role === 'user'
-														? 'self-end bg-primary text-primary-foreground'
-														: 'self-start border border-border bg-background'
-												]}
-											>
-												{message.content}
-											</div>
-										{/each}
-										{#if chatBusy}
-											<div
-												class="self-start rounded-lg border border-border bg-background px-3 py-2 text-sm text-muted-foreground"
-											>
-												thinking…
-											</div>
-										{/if}
-									{/if}
-								</div>
-
-								<div class="flex flex-wrap gap-2">
-									{#each suggestedQuestions as question (question)}
-										<button
-											class="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-											onclick={() => askAgent(question)}
-										>
-											{question}
-										</button>
-									{/each}
-								</div>
-
-								<form
-									class="flex gap-2"
-									onsubmit={(event) => {
-										event.preventDefault();
-										void askAgent(chatInput);
-									}}
-								>
-									<Input
-										bind:value={chatInput}
-										placeholder="e.g. how many users signed in with Google?"
-										data-testid="chat-input"
-									/>
-									<Button type="submit" size="icon" disabled={chatBusy} data-testid="chat-send">
-										<SendHorizontal class="h-4 w-4" />
-									</Button>
-								</form>
 							</Card.Content>
 						</Card.Root>
 					</div>{/if}
@@ -1257,7 +1720,10 @@ await fetch('${`/api/projects/${data.projectId}/auth/get-session`}', {
 						<ul class="space-y-2">
 							{#each analytics.countries as c (c.country)}
 								<li class="flex items-center justify-between text-sm">
-									<span class="font-mono text-xs">{c.country}</span>
+									<span class="flex items-center gap-2 font-mono text-xs">
+										<CountryFlag code={c.country} class="h-3.5 w-[1.1666rem]" />
+										{c.country}
+									</span>
 									<span class="tabular-nums">{c.sessions}</span>
 								</li>
 							{/each}
@@ -1290,21 +1756,7 @@ await fetch('${`/api/projects/${data.projectId}/auth/get-session`}', {
 								<span class="ml-auto h-2 w-2 rounded-full bg-emerald-500"></span>
 							</div>
 							<div class="flex items-center gap-2 rounded-lg border p-2.5">
-								<svg viewBox="0 0 24 24" class="h-4 w-4" aria-label="Google"
-									><path
-										fill="#4285F4"
-										d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.8 3-4.3 3-7.3Z"
-									/><path
-										fill="#34A853"
-										d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1a5.8 5.8 0 0 1-5.4-4H3.3v2.6A10 10 0 0 0 12 22Z"
-									/><path
-										fill="#FBBC05"
-										d="M6.6 14a6 6 0 0 1 0-4V7.4H3.3a10 10 0 0 0 0 9.2L6.6 14Z"
-									/><path
-										fill="#EA4335"
-										d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.9-2.8A9.7 9.7 0 0 0 3.3 7.4L6.6 10A5.8 5.8 0 0 1 12 6Z"
-									/></svg
-								>
+								<GoogleLogo class="h-4 w-4" />
 								Google
 								<Badge variant="outline" class="ml-auto text-[10px]"
 									>{agentState.enabledSocialProviders?.includes('google')
@@ -1313,11 +1765,7 @@ await fetch('${`/api/projects/${data.projectId}/auth/get-session`}', {
 								>
 							</div>
 							<div class="flex items-center gap-2 rounded-lg border p-2.5">
-								<svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-label="GitHub"
-									><path
-										d="M12 .7a11.5 11.5 0 0 0-3.6 22.4c.6.1.8-.2.8-.5v-2c-3.3.7-4-1.4-4-1.4-.5-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.4 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.6.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0C15.2 5 16.2 5.3 16.2 5.3c.6 1.5.2 2.8.1 3.1.8.8 1.2 1.9 1.2 3.1 0 4.4-2.7 5.4-5.5 5.7.4.4.8 1.1.8 2.3v3.1c0 .3.2.7.8.5A11.5 11.5 0 0 0 12 .7Z"
-									/></svg
-								>
+								<GithubLogo class="h-4 w-4" />
 								GitHub
 								<Badge variant="outline" class="ml-auto text-[10px]"
 									>{agentState.enabledSocialProviders?.includes('github')
