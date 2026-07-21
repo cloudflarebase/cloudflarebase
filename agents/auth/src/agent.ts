@@ -757,7 +757,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 			return this.behavioralCache.data;
 		}
 		const config = this.waeConfig;
-		if (!config && this.env.LOCAL_ANALYTICS) return this.queryLocalBehavioralAnalytics();
+		if (!config && this.env.LOCAL_ANALYTICS) return this.queryLocalBehavioralAnalytics(timeZone);
 		const empty = this.emptyBehavioralAnalytics();
 		if (!config) {
 			this.behavioralCache = {
@@ -813,7 +813,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 		return data;
 	}
 
-	private async queryLocalBehavioralAnalytics(): Promise<BehavioralAnalytics> {
+	private async queryLocalBehavioralAnalytics(timeZone: string): Promise<BehavioralAnalytics> {
 		const db = this.env.LOCAL_ANALYTICS!;
 		const since = (days: number) => Date.now() - days * 86_400_000;
 		const bind = (sql: string, ...values: unknown[]) => db.prepare(sql).bind(this.name, ...values);
@@ -839,7 +839,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 				since(30),
 			),
 			bind(
-				`SELECT date(timestamp / 1000, 'unixepoch') day, COUNT(*) count FROM auth_events WHERE project_id=? AND event_type='user.created' AND timestamp>? GROUP BY day ORDER BY day`,
+				`SELECT timestamp FROM auth_events WHERE project_id=? AND event_type='user.created' AND timestamp>?`,
 				since(7),
 			),
 			bind(
@@ -852,6 +852,20 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 		]);
 		const rows = <T>(result: D1Result<unknown>) => (result.results ?? []) as T[];
 		const scalar = (result: D1Result) => Number(rows<{ users: number }>(result)[0]?.users ?? 0);
+		// D1's SQLite cannot group by an IANA-timezone day, so bucket sign-up
+		// timestamps here in the viewer's timezone, matching the remote
+		// formatDateTime(timestamp, '%Y-%m-%d', timeZone) query.
+		const dayFormatter = new Intl.DateTimeFormat('en-CA', {
+			timeZone,
+			year: 'numeric',
+			month: '2-digit',
+			day: '2-digit',
+		});
+		const signupsByDay = new Map<string, number>();
+		for (const { timestamp } of rows<{ timestamp: number }>(signups)) {
+			const day = dayFormatter.format(timestamp);
+			signupsByDay.set(day, (signupsByDay.get(day) ?? 0) + 1);
+		}
 		return {
 			dau: scalar(dau),
 			wau: scalar(wau),
@@ -859,7 +873,9 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 			gmailUsers: scalar(gmail),
 			providers: rows(providers),
 			countries: rows(countries),
-			signupsLast7Days: rows(signups),
+			signupsLast7Days: [...signupsByDay]
+				.map(([day, count]) => ({ day, count }))
+				.sort((a, b) => a.day.localeCompare(b.day)),
 			eventsLast24h: rows(events),
 		};
 	}

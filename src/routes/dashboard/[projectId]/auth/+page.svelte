@@ -1,12 +1,6 @@
 <script lang="ts">
 	import { dev } from '$app/environment';
-	import type {
-		AgentChatMessage,
-		AgentChatReply,
-		AuthAgentState,
-		AuthAnalytics,
-		AuthOverview
-	} from '$lib/agents';
+	import type { AuthAgentState, AuthAnalytics, AuthOverview } from '$lib/agents';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
 	import * as Card from '$lib/components/ui/card';
@@ -14,21 +8,19 @@
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
-	import { signInSchema, signUpSchema } from '$lib/schemas/auth';
+	import { allowedOriginSchema, signInSchema, signUpSchema } from '$lib/schemas/auth';
 	import * as Table from '$lib/components/ui/table';
-	import * as Tabs from '$lib/components/ui/tabs';
+	import GithubLogo from '$lib/components/github-logo.svelte';
+	import GoogleLogo from '$lib/components/google-logo.svelte';
 	import {
 		Activity,
-		Bot,
-		Code2,
+		CodeXml,
 		Globe,
 		KeyRound,
 		LogIn,
 		LogOut,
 		Radio,
 		Rocket,
-		SendHorizontal,
-		Settings,
 		Trash2,
 		UserPlus,
 		UserRound,
@@ -37,6 +29,7 @@
 	import { AgentClient } from 'agents/client';
 	import { AreaChart } from 'layerchart';
 	import { onMount, tick } from 'svelte';
+	import { SvelteDate } from 'svelte/reactivity';
 	import { superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 
@@ -95,10 +88,6 @@
 	let busy = $state(false);
 	let authError = $state<string | null>(null);
 
-	// Agent chat state
-	let chatMessages = $state<AgentChatMessage[]>([]);
-	let chatInput = $state('');
-	let chatBusy = $state(false);
 	// svelte-ignore state_referenced_locally
 	let allowedOriginsInput = $state((data.overview.state.allowedOrigins ?? []).join('\n'));
 	let settingsSaved = $state(false);
@@ -111,13 +100,6 @@
 	let githubClientId = $state('');
 	let githubClientSecret = $state('');
 
-	const suggestedQuestions = [
-		"What's our DAU/MAU?",
-		'How many anonymous users do we have?',
-		'Which providers do users sign in with?',
-		'What countries are users from?'
-	];
-
 	const authBase = $derived(`/api/projects/${data.projectId}/auth`);
 
 	// Reset local state when navigating between projects.
@@ -126,8 +108,6 @@
 		agentState = data.overview.state;
 		analytics = data.analytics;
 		activityTimeZone = null;
-		chatMessages = [];
-		void loadChatHistory(data.projectId);
 		allowedOriginsInput = (data.overview.state.allowedOrigins ?? []).join('\n');
 		googleEnabled = (data.overview.state.enabledSocialProviders ?? []).includes('google');
 		githubEnabled = (data.overview.state.enabledSocialProviders ?? []).includes('github');
@@ -189,21 +169,6 @@
 		}
 	}
 
-	async function loadChatHistory(projectId: string) {
-		try {
-			const response = await fetch(`/api/projects/${projectId}/chat`);
-			if (projectId !== data.projectId) return;
-			if (!response.ok) {
-				chatMessages = [];
-				return;
-			}
-			const history = (await response.json()) as { messages: AgentChatMessage[] };
-			chatMessages = history.messages;
-		} catch {
-			// Keep the panel usable if history is temporarily unavailable.
-		}
-	}
-
 	async function authPost(path: string, body: Record<string, unknown> = {}) {
 		busy = true;
 		authError = null;
@@ -214,15 +179,16 @@
 				body: JSON.stringify(body)
 			});
 			const text = await res.text();
-			const json = text ? JSON.parse(text) : null;
+			let json: { message?: string } | null = null;
+			try {
+				json = text ? JSON.parse(text) : null;
+			} catch {
+				// non-JSON body — fall through to the status-based error
+			}
 			if (!res.ok) {
 				throw new Error(json?.message ?? `request failed (HTTP ${res.status})`);
 			}
-			await Promise.all([
-				refreshSession(data.projectId),
-				refreshData(data.projectId),
-				loadChatHistory(data.projectId)
-			]);
+			await Promise.all([refreshSession(data.projectId), refreshData(data.projectId)]);
 		} catch (err) {
 			authError = err instanceof Error ? err.message : String(err);
 		} finally {
@@ -266,55 +232,6 @@
 		}
 	}
 
-	async function askAgent(question: string) {
-		const trimmed = question.trim();
-		if (!trimmed || chatBusy) return;
-		chatBusy = true;
-		chatInput = '';
-		const pendingId = crypto.randomUUID();
-		chatMessages = [
-			...chatMessages,
-			{ id: pendingId, role: 'user', content: trimmed, createdAt: new Date().toISOString() }
-		];
-		try {
-			const res = await fetch(`/api/projects/${data.projectId}/chat`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ question: trimmed })
-			});
-			const reply = (await res.json()) as AgentChatReply & { error?: string };
-			if (res.ok) {
-				chatMessages = [
-					...chatMessages.filter((message) => message.id !== pendingId),
-					reply.userMessage,
-					reply.agentMessage
-				];
-			} else {
-				chatMessages = [
-					...chatMessages,
-					{
-						id: crypto.randomUUID(),
-						role: 'agent',
-						content: reply.error ?? 'The agent could not answer that.',
-						createdAt: new Date().toISOString()
-					}
-				];
-			}
-		} catch {
-			chatMessages = [
-				...chatMessages,
-				{
-					id: crypto.randomUUID(),
-					role: 'agent',
-					content: 'The agent is unreachable right now.',
-					createdAt: new Date().toISOString()
-				}
-			];
-		} finally {
-			chatBusy = false;
-		}
-	}
-
 	async function adminDelete(kind: 'users' | 'sessions', id: string) {
 		const label = kind === 'users' ? 'user and all of their sessions' : 'session';
 		if (!confirm(`Delete this ${label}? This cannot be undone.`)) return;
@@ -340,14 +257,41 @@
 	}
 
 	async function saveSettings() {
-		busy = true;
 		authError = null;
 		settingsSaved = false;
+		const allowedOrigins = allowedOriginsInput
+			.split(/\r?\n|,/)
+			.map((value) => value.trim())
+			.filter(Boolean);
+
+		// Validate locally so users see which entry is wrong instead of a generic
+		// 400 from the API. The same rules run in the agent.
+		if (allowedOrigins.length > 10) {
+			authError = 'Add at most 10 origins.';
+			return;
+		}
+		for (const origin of allowedOrigins) {
+			const parsed = allowedOriginSchema.safeParse(origin);
+			if (!parsed.success) {
+				authError = `${origin}: ${parsed.error.issues[0]?.message ?? 'invalid origin'}`;
+				return;
+			}
+		}
+		for (const [label, key, enabled, clientId, clientSecret] of [
+			['Google', 'google', googleEnabled, googleClientId, googleClientSecret],
+			['GitHub', 'github', githubEnabled, githubClientId, githubClientSecret]
+		] as const) {
+			if (!enabled || (clientId.trim() && clientSecret.trim())) continue;
+			const configured = agentState.enabledSocialProviders?.includes(key);
+			if (!clientId.trim() && !clientSecret.trim() && configured) continue; // keeps stored credentials
+			authError = configured
+				? `Enter both the ${label} client ID and client secret to replace the stored ones.`
+				: `Enter a ${label} client ID and client secret, or turn ${label} off.`;
+			return;
+		}
+
+		busy = true;
 		try {
-			const allowedOrigins = allowedOriginsInput
-				.split(/\r?\n|,/)
-				.map((value) => value.trim())
-				.filter(Boolean);
 			const response = await fetch(`/api/projects/${data.projectId}/admin/settings`, {
 				method: 'PUT',
 				headers: { 'content-type': 'application/json' },
@@ -432,7 +376,7 @@
 	const activityChart = $derived.by(() => {
 		const counts = new Map(analytics.signupsLast7Days.map((point) => [point.day, point.count]));
 		return Array.from({ length: 7 }, (_, index) => {
-			const date = new Date();
+			const date = new SvelteDate();
 			date.setDate(date.getDate() - (6 - index));
 			const key = [
 				date.getFullYear(),
@@ -917,21 +861,7 @@
 														onclick={() => socialSignIn('google')}
 														disabled={busy}
 													>
-														<svg viewBox="0 0 24 24" class="mr-2 h-4 w-4" aria-hidden="true"
-															><path
-																fill="#4285F4"
-																d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.8 3-4.3 3-7.3Z"
-															/><path
-																fill="#34A853"
-																d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1a5.8 5.8 0 0 1-5.4-4H3.3v2.6A10 10 0 0 0 12 22Z"
-															/><path
-																fill="#FBBC05"
-																d="M6.6 14a6 6 0 0 1 0-4V7.4H3.3a10 10 0 0 0 0 9.2L6.6 14Z"
-															/><path
-																fill="#EA4335"
-																d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.9-2.8A9.7 9.7 0 0 0 3.3 7.4L6.6 10A5.8 5.8 0 0 1 12 6Z"
-															/></svg
-														> Google
+														<GoogleLogo class="mr-2 h-4 w-4" /> Google
 													</Button>
 												{/if}
 												{#if agentState.enabledSocialProviders.includes('github')}
@@ -940,14 +870,7 @@
 														onclick={() => socialSignIn('github')}
 														disabled={busy}
 													>
-														<svg
-															viewBox="0 0 24 24"
-															class="mr-2 h-4 w-4 fill-current"
-															aria-hidden="true"
-															><path
-																d="M12 .7a11.5 11.5 0 0 0-3.6 22.4c.6.1.8-.2.8-.5v-2c-3.3.7-4-1.4-4-1.4-.5-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.4 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.6.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0C15.2 5 16.2 5.3 16.2 5.3c.6 1.5.2 2.8.1 3.1.8.8 1.2 1.9 1.2 3.1 0 4.4-2.7 5.4-5.5 5.7.4.4.8 1.1.8 2.3v3.1c0 .3.2.7.8.5A11.5 11.5 0 0 0 12 .7Z"
-															/></svg
-														> GitHub
+														<GithubLogo class="mr-2 h-4 w-4" /> GitHub
 													</Button>
 												{/if}
 											</div>
@@ -1061,21 +984,7 @@ await fetch('${`/api/projects/${data.projectId}/auth/get-session`}', {
 												<span class="flex items-center gap-2"
 													><span
 														class="flex h-8 w-8 items-center justify-center rounded-lg border bg-background"
-														><svg viewBox="0 0 24 24" class="h-4 w-4" aria-hidden="true"
-															><path
-																fill="#4285F4"
-																d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.8 3-4.3 3-7.3Z"
-															/><path
-																fill="#34A853"
-																d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1a5.8 5.8 0 0 1-5.4-4H3.3v2.6A10 10 0 0 0 12 22Z"
-															/><path
-																fill="#FBBC05"
-																d="M6.6 14a6 6 0 0 1 0-4V7.4H3.3a10 10 0 0 0 0 9.2L6.6 14Z"
-															/><path
-																fill="#EA4335"
-																d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.9-2.8A9.7 9.7 0 0 0 3.3 7.4L6.6 10A5.8 5.8 0 0 1 12 6Z"
-															/></svg
-														></span
+														><GoogleLogo class="h-4 w-4" /></span
 													>Google</span
 												>
 												<input
@@ -1107,14 +1016,7 @@ await fetch('${`/api/projects/${data.projectId}/auth/get-session`}', {
 												<span class="flex items-center gap-2"
 													><span
 														class="flex h-8 w-8 items-center justify-center rounded-lg border bg-background"
-														><svg
-															viewBox="0 0 24 24"
-															class="h-4 w-4 fill-current"
-															aria-hidden="true"
-															><path
-																d="M12 .7a11.5 11.5 0 0 0-3.6 22.4c.6.1.8-.2.8-.5v-2c-3.3.7-4-1.4-4-1.4-.5-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.4 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.6.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0C15.2 5 16.2 5.3 16.2 5.3c.6 1.5.2 2.8.1 3.1.8.8 1.2 1.9 1.2 3.1 0 4.4-2.7 5.4-5.5 5.7.4.4.8 1.1.8 2.3v3.1c0 .3.2.7.8.5A11.5 11.5 0 0 0 12 .7Z"
-															/></svg
-														></span
+														><GithubLogo class="h-4 w-4" /></span
 													>GitHub</span
 												>
 												<input
@@ -1145,7 +1047,7 @@ await fetch('${`/api/projects/${data.projectId}/auth/get-session`}', {
 									<div
 										class="flex min-w-0 items-start gap-2 rounded-lg border bg-muted/30 p-3 font-mono text-xs break-all text-muted-foreground"
 									>
-										<Code2 class="mt-0.5 h-3.5 w-3.5 shrink-0" />
+										<CodeXml class="mt-0.5 h-3.5 w-3.5 shrink-0" />
 										OAuth callback: {typeof window === 'undefined'
 											? ''
 											: window.location
@@ -1164,7 +1066,7 @@ await fetch('${`/api/projects/${data.projectId}/auth/get-session`}', {
 										bind:value={allowedOriginsInput}
 										rows="4"
 										class="w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-sm"
-										placeholder={'https://app.example.com\nhttp://localhost:3000'}
+										placeholder="https://app.example.com&#10;http://localhost:3000"
 									></textarea>
 									<p class="text-xs text-muted-foreground">
 										One exact origin per line. HTTPS is required except for localhost.
@@ -1179,80 +1081,6 @@ await fetch('${`/api/projects/${data.projectId}/auth/get-session`}', {
 										>{busy ? 'Saving…' : 'Save changes'}</Button
 									>
 								</div>
-							</Card.Content>
-						</Card.Root>
-					</div>{/if}
-
-				{#if false}<div class="mt-4">
-						<Card.Root data-testid="chat-panel">
-							<Card.Header>
-								<Card.Title class="flex items-center gap-2">
-									<Bot class="h-4 w-4 text-primary" /> Ask the Auth Agent
-								</Card.Title>
-								<Card.Description>
-									Workers AI reasons over authoritative auth totals and aggregated Analytics Engine
-									metrics.
-								</Card.Description>
-							</Card.Header>
-							<Card.Content class="space-y-4">
-								<div
-									class="flex h-80 flex-col gap-3 overflow-y-auto rounded-lg border border-border bg-card/50 p-4"
-									data-testid="chat-messages"
-								>
-									{#if chatMessages.length === 0}
-										<p class="m-auto max-w-sm text-center text-sm text-muted-foreground">
-											Ask something about this project's users — try one of the suggestions below.
-										</p>
-									{:else}
-										{#each chatMessages as message (message.id)}
-											<div
-												class={[
-													'max-w-[85%] rounded-lg px-3 py-2 text-sm',
-													message.role === 'user'
-														? 'self-end bg-primary text-primary-foreground'
-														: 'self-start border border-border bg-background'
-												]}
-											>
-												{message.content}
-											</div>
-										{/each}
-										{#if chatBusy}
-											<div
-												class="self-start rounded-lg border border-border bg-background px-3 py-2 text-sm text-muted-foreground"
-											>
-												thinking…
-											</div>
-										{/if}
-									{/if}
-								</div>
-
-								<div class="flex flex-wrap gap-2">
-									{#each suggestedQuestions as question (question)}
-										<button
-											class="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-											onclick={() => askAgent(question)}
-										>
-											{question}
-										</button>
-									{/each}
-								</div>
-
-								<form
-									class="flex gap-2"
-									onsubmit={(event) => {
-										event.preventDefault();
-										void askAgent(chatInput);
-									}}
-								>
-									<Input
-										bind:value={chatInput}
-										placeholder="e.g. how many users signed in with Google?"
-										data-testid="chat-input"
-									/>
-									<Button type="submit" size="icon" disabled={chatBusy} data-testid="chat-send">
-										<SendHorizontal class="h-4 w-4" />
-									</Button>
-								</form>
 							</Card.Content>
 						</Card.Root>
 					</div>{/if}
@@ -1346,21 +1174,7 @@ await fetch('${`/api/projects/${data.projectId}/auth/get-session`}', {
 								<span class="ml-auto h-2 w-2 rounded-full bg-emerald-500"></span>
 							</div>
 							<div class="flex items-center gap-2 rounded-lg border p-2.5">
-								<svg viewBox="0 0 24 24" class="h-4 w-4" aria-label="Google"
-									><path
-										fill="#4285F4"
-										d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.8 3-4.3 3-7.3Z"
-									/><path
-										fill="#34A853"
-										d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1a5.8 5.8 0 0 1-5.4-4H3.3v2.6A10 10 0 0 0 12 22Z"
-									/><path
-										fill="#FBBC05"
-										d="M6.6 14a6 6 0 0 1 0-4V7.4H3.3a10 10 0 0 0 0 9.2L6.6 14Z"
-									/><path
-										fill="#EA4335"
-										d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.9-2.8A9.7 9.7 0 0 0 3.3 7.4L6.6 10A5.8 5.8 0 0 1 12 6Z"
-									/></svg
-								>
+								<GoogleLogo class="h-4 w-4" />
 								Google
 								<Badge variant="outline" class="ml-auto text-[10px]"
 									>{agentState.enabledSocialProviders?.includes('google')
@@ -1369,11 +1183,7 @@ await fetch('${`/api/projects/${data.projectId}/auth/get-session`}', {
 								>
 							</div>
 							<div class="flex items-center gap-2 rounded-lg border p-2.5">
-								<svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-label="GitHub"
-									><path
-										d="M12 .7a11.5 11.5 0 0 0-3.6 22.4c.6.1.8-.2.8-.5v-2c-3.3.7-4-1.4-4-1.4-.5-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.4 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.6.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0C15.2 5 16.2 5.3 16.2 5.3c.6 1.5.2 2.8.1 3.1.8.8 1.2 1.9 1.2 3.1 0 4.4-2.7 5.4-5.5 5.7.4.4.8 1.1.8 2.3v3.1c0 .3.2.7.8.5A11.5 11.5 0 0 0 12 .7Z"
-									/></svg
-								>
+								<GithubLogo class="h-4 w-4" />
 								GitHub
 								<Badge variant="outline" class="ml-auto text-[10px]"
 									>{agentState.enabledSocialProviders?.includes('github')
