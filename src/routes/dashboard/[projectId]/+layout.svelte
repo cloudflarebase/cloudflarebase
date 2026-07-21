@@ -57,6 +57,34 @@
 		{ label: 'Cron & Queues', icon: Clock }
 	];
 
+	// Grounded in the aggregated auth data the agent can actually answer from.
+	const copilotSuggestionPool = [
+		'Summarize this project',
+		'What should I investigate?',
+		'How is user activity?',
+		"What's our DAU/MAU ratio?",
+		"What's our churn rate?",
+		'How many anonymous users do we have?',
+		'Which sign-in providers are most used?',
+		'What countries are users from?',
+		'How many sessions are active right now?',
+		'Are sign-ups trending up this week?',
+		'Compare guest and registered sign-ups',
+		'Which auth events fired in the last day?',
+		'Is anything unusual in the auth activity?'
+	];
+
+	function pickSuggestions(): string[] {
+		const pool = [...copilotSuggestionPool];
+		for (let i = pool.length - 1; i > 0; i -= 1) {
+			const j = Math.floor(Math.random() * (i + 1));
+			[pool[i], pool[j]] = [pool[j], pool[i]];
+		}
+		return pool.slice(0, 3);
+	}
+
+	let copilotSuggestions = $state(pickSuggestions());
+
 	$effect(() => {
 		const currentProject = projectId;
 		copilotMessages = [];
@@ -107,17 +135,21 @@
 		if (!trimmed || copilotBusy) return;
 		copilotBusy = true;
 		copilotInput = '';
+		const currentProject = projectId;
 		const pendingId = crypto.randomUUID();
 		copilotMessages = [
 			...copilotMessages,
 			{ id: pendingId, role: 'user', content: trimmed, createdAt: new Date().toISOString() }
 		];
 		try {
-			const response = await fetch(`/api/projects/${projectId}/chat`, {
+			const response = await fetch(`/api/projects/${currentProject}/chat`, {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
 				body: JSON.stringify({ question: trimmed })
 			});
+			// The user may have switched projects while the request was in flight;
+			// this reply belongs to the previous project's conversation.
+			if (currentProject !== projectId) return;
 			const reply = (await response.json()) as AgentChatReply & { error?: string };
 			if (response.ok) {
 				copilotMessages = [
@@ -137,6 +169,7 @@
 				];
 			}
 		} catch {
+			if (currentProject !== projectId) return;
 			copilotMessages = [
 				...copilotMessages,
 				{
@@ -148,6 +181,7 @@
 			];
 		} finally {
 			copilotBusy = false;
+			copilotSuggestions = pickSuggestions();
 		}
 	}
 </script>
@@ -342,16 +376,6 @@
 							project's aggregated data.
 						</p>
 					</div>
-					<div class="grid gap-2">
-						{#each ['Summarize this project', 'What should I investigate?', 'How is user activity?'] as suggestion (suggestion)}
-							<button
-								class="rounded-lg border px-3 py-2 text-left text-xs hover:border-primary/40 hover:bg-primary/5"
-								onclick={() => askCopilot(suggestion)}
-							>
-								{suggestion}
-							</button>
-						{/each}
-					</div>
 				{/if}
 				{#each copilotMessages as message (message.id)}
 					<div
@@ -373,6 +397,17 @@
 						<span class="h-2 w-2 animate-pulse rounded-full bg-primary"></span>Analyzing live data…
 					</p>
 				{/if}
+				<div class="grid gap-2" data-testid="copilot-suggestions">
+					{#each copilotSuggestions as suggestion (suggestion)}
+						<button
+							class="rounded-lg border px-3 py-2 text-left text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-foreground disabled:opacity-50"
+							disabled={copilotBusy}
+							onclick={() => askCopilot(suggestion)}
+						>
+							{suggestion}
+						</button>
+					{/each}
+				</div>
 			</div>
 
 			<form
