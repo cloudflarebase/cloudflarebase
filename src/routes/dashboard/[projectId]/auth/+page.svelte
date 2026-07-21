@@ -515,6 +515,17 @@ curl ${url}/get-session \\
 		return `${Math.floor(hours / 24)}d ago`;
 	}
 
+	/** ISO 3166-1 alpha-2 code → flag emoji; globe for unknown/special codes. */
+	function countryFlag(code: string | null | undefined): string {
+		if (!code || !/^[A-Za-z]{2}$/.test(code) || code.toUpperCase() === 'XX') return '🌐';
+		return String.fromCodePoint(
+			...code
+				.toUpperCase()
+				.split('')
+				.map((letter) => 0x1f1a5 + letter.charCodeAt(0))
+		);
+	}
+
 	const eventIcons = {
 		'project.provisioned': Rocket,
 		'user.created': UserPlus,
@@ -868,8 +879,9 @@ curl ${url}/get-session \\
 												<Table.Row>
 													<Table.Cell class="font-mono text-xs">{s.email ?? s.userId}</Table.Cell>
 													<Table.Cell>
-														<Badge variant="outline" class="font-mono text-[11px]">
-															{s.country ?? '—'}
+														<Badge variant="outline" class="gap-1 font-mono text-[11px]">
+															{#if s.country}<span aria-hidden="true">{countryFlag(s.country)}</span
+																>{/if}{s.country ?? '—'}
 														</Badge>
 													</Table.Cell>
 													<Table.Cell
@@ -1376,7 +1388,12 @@ curl ${url}/get-session \\
 						<ul class="space-y-2">
 							{#each analytics.countries as c (c.country)}
 								<li class="flex items-center justify-between text-sm">
-									<span class="font-mono text-xs">{c.country}</span>
+									<span class="flex items-center gap-2 font-mono text-xs">
+										<span class="text-base leading-none" aria-hidden="true">
+											{countryFlag(c.country)}
+										</span>
+										{c.country}
+									</span>
 									<span class="tabular-nums">{c.sessions}</span>
 								</li>
 							{/each}
