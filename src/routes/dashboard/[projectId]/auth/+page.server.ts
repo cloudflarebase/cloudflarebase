@@ -22,15 +22,8 @@ export const load: PageServerLoad = async ({ params, url, platform }) => {
 		projectId,
 		overview: (await overviewRes.json()) as AuthOverview,
 		analytics: (await analyticsRes.json()) as AuthAnalytics,
-		signUpForm: await superValidate(
-			{ name: 'Ada Lovelace', email: 'ada@example.com', password: 'correct-horse-battery' },
-			zod4(signUpSchema),
-			{ id: 'sign-up' }
-		),
-		signInForm: await superValidate(
-			{ email: 'ada@example.com', password: 'correct-horse-battery' },
-			zod4(signInSchema),
-			{ id: 'sign-in' }
-		)
+		// Forms start empty; the playground's "New identity" dice fills demo values.
+		signUpForm: await superValidate(zod4(signUpSchema), { id: 'sign-up' }),
+		signInForm: await superValidate(zod4(signInSchema), { id: 'sign-in' })
 	};
 };
