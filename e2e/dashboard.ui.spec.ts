@@ -112,11 +112,95 @@ test.describe('authentication page (frontend)', () => {
 		await page.getByRole('tab', { name: 'Try auth' }).click();
 		await page.getByTestId('guest-button').click();
 
+		await expect(page.getByTestId('auth-success')).toContainText('Guest session started');
 		const sessionPanel = page.getByTestId('session-panel');
 		await expect(sessionPanel.getByText('Anonymous')).toBeVisible();
 
 		await page.getByRole('tab', { name: 'Users' }).click();
 		await expect(page.getByTestId('users-card').getByText('anonymous').first()).toBeVisible();
+	});
+
+	test('new-identity dice fills the sign-up form with a unique demo user', async ({ page }) => {
+		await gotoAuthPage(page, 'e2e-ui-dice');
+		await page.getByRole('tab', { name: 'Try auth' }).click();
+
+		await expect(page.locator('#su-name')).toHaveValue('');
+		await expect(page.locator('#su-email')).toHaveValue('');
+
+		await page.getByTestId('randomize-identity').click();
+		await expect(page.locator('#su-name')).not.toHaveValue('');
+		await expect(page.locator('#su-email')).toHaveValue(/@example\.com$/);
+		await expect(page.locator('#su-password')).not.toHaveValue('');
+
+		await page.getByRole('button', { name: 'Create account' }).click();
+		await expect(page.getByTestId('auth-success')).toContainText('signed in');
+	});
+
+	test('roles tab manages roles and permissions and assigns them to users', async ({ page }) => {
+		const project = 'e2e-ui-roles';
+		const email = uniqueEmail('roles');
+		await gotoAuthPage(page, project);
+
+		// A user to assign roles to.
+		await page.getByRole('tab', { name: 'Try auth' }).click();
+		await page.getByTestId('randomize-identity').click();
+		await page.locator('#su-email').fill(email);
+		await page.getByRole('button', { name: 'Create account' }).click();
+		await expect(page.getByTestId('session-panel').getByText(email)).toBeVisible();
+
+		// Define a custom role and grant it a permission.
+		await page.getByRole('tab', { name: 'Roles' }).click();
+		await expect(page.getByTestId('role-user')).toBeVisible();
+		await expect(page.getByTestId('role-admin')).toBeVisible();
+		await page.getByLabel('New role name').fill('editor');
+		await page.getByRole('button', { name: 'Add role' }).click();
+		const editorCard = page.getByTestId('role-editor');
+		await expect(editorCard).toBeVisible();
+		await editorCard.getByLabel('New permission for editor').fill('posts:write');
+		await editorCard.getByRole('button', { name: 'Grant' }).click();
+		await expect(editorCard.getByText('posts:write')).toBeVisible();
+
+		// Assign it from the users table.
+		await page.getByRole('tab', { name: 'Users' }).click();
+		await page.getByLabel(`Role for ${email}`).click();
+		await page.getByRole('option', { name: 'editor' }).click();
+		await expect(page.getByLabel(`Role for ${email}`)).toHaveText('editor');
+	});
+
+	test('integration tab switches between framework examples', async ({ page }) => {
+		const project = 'e2e-ui-integration';
+		await gotoAuthPage(page, project);
+		await page.getByRole('tab', { name: 'Integration' }).click();
+
+		const card = page.getByTestId('connect-card');
+		await expect(card).toContainText(`/api/projects/${project}/auth`);
+
+		await page.getByRole('tab', { name: 'Python' }).click();
+		await expect(card).toContainText('requests.post');
+		await page.getByRole('tab', { name: 'cURL' }).click();
+		await expect(card).toContainText('curl -i -X POST');
+		await page.getByRole('tab', { name: 'Better Auth client' }).click();
+		await expect(card).toContainText('createAuthClient');
+	});
+
+	test('activity chart range picker switches windows', async ({ page }) => {
+		await gotoAuthPage(page, SEED_PROJECT);
+
+		await expect(page.getByTestId('activity-chart')).toBeVisible();
+		const trigger = page.getByTestId('activity-range');
+		await expect(trigger).toContainText('Last week');
+
+		await trigger.click();
+		await page.getByRole('option', { name: 'Last 90 days' }).click();
+		await expect(trigger).toContainText('Last 90 days');
+		await expect(page.getByTestId('activity-chart')).toBeVisible();
+	});
+
+	test('copilot offers three suggestions once history loads', async ({ page }) => {
+		await gotoAuthPage(page, SEED_PROJECT);
+
+		await expect(page.getByTestId('project-copilot')).toBeVisible();
+		await expect(page.getByTestId('copilot-suggestions').getByRole('button')).toHaveCount(3);
 	});
 
 	test('sign-in and sign-out round trip on the seeded project', async ({ page }) => {
