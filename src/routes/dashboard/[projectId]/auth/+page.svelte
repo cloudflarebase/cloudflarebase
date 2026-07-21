@@ -14,7 +14,9 @@
 	import GoogleLogo from '$lib/components/google-logo.svelte';
 	import {
 		Activity,
+		Check,
 		CodeXml,
+		Copy,
 		Dices,
 		Globe,
 		KeyRound,
@@ -130,6 +132,126 @@
 	let githubClientSecret = $state('');
 
 	const authBase = $derived(`/api/projects/${data.projectId}/auth`);
+
+	let integrationTab = $state('js');
+	let integrationCopied = $state(false);
+	let copyResetTimer: ReturnType<typeof setTimeout> | undefined;
+	const integrationExamples = $derived.by(() => {
+		const origin = typeof window === 'undefined' ? '' : window.location.origin;
+		const url = `${origin}/api/projects/${data.projectId}/auth`;
+		return [
+			{
+				id: 'js',
+				label: 'JavaScript',
+				code: `const res = await fetch('${url}/sign-up/email', {
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({ name, email, password })
+});
+
+// Same-origin apps get a cookie; external clients use the bearer token:
+const token = res.headers.get('set-auth-token');
+
+await fetch('${url}/get-session', {
+  headers: { authorization: \`Bearer \${token}\` }
+});`
+			},
+			{
+				id: 'ts',
+				label: 'Better Auth client',
+				code: `import { createAuthClient } from 'better-auth/client';
+
+const authClient = createAuthClient({
+  baseURL: '${url}'
+});
+
+await authClient.signUp.email({ name, email, password });
+const { data: session } = await authClient.getSession();`
+			},
+			{
+				id: 'react',
+				label: 'React',
+				code: `import { createAuthClient } from 'better-auth/react';
+
+const { useSession, signIn } = createAuthClient({
+  baseURL: '${url}'
+});
+
+export function Profile() {
+  const { data: session, isPending } = useSession();
+  if (isPending) return <p>Loading…</p>;
+  if (!session) {
+    return <button onClick={() => signIn.email({ email, password })}>Sign in</button>;
+  }
+  return <p>Signed in as {session.user.name}</p>;
+}`
+			},
+			{
+				id: 'svelte',
+				label: 'Svelte',
+				code: `<script>
+  import { createAuthClient } from 'better-auth/svelte';
+
+  const authClient = createAuthClient({
+    baseURL: '${url}'
+  });
+  const session = authClient.useSession();
+${'<'}/script>
+
+{#if $session.data}
+  <p>Signed in as {$session.data.user.name}</p>
+{:else}
+  <button onclick={() => authClient.signIn.email({ email, password })}>
+    Sign in
+  </button>
+{/if}`
+			},
+			{
+				id: 'python',
+				label: 'Python',
+				code: `import requests
+
+BASE = "${url}"
+
+res = requests.post(f"{BASE}/sign-up/email", json={
+    "name": "Ada Lovelace",
+    "email": "ada@example.com",
+    "password": "correct-horse-battery",
+})
+token = res.headers["set-auth-token"]
+
+session = requests.get(
+    f"{BASE}/get-session",
+    headers={"Authorization": f"Bearer {token}"},
+).json()`
+			},
+			{
+				id: 'curl',
+				label: 'cURL',
+				code: `# -i prints headers; set-auth-token carries the bearer token
+curl -i -X POST ${url}/sign-up/email \\
+  -H 'content-type: application/json' \\
+  -d '{"name":"Ada","email":"ada@example.com","password":"correct-horse-battery"}'
+
+curl ${url}/get-session \\
+  -H 'authorization: Bearer <token>'`
+			}
+		];
+	});
+	const activeIntegration = $derived(
+		integrationExamples.find((example) => example.id === integrationTab) ?? integrationExamples[0]
+	);
+
+	async function copyIntegration() {
+		try {
+			await navigator.clipboard.writeText(activeIntegration.code);
+			integrationCopied = true;
+			clearTimeout(copyResetTimer);
+			copyResetTimer = setTimeout(() => (integrationCopied = false), 1500);
+		} catch {
+			// clipboard unavailable — the code stays selectable
+		}
+	}
 
 	// Reset local state when navigating between projects.
 	$effect(() => {
@@ -1026,20 +1148,45 @@
 									>
 								</div>
 								<div>
-									<Label>Sign up and capture a bearer token</Label>
-									<pre
-										class="mt-2 overflow-x-auto rounded-lg border bg-zinc-950 p-4 text-xs leading-relaxed text-zinc-100"><code
-											>{`const response = await fetch('${`/api/projects/${data.projectId}/auth/sign-up/email`}', {
-  method: 'POST',
-  headers: { 'content-type': 'application/json' },
-  body: JSON.stringify({ email, password, name })
-});
-const token = response.headers.get('set-auth-token');
-
-await fetch('${`/api/projects/${data.projectId}/auth/get-session`}', {
-  headers: { authorization: \`Bearer \${token}\` }
-});`}</code
-										></pre>
+									<Label>Sign up and read the session, in your stack</Label>
+									<div
+										class="mt-2 flex flex-wrap gap-1.5"
+										role="tablist"
+										aria-label="Integration examples"
+									>
+										{#each integrationExamples as example (example.id)}
+											<button
+												type="button"
+												role="tab"
+												aria-selected={integrationTab === example.id}
+												class={[
+													'rounded-full border px-3 py-1 font-mono text-xs transition-colors',
+													integrationTab === example.id
+														? 'border-primary bg-primary/10 text-primary'
+														: 'text-muted-foreground hover:border-primary/40 hover:text-foreground'
+												]}
+												onclick={() => (integrationTab = example.id)}>{example.label}</button
+											>
+										{/each}
+									</div>
+									<div class="relative mt-3">
+										<Button
+											variant="ghost"
+											size="icon"
+											class="absolute top-2 right-2 h-7 w-7 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+											aria-label="Copy example"
+											data-testid="copy-integration"
+											onclick={copyIntegration}
+										>
+											{#if integrationCopied}<Check class="h-3.5 w-3.5" />{:else}<Copy
+													class="h-3.5 w-3.5"
+												/>{/if}
+										</Button>
+										<pre
+											class="overflow-x-auto rounded-lg border bg-zinc-950 p-4 text-xs leading-relaxed text-zinc-100"><code
+												>{activeIntegration.code}</code
+											></pre>
+									</div>
 								</div>
 								<p class="text-xs text-muted-foreground">
 									External browser applications must be added under Settings → Allowed origins. Keep
