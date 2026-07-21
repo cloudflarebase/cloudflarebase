@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { dev } from '$app/environment';
-	import type { AuthAgentState, AuthAnalytics, AuthOverview } from '$lib/agents';
+	import type { AuthAgentState, AuthAnalytics, AuthOverview, RoleDefinition } from '$lib/agents';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
 	import * as Card from '$lib/components/ui/card';
@@ -8,7 +8,14 @@
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
-	import { allowedOriginSchema, signInSchema, signUpSchema } from '$lib/schemas/auth';
+	import * as Select from '$lib/components/ui/select';
+	import {
+		allowedOriginSchema,
+		permissionKeySchema,
+		roleSlugSchema,
+		signInSchema,
+		signUpSchema
+	} from '$lib/schemas/auth';
 	import * as Table from '$lib/components/ui/table';
 	import CountryFlag from '$lib/components/country-flag.svelte';
 	import GithubLogo from '$lib/components/github-logo.svelte';
@@ -26,10 +33,12 @@
 		LogOut,
 		Radio,
 		Rocket,
+		ShieldCheck,
 		Trash2,
 		UserPlus,
 		UserRound,
-		Users
+		Users,
+		X
 	} from '@lucide/svelte';
 	import { AgentClient } from 'agents/client';
 	import { AreaChart } from 'layerchart';
@@ -116,6 +125,7 @@
 		const suffix = Math.random().toString(36).slice(2, 6);
 		$signUpForm.name = name;
 		$signUpForm.email = `${name.toLowerCase().replace(/[^a-z]+/g, '.')}-${suffix}@example.com`;
+		$signUpForm.password = 'correct-horse-battery';
 		authError = null;
 		authSuccess = null;
 	}
@@ -220,8 +230,8 @@ ${'<'}/script>
 BASE = "${url}"
 
 res = requests.post(f"{BASE}/sign-up/email", json={
-    "name": "Ada Lovelace",
-    "email": "ada@example.com",
+    "name": "Jane Doe",
+    "email": "jane@example.com",
     "password": "correct-horse-battery",
 })
 token = res.headers["set-auth-token"]
@@ -238,7 +248,7 @@ session = requests.get(
 				code: `# -i prints headers; set-auth-token carries the bearer token
 curl -i -X POST ${url}/sign-up/email \\
   -H 'content-type: application/json' \\
-  -d '{"name":"Ada","email":"ada@example.com","password":"correct-horse-battery"}'
+  -d '{"name":"Jane","email":"jane@example.com","password":"correct-horse-battery"}'
 
 curl ${url}/get-session \\
   -H 'authorization: Bearer <token>'`
@@ -544,9 +554,119 @@ curl ${url}/get-session \\
 		'project.provisioned': Rocket,
 		'user.created': UserPlus,
 		'user.deleted': Trash2,
+		'user.role-changed': ShieldCheck,
 		'session.created': LogIn,
 		'session.revoked': LogOut
 	} as const;
+
+	const BUILT_IN_ROLES = ['user', 'admin'];
+	const DEFAULT_ROLE_DEFINITIONS: RoleDefinition[] = [
+		{ name: 'user', permissions: [] },
+		{ name: 'admin', permissions: ['*'] }
+	];
+	let newRoleInput = $state('');
+	let rolesError = $state<string | null>(null);
+	let permissionInputs = $state<Record<string, string>>({});
+	const projectRoles = $derived(agentState.roles ?? DEFAULT_ROLE_DEFINITIONS);
+	const roleNames = $derived(projectRoles.map((role) => role.name));
+
+	/** Registry roles plus the user's current one (it may have been removed). */
+	function roleOptions(current: string): string[] {
+		return [...new Set([...roleNames, current])];
+	}
+
+	async function saveRoles(roles: RoleDefinition[]) {
+		busy = true;
+		rolesError = null;
+		try {
+			const response = await fetch(`/api/projects/${data.projectId}/admin/roles`, {
+				method: 'PUT',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ roles })
+			});
+			const result = (await response.json().catch(() => null)) as { error?: string } | null;
+			if (!response.ok) {
+				throw new Error(result?.error ?? `request failed (HTTP ${response.status})`);
+			}
+			await refreshData(data.projectId);
+		} catch (error) {
+			rolesError = error instanceof Error ? error.message : String(error);
+		} finally {
+			busy = false;
+		}
+	}
+
+	async function addRole(event: SubmitEvent) {
+		event.preventDefault();
+		const parsed = roleSlugSchema.safeParse(newRoleInput.toLowerCase());
+		if (!parsed.success) {
+			rolesError = parsed.error.issues[0]?.message ?? 'Invalid role name.';
+			return;
+		}
+		if (roleNames.includes(parsed.data)) {
+			rolesError = `Role "${parsed.data}" already exists.`;
+			return;
+		}
+		await saveRoles([...projectRoles, { name: parsed.data, permissions: [] }]);
+		if (!rolesError) newRoleInput = '';
+	}
+
+	function removeRole(name: string) {
+		void saveRoles(projectRoles.filter((role) => role.name !== name));
+	}
+
+	async function addPermission(event: SubmitEvent, roleName: string) {
+		event.preventDefault();
+		const parsed = permissionKeySchema.safeParse((permissionInputs[roleName] ?? '').toLowerCase());
+		if (!parsed.success) {
+			rolesError = parsed.error.issues[0]?.message ?? 'Invalid permission key.';
+			return;
+		}
+		await saveRoles(
+			projectRoles.map((role) =>
+				role.name === roleName
+					? { ...role, permissions: [...new Set([...role.permissions, parsed.data])] }
+					: role
+			)
+		);
+		if (!rolesError) permissionInputs[roleName] = '';
+	}
+
+	function removePermission(roleName: string, permission: string) {
+		void saveRoles(
+			projectRoles.map((role) =>
+				role.name === roleName
+					? { ...role, permissions: role.permissions.filter((entry) => entry !== permission) }
+					: role
+			)
+		);
+	}
+
+	async function setUserRole(userId: string, role: string, previous: string) {
+		if (role === previous) return;
+		busy = true;
+		authError = null;
+		authSuccess = null;
+		try {
+			const response = await fetch(
+				`/api/projects/${data.projectId}/admin/users/${encodeURIComponent(userId)}/role`,
+				{
+					method: 'PUT',
+					headers: { 'content-type': 'application/json' },
+					body: JSON.stringify({ role })
+				}
+			);
+			if (!response.ok) {
+				const result = (await response.json().catch(() => null)) as { error?: string } | null;
+				throw new Error(result?.error ?? `request failed (HTTP ${response.status})`);
+			}
+			await refreshData(data.projectId);
+		} catch (error) {
+			authError = error instanceof Error ? error.message : String(error);
+		} finally {
+			busy = false;
+		}
+	}
 
 	const stats = $derived([
 		{ id: 'users', label: 'Users', value: agentState.users, icon: Users },
@@ -751,7 +871,7 @@ curl ${url}/get-session \\
 		<div class="min-w-0 lg:col-span-2">
 			<div>
 				<div class="flex h-10 max-w-full gap-1 overflow-x-auto border-b px-1" role="tablist">
-					{#each [['users', 'Users'], ['sessions', 'Sessions'], ['settings', 'Sign-in methods'], ['playground', 'Try auth'], ['setup', 'Integration']] as tab (tab[0])}
+					{#each [['users', 'Users'], ['sessions', 'Sessions'], ['roles', 'Roles'], ['settings', 'Sign-in methods'], ['playground', 'Try auth'], ['setup', 'Integration']] as tab (tab[0])}
 						<button
 							type="button"
 							role="tab"
@@ -797,6 +917,7 @@ curl ${url}/get-session \\
 											<Table.Row>
 												<Table.Head>Identifier</Table.Head>
 												<Table.Head>Providers</Table.Head>
+												<Table.Head>Role</Table.Head>
 												<Table.Head>Status</Table.Head>
 												<Table.Head class="text-right">Created</Table.Head>
 												<Table.Head class="w-12"><span class="sr-only">Actions</span></Table.Head>
@@ -828,6 +949,27 @@ curl ${url}/get-session \\
 																</Badge>
 															{/each}
 														</div>
+													</Table.Cell>
+													<Table.Cell>
+														<Select.Root
+															type="single"
+															value={user.role}
+															onValueChange={(value) => setUserRole(user.id, value, user.role)}
+														>
+															<Select.Trigger
+																class="min-w-28 font-mono"
+																size="sm"
+																disabled={busy}
+																aria-label={`Role for ${user.email}`}
+															>
+																{user.role}
+															</Select.Trigger>
+															<Select.Content>
+																{#each roleOptions(user.role) as role (role)}
+																	<Select.Item value={role} label={role} class="font-mono" />
+																{/each}
+															</Select.Content>
+														</Select.Root>
 													</Table.Cell>
 													<Table.Cell>
 														{#if user.isAnonymous}
@@ -930,6 +1072,110 @@ curl ${url}/get-session \\
 						</Card.Root>
 					</div>{/if}
 
+				<!-- ROLES -->
+				{#if activeTab === 'roles'}<div class="mt-4">
+						<Card.Root data-testid="roles-card">
+							<Card.Header>
+								<Card.Title>Roles & permissions</Card.Title>
+								<Card.Description>
+									Define roles and the permission keys they grant, then assign them on the Users
+									tab. Roles are returned by get-session; /token JWTs carry the role and its
+									permissions as claims.
+								</Card.Description>
+								<Card.Action class="self-center">
+									<form class="flex items-center gap-1.5" onsubmit={addRole}>
+										<Input
+											bind:value={newRoleInput}
+											oninput={() => (rolesError = null)}
+											placeholder="new-role"
+											aria-label="New role name"
+											class="h-8 w-36 font-mono text-xs"
+											autocomplete="off"
+											spellcheck="false"
+										/>
+										<Button type="submit" size="sm" variant="outline" class="h-8" disabled={busy}>
+											Add role
+										</Button>
+									</form>
+								</Card.Action>
+							</Card.Header>
+							<Card.Content class="space-y-3">
+								{#if rolesError}
+									<p class="text-sm text-destructive" role="alert">{rolesError}</p>
+								{/if}
+								<div class="divide-y rounded-xl border bg-card">
+									{#each projectRoles as role (role.name)}
+										<div class="space-y-3 p-4 sm:p-5" data-testid={`role-${role.name}`}>
+											<div class="flex items-center gap-2">
+												<ShieldCheck class="h-4 w-4 text-primary" />
+												<span class="font-mono text-sm font-medium">{role.name}</span>
+												{#if BUILT_IN_ROLES.includes(role.name)}
+													<Badge variant="secondary" class="text-[10px]">built-in</Badge>
+												{:else}
+													<Button
+														variant="ghost"
+														size="sm"
+														class="ml-auto h-7 px-2 text-xs text-muted-foreground hover:text-destructive"
+														disabled={busy}
+														onclick={() => removeRole(role.name)}
+													>
+														<Trash2 class="mr-1 h-3.5 w-3.5" /> Remove role
+													</Button>
+												{/if}
+											</div>
+											<div class="flex flex-wrap items-center gap-1.5">
+												{#if role.permissions.length === 0}
+													<span class="text-xs text-muted-foreground">No permissions granted.</span>
+												{/if}
+												{#each role.permissions as permission (permission)}
+													<Badge variant="outline" class="gap-1 font-mono text-[11px]">
+														{permission}
+														<button
+															type="button"
+															class="text-muted-foreground hover:text-destructive"
+															aria-label={`Remove ${permission} from ${role.name}`}
+															disabled={busy}
+															onclick={() => removePermission(role.name, permission)}
+														>
+															<X class="h-3 w-3" />
+														</button>
+													</Badge>
+												{/each}
+											</div>
+											<form
+												class="flex items-center gap-1.5"
+												onsubmit={(event) => addPermission(event, role.name)}
+											>
+												<Input
+													bind:value={permissionInputs[role.name]}
+													oninput={() => (rolesError = null)}
+													placeholder="posts:write"
+													aria-label={`New permission for ${role.name}`}
+													class="h-8 w-44 font-mono text-xs"
+													autocomplete="off"
+													spellcheck="false"
+												/>
+												<Button
+													type="submit"
+													size="sm"
+													variant="outline"
+													class="h-8"
+													disabled={busy}
+												>
+													Grant
+												</Button>
+											</form>
+										</div>
+									{/each}
+								</div>
+								<p class="text-xs text-muted-foreground">
+									Permission keys are free-form resource:action slugs (or * for everything).
+									Removing a role does not change users that already hold it.
+								</p>
+							</Card.Content>
+						</Card.Root>
+					</div>{/if}
+
 				<!-- PLAYGROUND -->
 				{#if activeTab === 'playground'}<div class="mt-4">
 						<Card.Root>
@@ -983,7 +1229,7 @@ curl ${url}/get-session \\
 													<Input
 														id="su-name"
 														bind:value={$signUpForm.name}
-														placeholder="Ada Lovelace"
+														placeholder="Jane Doe"
 														aria-invalid={$signUpErrors.name ? 'true' : undefined}
 													/>
 													{#if $signUpErrors.name}<p class="text-xs text-destructive">

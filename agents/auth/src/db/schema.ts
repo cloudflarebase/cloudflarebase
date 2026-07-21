@@ -14,6 +14,9 @@ export const user = sqliteTable('user', {
 	image: text('image'),
 	// Added by the Better Auth anonymous plugin.
 	isAnonymous: integer('is_anonymous', { mode: 'boolean' }),
+	// Simple RBAC: assigned via the dashboard admin route, surfaced in
+	// get-session and as a claim in /token JWTs.
+	role: text('role').notNull().default('user'),
 	createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
 	updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
 });
@@ -58,6 +61,15 @@ export const verification = sqliteTable('verification', {
 	expiresAt: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
 	createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
 	updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
+});
+
+/** Better Auth jwt plugin: per-project signing keys backing GET /token. */
+export const jwks = sqliteTable('jwks', {
+	id: text('id').primaryKey(),
+	publicKey: text('public_key').notNull(),
+	privateKey: text('private_key').notNull(),
+	createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+	expiresAt: integer('expires_at', { mode: 'timestamp_ms' }),
 });
 
 export const chatMessage = sqliteTable(

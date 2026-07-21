@@ -53,5 +53,25 @@ export const settingsPayloadSchema = z.object({
 		.optional()
 });
 
+// Mirrors roleRequestSchema/rolesRequestSchema in agents/auth/src/schemas.ts.
+export const roleSlugSchema = z
+	.string()
+	.trim()
+	.regex(/^[a-z][a-z0-9-]{0,31}$/, 'Use 1–32 lowercase letters, digits, or dashes.');
+export const permissionKeySchema = z
+	.string()
+	.trim()
+	.max(64)
+	.regex(
+		/^(\*|[a-z][a-z0-9-]*(:[a-z][a-z0-9-]*)*)$/,
+		'Use resource:action keys like posts:write, or * for everything.'
+	);
+export const roleUpdateSchema = z.object({ role: roleSlugSchema });
+export const rolesUpdateSchema = z.object({
+	roles: z
+		.array(z.object({ name: roleSlugSchema, permissions: z.array(permissionKeySchema).max(50) }))
+		.max(20)
+});
+
 export type SignUpInput = z.infer<typeof signUpSchema>;
 export type SignInInput = z.infer<typeof signInSchema>;

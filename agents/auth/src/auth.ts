@@ -1,6 +1,6 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { anonymous, bearer } from 'better-auth/plugins';
+import { anonymous, bearer, jwt } from 'better-auth/plugins';
 import type { DrizzleSqliteDODatabase } from 'drizzle-orm/durable-sqlite';
 import * as schema from './db/schema';
 
@@ -25,6 +25,8 @@ export interface ProjectAuthConfig {
 	disableRateLimit?: boolean;
 	/** Country of the request currently being handled (from request.cf). */
 	getRequestCountry?: () => string | null;
+	/** Resolves a role name to its granted permission keys (from agent state). */
+	getRolePermissions?: (role: string) => string[];
 	/** Optional Google OAuth credentials (per-project social sign-in). */
 	google?: { clientId: string; clientSecret: string };
 	github?: { clientId: string; clientSecret: string };
@@ -85,10 +87,36 @@ export function createProjectAuth(config: ProjectAuthConfig) {
 			},
 		},
 		// Guest sign-in (POST /sign-in/anonymous) — adds user.isAnonymous.
-		plugins: [anonymous(), bearer()],
+		plugins: [
+			anonymous(),
+			bearer(),
+			// GET /token issues a project-signed JWT (public keys on GET /jwks)
+			// carrying the user's role so external services can authorize offline.
+			jwt({
+				jwt: {
+					issuer: `cloudflarebase:${config.projectId}`,
+					audience: config.projectId,
+					definePayload: ({ user }) => {
+						const role = (user as { role?: string }).role ?? 'user';
+						return {
+							email: user.email,
+							role,
+							permissions: config.getRolePermissions?.(role) ?? [],
+						};
+					},
+				},
+			}),
+		],
 		socialProviders: {
 			...(config.google ? { google: config.google } : {}),
 			...(config.github ? { github: config.github } : {}),
+		},
+		user: {
+			additionalFields: {
+				// Simple RBAC. input: false blocks self-assignment at sign-up; the
+				// dashboard's admin route is the only writer.
+				role: { type: 'string', required: false, defaultValue: 'user', input: false },
+			},
 		},
 		session: {
 			additionalFields: {

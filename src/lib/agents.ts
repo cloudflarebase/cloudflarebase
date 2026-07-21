@@ -9,15 +9,28 @@
 export interface AuthActivityEvent {
 	id: string;
 	type:
-		'project.provisioned' | 'user.created' | 'user.deleted' | 'session.created' | 'session.revoked';
+		| 'project.provisioned'
+		| 'user.created'
+		| 'user.deleted'
+		| 'user.role-changed'
+		| 'session.created'
+		| 'session.revoked';
 	message: string;
 	at: string;
+}
+
+/** An assignable RBAC role and the permission keys it grants. */
+export interface RoleDefinition {
+	name: string;
+	permissions: string[];
 }
 
 /** Synced in realtime from the AuthAgent via WebSocket state sync. */
 export interface AuthAgentState {
 	projectId: string;
 	provisionedAt: string | null;
+	/** Role registry; always contains the built-in `user` and `admin`. */
+	roles: RoleDefinition[];
 	allowedOrigins: string[];
 	enabledSocialProviders: string[];
 	users: number;
@@ -33,6 +46,7 @@ export interface OverviewUser {
 	email: string;
 	emailVerified: boolean;
 	isAnonymous: boolean;
+	role: string;
 	providers: string[];
 	createdAt: string;
 }

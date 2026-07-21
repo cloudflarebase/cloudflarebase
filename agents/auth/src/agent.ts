@@ -10,6 +10,8 @@ import {
 	chatRequestSchema,
 	projectIdSchema,
 	resourceIdSchema,
+	roleRequestSchema,
+	rolesRequestSchema,
 	sessionActivityResponseSchema,
 	settingsRequestSchema,
 	socialCredentialsSchema,
@@ -44,15 +46,28 @@ function applySocialCredentials(
 export interface AuthActivityEvent {
 	id: string;
 	type:
-		'project.provisioned' | 'user.created' | 'user.deleted' | 'session.created' | 'session.revoked';
+		| 'project.provisioned'
+		| 'user.created'
+		| 'user.deleted'
+		| 'user.role-changed'
+		| 'session.created'
+		| 'session.revoked';
 	message: string;
 	at: string;
+}
+
+/** An assignable RBAC role and the permission keys it grants. */
+export interface RoleDefinition {
+	name: string;
+	permissions: string[];
 }
 
 /** Synced in realtime to every dashboard connected to this agent. */
 export interface AuthAgentState {
 	projectId: string;
 	provisionedAt: string | null;
+	/** Role registry; always contains the built-in `user` and `admin`. */
+	roles: RoleDefinition[];
 	allowedOrigins: string[];
 	enabledSocialProviders: string[];
 	users: number;
@@ -68,6 +83,7 @@ export interface OverviewUser {
 	email: string;
 	emailVerified: boolean;
 	isAnonymous: boolean;
+	role: string;
 	providers: string[];
 	createdAt: string;
 }
@@ -154,10 +170,16 @@ const DEFAULT_CHAT_MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
  *
  * Addressed as /agents/auth-agent/<projectId>/...
  */
+const DEFAULT_ROLES: RoleDefinition[] = [
+	{ name: 'user', permissions: [] },
+	{ name: 'admin', permissions: ['*'] },
+];
+
 export class AuthAgent extends Agent<Env, AuthAgentState> {
 	initialState: AuthAgentState = {
 		projectId: '',
 		provisionedAt: null,
+		roles: DEFAULT_ROLES,
 		allowedOrigins: [],
 		enabledSocialProviders: [],
 		users: 0,
@@ -195,6 +217,8 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 			trustedOrigins: this.trustedOrigins,
 			disableRateLimit: this.env.DISABLE_RATE_LIMIT === 'true',
 			getRequestCountry: () => this.requestCountry,
+			getRolePermissions: (role) =>
+				(this.state.roles ?? DEFAULT_ROLES).find((entry) => entry.name === role)?.permissions ?? [],
 			google:
 				this.socialCredentials.google ??
 				(this.env.GOOGLE_CLIENT_ID && this.env.GOOGLE_CLIENT_SECRET
@@ -266,11 +290,17 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 			await this.ctx.storage.get('social-provider-credentials'),
 		);
 
+		const rolesValid =
+			Array.isArray(this.state.roles) &&
+			this.state.roles.every(
+				(entry) => entry && typeof entry === 'object' && typeof entry.name === 'string',
+			);
 		if (!this.state.projectId) {
 			this.setState({
 				...this.state,
 				projectId: this.name,
 				provisionedAt: new Date().toISOString(),
+				roles: DEFAULT_ROLES,
 				allowedOrigins: [],
 				enabledSocialProviders: this.configuredSocialProviders,
 			});
@@ -278,11 +308,13 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 			await this.recordEvent('project.provisioned', `auth provisioned for project "${this.name}"`);
 		} else if (
 			!Array.isArray(this.state.allowedOrigins) ||
-			!Array.isArray(this.state.enabledSocialProviders)
+			!Array.isArray(this.state.enabledSocialProviders) ||
+			!rolesValid
 		) {
-			// State schema upgrade for agents provisioned before origin settings.
+			// State schema upgrade for agents provisioned before origin/role settings.
 			this.setState({
 				...this.state,
+				roles: rolesValid ? this.state.roles : DEFAULT_ROLES,
 				allowedOrigins: this.state.allowedOrigins ?? [],
 				enabledSocialProviders: this.configuredSocialProviders,
 			});
@@ -460,6 +492,11 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 			}
 		}
 
+		const roleUpdate = subPath.match(/^\/admin\/users\/([^/]+)\/role$/);
+		if (roleUpdate && request.method === 'PUT') {
+			return this.setUserRole(this.decodeResourceId(roleUpdate[1]), request);
+		}
+
 		const userDelete = subPath.match(/^\/admin\/users\/([^/]+)$/);
 		if (userDelete && request.method === 'DELETE') {
 			return this.deleteUser(this.decodeResourceId(userDelete[1]));
@@ -468,6 +505,10 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 		const sessionDelete = subPath.match(/^\/admin\/sessions\/([^/]+)$/);
 		if (sessionDelete && request.method === 'DELETE') {
 			return this.revokeSession(this.decodeResourceId(sessionDelete[1]));
+		}
+
+		if (subPath === '/admin/roles' && request.method === 'PUT') {
+			return this.updateRoles(request);
 		}
 
 		if (subPath === '/admin/settings' && request.method === 'PUT') {
@@ -558,6 +599,53 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 		return Response.json({ ok: true });
 	}
 
+	/** Replaces the assignable-role registry; built-in roles always remain. */
+	private async updateRoles(request: Request): Promise<Response> {
+		const body = rolesRequestSchema.safeParse(await request.json().catch(() => null));
+		if (!body.success) {
+			return Response.json(
+				{ error: 'invalid roles — use 1-32 lowercase letters, digits or dashes' },
+				{ status: 400 },
+			);
+		}
+		this.setState({ ...this.state, roles: body.data.roles });
+		return Response.json({ roles: body.data.roles });
+	}
+
+	private async setUserRole(userId: string, request: Request): Promise<Response> {
+		if (!userId) {
+			return Response.json({ error: 'invalid user id' }, { status: 400 });
+		}
+		const body = roleRequestSchema.safeParse(await request.json().catch(() => null));
+		if (!body.success) {
+			return Response.json(
+				{ error: 'invalid role — use 1-32 lowercase letters, digits or dashes' },
+				{ status: 400 },
+			);
+		}
+		const knownRoles = this.state.roles ?? DEFAULT_ROLES;
+		if (!knownRoles.some((entry) => entry.name === body.data.role)) {
+			return Response.json(
+				{ error: `unknown role "${body.data.role}" — define it in the Roles tab first` },
+				{ status: 400 },
+			);
+		}
+		const [existing] = await this.db
+			.select({ id: schema.user.id, role: schema.user.role })
+			.from(schema.user)
+			.where(eq(schema.user.id, userId))
+			.limit(1);
+		if (!existing) return Response.json({ error: 'user not found' }, { status: 404 });
+		if (existing.role !== body.data.role) {
+			await this.db
+				.update(schema.user)
+				.set({ role: body.data.role, updatedAt: new Date() })
+				.where(eq(schema.user.id, userId));
+			await this.recordEvent('user.role-changed', `role "${body.data.role}" assigned`);
+		}
+		return Response.json({ id: userId, role: body.data.role });
+	}
+
 	private async revokeSession(sessionId: string): Promise<Response> {
 		if (!sessionId || sessionId.length > 128) {
 			return Response.json({ error: 'invalid session id' }, { status: 400 });
@@ -615,6 +703,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 				email: schema.user.email,
 				emailVerified: schema.user.emailVerified,
 				isAnonymous: schema.user.isAnonymous,
+				role: schema.user.role,
 				createdAt: schema.user.createdAt,
 			})
 			.from(schema.user)

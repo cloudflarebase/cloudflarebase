@@ -17,6 +17,37 @@ export const timeZoneSchema = z
 		}
 	}, 'Invalid IANA time zone');
 
+const roleSlugSchema = z
+	.string()
+	.trim()
+	.regex(/^[a-z][a-z0-9-]{0,31}$/, 'invalid role');
+
+// Clerk-style permission keys: `resource:action` segments, or `*` for all.
+const permissionSchema = z
+	.string()
+	.trim()
+	.max(64)
+	.regex(/^(\*|[a-z][a-z0-9-]*(:[a-z][a-z0-9-]*)*)$/, 'invalid permission');
+
+const roleDefinitionSchema = z.strictObject({
+	name: roleSlugSchema,
+	permissions: z.array(permissionSchema).max(50),
+});
+
+export const roleRequestSchema = z.strictObject({ role: roleSlugSchema });
+
+// The built-in roles always exist so assignment and the dashboard default set
+// can rely on them; duplicate names collapse to the last definition.
+export const rolesRequestSchema = z
+	.strictObject({ roles: z.array(roleDefinitionSchema).max(20) })
+	.transform(({ roles }) => {
+		const byName = new Map<string, string[]>();
+		byName.set('user', []);
+		byName.set('admin', ['*']);
+		for (const role of roles) byName.set(role.name, [...new Set(role.permissions)]);
+		return { roles: [...byName].map(([name, permissions]) => ({ name, permissions })) };
+	});
+
 export const chatRequestSchema = z.strictObject({
 	question: z.string().trim().min(1, 'question is required').max(500),
 });

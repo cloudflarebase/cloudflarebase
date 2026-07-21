@@ -29,6 +29,13 @@
       "when": 1784512063872,
       "tag": "0003_reflective_tinkerer",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1784607935612,
+      "tag": "0004_thin_hercules",
+      "breakpoints": true
     }
   ]
 }

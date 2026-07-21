@@ -29,9 +29,11 @@ The Worker exposes `GET /health`. Agent requests use `/agents/auth-agent/<projec
 - `GET /config`: safe public client configuration; never returns provider secrets.
 - `POST /chat`: Workers AI answer grounded in project analytics.
 - `PUT /admin/settings`: trusted origins and per-project social credentials.
+- `PUT /admin/roles`: replace the role registry — `{ roles: [{ name, permissions[] }] }` with lowercase slug names and `resource:action` (or `*`) permission keys. Built-in `user` and `admin` always remain. Stored in agent state and synced to dashboards.
+- `PUT /admin/users/:id/role`: assign a registry role (default `user`); anonymous users can hold roles too. Recorded in the activity feed.
 - `DELETE /admin/users/:id`: delete a user and related sessions.
 - `DELETE /admin/sessions/:id`: revoke one session.
-- `/api/auth/*`: Better Auth endpoints.
+- `/api/auth/*`: Better Auth endpoints, including `GET /token` (project-signed JWT with `role` and `email` claims) and `GET /jwks` from the jwt plugin.
 
 The SvelteKit Worker exposes matching `/api/projects/<projectId>/...` same-origin proxies over the `AUTH_AGENT` service binding.
 
@@ -40,6 +42,7 @@ The SvelteKit Worker exposes matching `/api/projects/<projectId>/...` same-origi
 - Better Auth uses `drizzleAdapter(db, { provider: 'sqlite', schema, transaction: false })`.
 - Cookies have a `cfb-<projectId>` prefix so projects on the same dashboard origin do not overwrite each other.
 - Email/password and anonymous sessions are enabled. The bearer plugin returns `set-auth-token` for external clients.
+- `user.role` is an additional field with `input: false` — only the admin role route writes it. The jwt plugin's signing keys live in the `jwks` table; keys are generated on the first `GET /token`.
 - Cookie-carrying POSTs require an `Origin` in the effective trusted-origin list.
 - `AuthAgent.corsHeaders()` is the only CORS authority. It combines `TRUSTED_ORIGINS` with validated per-project `allowedOrigins`, echoes the exact origin, permits credentials, and exposes `set-auth-token`.
 - Never pass `cors: true` to `routeAgentRequest`. The Agents SDK default adds `Access-Control-Allow-Origin: *`, overriding the project's dynamic header.
