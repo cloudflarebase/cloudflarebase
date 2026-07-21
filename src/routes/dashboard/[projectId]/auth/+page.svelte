@@ -143,6 +143,7 @@
 			{
 				id: 'js',
 				label: 'JavaScript',
+				lang: 'javascript',
 				code: `const res = await fetch('${url}/sign-up/email', {
   method: 'POST',
   headers: { 'content-type': 'application/json' },
@@ -159,6 +160,7 @@ await fetch('${url}/get-session', {
 			{
 				id: 'ts',
 				label: 'Better Auth client',
+				lang: 'typescript',
 				code: `import { createAuthClient } from 'better-auth/client';
 
 const authClient = createAuthClient({
@@ -171,6 +173,7 @@ const { data: session } = await authClient.getSession();`
 			{
 				id: 'react',
 				label: 'React',
+				lang: 'tsx',
 				code: `import { createAuthClient } from 'better-auth/react';
 
 const { useSession, signIn } = createAuthClient({
@@ -189,6 +192,7 @@ export function Profile() {
 			{
 				id: 'svelte',
 				label: 'Svelte',
+				lang: 'svelte',
 				code: `<script>
   import { createAuthClient } from 'better-auth/svelte';
 
@@ -209,6 +213,7 @@ ${'<'}/script>
 			{
 				id: 'python',
 				label: 'Python',
+				lang: 'python',
 				code: `import requests
 
 BASE = "${url}"
@@ -228,6 +233,7 @@ session = requests.get(
 			{
 				id: 'curl',
 				label: 'cURL',
+				lang: 'bash',
 				code: `# -i prints headers; set-auth-token carries the bearer token
 curl -i -X POST ${url}/sign-up/email \\
   -H 'content-type: application/json' \\
@@ -241,6 +247,24 @@ curl ${url}/get-session \\
 	const activeIntegration = $derived(
 		integrationExamples.find((example) => example.id === integrationTab) ?? integrationExamples[0]
 	);
+
+	// Highlighting is client-only and lazy: shiki stays out of the SSR pass and
+	// the initial bundle, and the plain <pre> renders until it resolves.
+	let highlightedIntegration = $state<string | null>(null);
+	$effect(() => {
+		const { code, lang } = activeIntegration;
+		highlightedIntegration = null;
+		let cancelled = false;
+		void import('shiki')
+			.then(({ codeToHtml }) => codeToHtml(code, { lang, theme: 'github-dark-default' }))
+			.then((html) => {
+				if (!cancelled) highlightedIntegration = html;
+			})
+			.catch(() => {});
+		return () => {
+			cancelled = true;
+		};
+	});
 
 	async function copyIntegration() {
 		try {
@@ -1194,10 +1218,19 @@ curl ${url}/get-session \\
 													class="h-3.5 w-3.5"
 												/>{/if}
 										</Button>
-										<pre
-											class="overflow-x-auto rounded-lg border bg-zinc-950 p-4 text-xs leading-relaxed text-zinc-100"><code
-												>{activeIntegration.code}</code
-											></pre>
+										{#if highlightedIntegration}
+											<div
+												class="[&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:border [&_pre]:p-4 [&_pre]:text-xs [&_pre]:leading-relaxed"
+											>
+												<!-- eslint-disable-next-line svelte/no-at-html-tags -- shiki output over our own literals -->
+												{@html highlightedIntegration}
+											</div>
+										{:else}
+											<pre
+												class="overflow-x-auto rounded-lg border bg-zinc-950 p-4 text-xs leading-relaxed text-zinc-100"><code
+													>{activeIntegration.code}</code
+												></pre>
+										{/if}
 									</div>
 								</div>
 								<p class="text-xs text-muted-foreground">
