@@ -5,6 +5,7 @@
 	"type": "module",
 	"scripts": {
 		"dev": "node scripts/dev.js",
+		"demo:video": "node scripts/demo-video.mjs",
 		"build": "vite build",
 		"preview": "npm run build && wrangler dev",
 		"prepare": "svelte-kit sync || echo ''",
