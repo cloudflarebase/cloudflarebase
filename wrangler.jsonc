@@ -27,6 +27,10 @@
 	"vars": {
 		"SENTRY_DSN": "https://50ed6e26b886124ac39e983efb72144d@o4510375271530496.ingest.de.sentry.io/4511764380778576"
 	},
+	"secrets": {
+		"required": ["ADMIN_SECRET"]
+	},
+
 	"routes": [
 		{
 			"pattern": "cloudflarebase.com",
@@ -46,6 +50,13 @@
 	"env": {
 		"local": {
 			"routes": [],
+
+			// ADMIN_SECRET gates the /admin fleet dashboard. Plain var only in
+			// local/test; set it with `wrangler secret put ADMIN_SECRET` (and
+			// `--env preview`) for deployed environments.
+			"vars": {
+				"ADMIN_SECRET": "local-admin-secret"
+			},
 
 			"d1_databases": [
 				{
@@ -77,6 +88,11 @@
 		// (built worker in workerd + service binding), but bound to auth-agent-test.
 		"test": {
 			"routes": [],
+
+			// Fixed test-only admin password; keep aligned with wrangler.e2e.jsonc.
+			"vars": {
+				"ADMIN_SECRET": "e2e-admin-secret"
+			},
 
 			"d1_databases": [
 				{
@@ -116,7 +132,10 @@
 					"simple": { "limit": 100, "period": 60 }
 				}
 			],
-			"services": [{ "binding": "AUTH_AGENT", "service": "auth-agent-preview" }]
+			"services": [{ "binding": "AUTH_AGENT", "service": "auth-agent-preview" }],
+			"secrets": {
+				"required": ["ADMIN_SECRET"]
+			}
 		}
 	}
 

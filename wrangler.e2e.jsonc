@@ -22,5 +22,10 @@
 			"id": "KV"
 		}
 	],
-	"services": [{ "binding": "AUTH_AGENT", "service": "auth-agent-test" }]
+	"services": [{ "binding": "AUTH_AGENT", "service": "auth-agent-test" }],
+	// Fixed test-only admin password for the /admin fleet dashboard; keep
+	// aligned with root wrangler.jsonc env.test and e2e/admin.ui.spec.ts.
+	"vars": {
+		"ADMIN_SECRET": "e2e-admin-secret"
+	}
 }

@@ -2,6 +2,7 @@ import * as Sentry from '@sentry/cloudflare';
 import { routeAgentRequest } from 'agents';
 import { WorkerEntrypoint } from 'cloudflare:workers';
 import { AuthAgent as AuthAgentBase } from './agent';
+import { getFleetOverview } from './fleet';
 
 export type {
 	AgentChatReply,
@@ -10,7 +11,9 @@ export type {
 	AuthAgentState,
 	AuthAnalytics,
 	AuthOverview,
+	FleetProjectCounts,
 } from './agent';
+export type { FleetOverview, FleetProject, FleetTotals } from './fleet';
 
 const sentryOptions = (env: Env) => ({
 	dsn: env.SENTRY_DSN,
@@ -35,6 +38,16 @@ class AuthService extends WorkerEntrypoint<Env> {
 
 		if (url.pathname === '/health') {
 			return Response.json({ service: 'auth-agent', status: 'ok' });
+		}
+
+		// Fleet rollup for the platform admin dashboard. Not under /agents/*, so
+		// it is only reachable via the dashboard's service binding — the worker
+		// has no public route and the dashboard forwards only /agents/* paths.
+		if (url.pathname === '/fleet/overview') {
+			const requestedLimit = Number(url.searchParams.get('limit'));
+			const limit =
+				Number.isFinite(requestedLimit) && requestedLimit > 0 ? requestedLimit : undefined;
+			return Response.json(await getFleetOverview(this.env, limit));
 		}
 
 		const response =

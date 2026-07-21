@@ -93,6 +93,57 @@ export interface AuthAnalytics {
 	eventsLast24h?: { eventType: string; count: number }[];
 }
 
+/** Per-project counts for the platform admin fleet view — cheap SQLite reads only. */
+export interface FleetProjectCounts {
+	projectId: string;
+	users: number;
+	registeredUsers: number;
+	anonymousUsers: number;
+	activeSessions: number;
+	provisionedAt: string | null;
+	lastEventAt: string | null;
+	/** Cloudflare data center (IATA code) this project's Durable Object runs in. */
+	colo: string | null;
+	/** ISO country of that data center — approximates where the demo's visitor is. */
+	coloCountry: string | null;
+}
+
+/** One project row in the fleet admin rollup. Keep in sync with agents/auth/src/fleet.ts. */
+export interface FleetProject {
+	projectId: string;
+	/** Matches the dashboard's browser-demo naming convention (`demo-<hex>`). */
+	demo: boolean;
+	/** Event-derived and approximate (sampling, 90-day retention window). */
+	firstSeenAt: string | null;
+	lastSeenAt: string | null;
+	events: number;
+	/**
+	 * Authoritative Durable Object counts; null when the project was beyond the
+	 * fan-out limit or its agent could not be reached.
+	 */
+	counts: FleetProjectCounts | null;
+}
+
+export interface FleetTotals {
+	projects: number;
+	demoProjects: number;
+	/** Sums over projects with authoritative counts only. */
+	users: number;
+	registeredUsers: number;
+	anonymousUsers: number;
+	activeSessions: number;
+	uncountedProjects: number;
+}
+
+export interface FleetOverview {
+	generatedAt: string;
+	/** Where the project list came from. */
+	source: 'analytics-engine' | 'local-d1' | 'none';
+	projects: FleetProject[];
+	totals: FleetTotals;
+	error?: string;
+}
+
 export interface AgentChatReply {
 	question: string;
 	topic: 'ai-analysis';
