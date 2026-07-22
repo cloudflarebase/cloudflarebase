@@ -8,32 +8,33 @@
 @plugin '@tailwindcss/typography';
 
 /*
- * Cloudflare-coherent palette.
+ * Cloudflare-coherent palette on a warm "linen" paper ground.
  * Brand anchors: orange #F6821F → oklch(0.7163 0.1706 53.45)
  *                gold   #FAAD3F → oklch(0.8056 0.1493 72.15)
  *                blue   #0051C3 → oklch(0.45 0.19 262) (dashboard/link blue)
- * Neutrals carry a barely-there warm cast (hue ~60–70) so grays never clash
- * with the orange. `accent` stays a *subtle* hover surface (shadcn semantics),
- * tinted warm — never the loud gold, which lives in charts/highlights.
+ * Light mode sits on a warm "linen" off-white ground (hue ~76–85, chroma
+ * ≤0.022) instead of pure white; cards are *lighter* than the background so
+ * elevation still reads on tinted paper. `accent` stays a *subtle* hover
+ * surface (shadcn semantics), tinted warm — never the loud gold (charts only).
  */
 :root {
-	--background: oklch(1 0 0);
-	--foreground: oklch(0.15 0.004 60);
-	--card: oklch(1 0 0);
-	--card-foreground: oklch(0.15 0.004 60);
-	--popover: oklch(1 0 0);
-	--popover-foreground: oklch(0.15 0.004 60);
+	--background: oklch(0.976 0.008 80);
+	--foreground: oklch(0.155 0.008 55);
+	--card: oklch(0.993 0.005 85);
+	--card-foreground: oklch(0.155 0.008 55);
+	--popover: oklch(0.993 0.005 85);
+	--popover-foreground: oklch(0.155 0.008 55);
 	--primary: oklch(0.7163 0.1706 53.45);
 	--primary-foreground: oklch(1 0 0);
-	--secondary: oklch(0.966 0.004 70);
-	--secondary-foreground: oklch(0.24 0.01 55);
-	--muted: oklch(0.97 0.003 70);
-	--muted-foreground: oklch(0.552 0.012 60);
-	--accent: oklch(0.955 0.016 65);
-	--accent-foreground: oklch(0.24 0.024 50);
+	--secondary: oklch(0.942 0.012 78);
+	--secondary-foreground: oklch(0.24 0.012 55);
+	--muted: oklch(0.945 0.01 78);
+	--muted-foreground: oklch(0.53 0.016 60);
+	--accent: oklch(0.928 0.022 70);
+	--accent-foreground: oklch(0.24 0.026 50);
 	--destructive: oklch(0.577 0.245 27.325);
-	--border: oklch(0.922 0.005 70);
-	--input: oklch(0.922 0.005 70);
+	--border: oklch(0.893 0.013 76);
+	--input: oklch(0.893 0.013 76);
 	--ring: oklch(0.7163 0.1706 53.45);
 	--chart-1: oklch(0.7163 0.1706 53.45);
 	--chart-2: oklch(0.8056 0.1493 72.15);
@@ -41,47 +42,53 @@
 	--chart-4: oklch(0.35 0.07 260);
 	--chart-5: oklch(0.47 0.157 37.304);
 	--radius: 0.625rem;
-	--sidebar: oklch(0.985 0.003 70);
-	--sidebar-foreground: oklch(0.15 0.004 60);
+	--sidebar: oklch(0.962 0.01 78);
+	--sidebar-foreground: oklch(0.155 0.008 55);
 	--sidebar-primary: oklch(0.7163 0.1706 53.45);
 	--sidebar-primary-foreground: oklch(1 0 0);
-	--sidebar-accent: oklch(0.955 0.016 65);
-	--sidebar-accent-foreground: oklch(0.24 0.024 50);
-	--sidebar-border: oklch(0.922 0.005 70);
+	--sidebar-accent: oklch(0.928 0.022 70);
+	--sidebar-accent-foreground: oklch(0.24 0.026 50);
+	--sidebar-border: oklch(0.893 0.013 76);
 	--sidebar-ring: oklch(0.7163 0.1706 53.45);
 }
 
+/*
+ * Dark linen: the same warm hue family as the light ground (~58–80), pushed
+ * dark — espresso rather than gray. Deeper background with cards lifted
+ * further off it and brighter muted text for contrast; borders are warm
+ * paper at low alpha so hairlines never read cold.
+ */
 .dark {
-	--background: oklch(0.147 0.004 60);
-	--foreground: oklch(0.985 0.002 70);
-	--card: oklch(0.205 0.005 60);
-	--card-foreground: oklch(0.985 0.002 70);
-	--popover: oklch(0.205 0.005 60);
-	--popover-foreground: oklch(0.985 0.002 70);
+	--background: oklch(0.132 0.008 65);
+	--foreground: oklch(0.982 0.005 80);
+	--card: oklch(0.205 0.012 68);
+	--card-foreground: oklch(0.982 0.005 80);
+	--popover: oklch(0.205 0.012 68);
+	--popover-foreground: oklch(0.982 0.005 80);
 	--primary: oklch(0.7163 0.1706 53.45);
 	--primary-foreground: oklch(1 0 0);
-	--secondary: oklch(0.272 0.006 60);
-	--secondary-foreground: oklch(0.985 0.002 70);
-	--muted: oklch(0.268 0.005 60);
-	--muted-foreground: oklch(0.71 0.01 65);
-	--accent: oklch(0.285 0.022 55);
-	--accent-foreground: oklch(0.985 0.006 70);
+	--secondary: oklch(0.275 0.014 66);
+	--secondary-foreground: oklch(0.982 0.005 80);
+	--muted: oklch(0.268 0.012 66);
+	--muted-foreground: oklch(0.735 0.018 72);
+	--accent: oklch(0.298 0.028 58);
+	--accent-foreground: oklch(0.985 0.008 75);
 	--destructive: oklch(0.704 0.191 22.216);
-	--border: oklch(1 0 0 / 10%);
-	--input: oklch(1 0 0 / 15%);
+	--border: oklch(0.93 0.03 80 / 12%);
+	--input: oklch(0.93 0.03 80 / 16%);
 	--ring: oklch(0.7163 0.1706 53.45);
 	--chart-1: oklch(0.7163 0.1706 53.45);
 	--chart-2: oklch(0.8056 0.1493 72.15);
 	--chart-3: oklch(0.62 0.17 258);
 	--chart-4: oklch(0.75 0.09 250);
 	--chart-5: oklch(0.65 0.14 40);
-	--sidebar: oklch(0.205 0.005 60);
-	--sidebar-foreground: oklch(0.985 0.002 70);
+	--sidebar: oklch(0.185 0.011 66);
+	--sidebar-foreground: oklch(0.982 0.005 80);
 	--sidebar-primary: oklch(0.7163 0.1706 53.45);
 	--sidebar-primary-foreground: oklch(1 0 0);
-	--sidebar-accent: oklch(0.285 0.022 55);
-	--sidebar-accent-foreground: oklch(0.985 0.006 70);
-	--sidebar-border: oklch(1 0 0 / 10%);
+	--sidebar-accent: oklch(0.298 0.028 58);
+	--sidebar-accent-foreground: oklch(0.985 0.008 75);
+	--sidebar-border: oklch(0.93 0.03 80 / 12%);
 	--sidebar-ring: oklch(0.7163 0.1706 53.45);
 }
 
