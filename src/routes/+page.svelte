@@ -283,7 +283,7 @@
 							>
 								<span class="text-sm text-foreground">Auth Agent is live · open sourcing soon</span>
 								<span
-									class="block h-4 w-0.5 border-l bg-white dark:border-background dark:bg-zinc-700"
+									class="block h-4 w-0.5 border-l bg-background dark:border-background dark:bg-zinc-700"
 								></span>
 								<div class="size-6 overflow-hidden rounded-full bg-background">
 									<span class="flex size-6"><ArrowRight class="m-auto size-3" /></span>
