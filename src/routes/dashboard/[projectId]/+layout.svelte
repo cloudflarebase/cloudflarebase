@@ -166,12 +166,37 @@
 	}
 
 	function onPaneLayoutChange(layout: number[]) {
-		// [100] means the agent pane is collapsed or absent — keep the last
-		// two-pane sizes so reopening restores the user's width.
-		if (layout.length === 2) {
+		// Only record real two-pane layouts: a collapsed agent pane reports
+		// [100, 0], and overwriting the saved sizes with it would lose the
+		// width the user should get back on reopen.
+		if (layout.length === 2 && layout[1] >= 15) {
 			paneSizes = layout;
 			persistCopilotCookie();
 		}
+	}
+
+	let agentPane = $state<ReturnType<typeof Resizable.Pane>>();
+	let agentPaneRef = $state<HTMLElement | null>(null);
+	// Disable the flex-grow transition while dragging so resizing tracks the
+	// cursor 1:1; the transition only plays for collapse/expand.
+	let paneDragging = $state(false);
+	// While collapsing/expanding, the panel content is pinned to its expanded
+	// pixel width so the shrinking pane clips it (a clean slide, like VS Code)
+	// instead of continuously reflowing the chat.
+	let panelPinnedWidth = $state(0);
+	let panelPinTimer: ReturnType<typeof setTimeout> | undefined;
+
+	function closeCopilot() {
+		clearTimeout(panelPinTimer);
+		panelPinnedWidth = agentPaneRef?.getBoundingClientRect().width ?? 0;
+		setCopilotOpen(false);
+		agentPane?.collapse();
+	}
+
+	function openCopilot() {
+		setCopilotOpen(true);
+		agentPane?.resize(Math.min(55, Math.max(20, paneSizes[1] ?? 30)));
+		panelPinTimer = setTimeout(() => (panelPinnedWidth = 0), 350);
 	}
 
 	function showMobileAgent(show: boolean) {
@@ -250,6 +275,9 @@
 {#snippet copilotPanel(desktop: boolean)}
 	<section
 		class="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background"
+		style={desktop && panelPinnedWidth
+			? `width: ${panelPinnedWidth}px; min-width: ${panelPinnedWidth}px;`
+			: undefined}
 		data-testid="project-copilot"
 	>
 		<header class="flex shrink-0 items-center gap-3 border-b px-4 py-3 md:h-14 md:py-0">
@@ -270,7 +298,7 @@
 					size="icon"
 					variant="ghost"
 					class="h-8 w-8"
-					onclick={() => setCopilotOpen(false)}
+					onclick={closeCopilot}
 					aria-label="Close project agent"
 				>
 					<X class="h-4 w-4" />
@@ -442,7 +470,10 @@
 			defaultSize={initialPaneLayout[0]}
 			minSize={45}
 			order={1}
-			class="flex min-w-0 flex-col"
+			class={[
+				'flex min-w-0 flex-col',
+				!paneDragging && 'transition-[flex-grow] duration-300 ease-out'
+			]}
 		>
 			<header
 				class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-border px-3 py-3 sm:px-6 md:h-14 md:flex-nowrap md:py-0"
@@ -570,20 +601,35 @@
 			</nav>
 		</Resizable.Pane>
 
-		{#if !isMobile.current && copilotOpen}
+		{#if !isMobile.current}
 			<!-- hidden md:flex kills the SSR flash on phones: the server always
 			     renders this desktop pane (it cannot know the viewport), and CSS
-			     hides it at first paint until hydration removes it entirely. -->
+			     hides it at first paint until hydration removes it. The pane stays
+			     mounted while closed (collapsed to 0) so collapse/expand can
+			     animate via the flex-grow transition. -->
 			<Resizable.Handle
 				withHandle
-				class="hidden after:w-2 hover:bg-primary/50 md:flex [&>div]:h-10 [&>div]:w-1.5"
+				onDraggingChange={(dragging) => (paneDragging = dragging)}
+				class={[
+					'hidden after:w-2 hover:bg-primary/50 md:flex [&>div]:h-10 [&>div]:w-1.5',
+					!copilotOpen && 'md:hidden'
+				]}
 			/>
 			<Resizable.Pane
-				defaultSize={initialPaneLayout[1]}
+				bind:this={agentPane}
+				bind:ref={agentPaneRef}
+				defaultSize={copilotOpen ? initialPaneLayout[1] : 0}
 				minSize={20}
 				maxSize={55}
+				collapsible
+				collapsedSize={0}
 				order={2}
-				class="hidden min-w-0 flex-col md:flex"
+				onCollapse={() => setCopilotOpen(false)}
+				onExpand={() => setCopilotOpen(true)}
+				class={[
+					'hidden min-w-0 flex-col md:flex',
+					!paneDragging && 'transition-[flex-grow] duration-300 ease-out'
+				]}
 			>
 				{@render copilotPanel(true)}
 			</Resizable.Pane>
@@ -592,13 +638,15 @@
 
 	{#if !isMobile.current && !copilotOpen}
 		<div
-			class="hidden w-10 shrink-0 flex-col items-center gap-3 border-l border-border bg-card py-3 md:flex"
+			class="hidden w-10 shrink-0 flex-col items-center gap-3 border-l border-border bg-background py-3 md:flex"
+			in:fly={{ x: 12, duration: 180, delay: 200, easing: cubicOut }}
+			out:fly={{ x: 12, duration: 120, easing: cubicOut }}
 		>
 			<Button
 				size="icon"
 				variant="ghost"
 				class="h-8 w-8 text-primary"
-				onclick={() => setCopilotOpen(true)}
+				onclick={openCopilot}
 				data-testid="open-project-copilot"
 				aria-label="Open project agent"
 			>
