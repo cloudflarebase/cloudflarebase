@@ -1,6 +1,8 @@
 {
 	"prefix": "name",
-	"killOthersOn": ["failure"],
+	"killOthersOn": [
+		"failure"
+	],
 	"restartTries": 0,
 	"commands": [
 		{
@@ -9,7 +11,7 @@
 		},
 		{
 			"name": "web",
-			"command": "wait-on tcp:localhost:8788 && vite dev --port 5173 --open"
+			"command": "wait-on tcp:localhost:8788 && vite dev --port 5173 --open --host"
 		}
 	]
 }
