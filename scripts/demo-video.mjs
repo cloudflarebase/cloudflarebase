@@ -641,8 +641,8 @@ async function runTour() {
 	await page.getByRole('heading', { name: 'Project Overview' }).waitFor({ timeout: 20_000 });
 	await pace(1000);
 	await screenshot(page, '02-overview');
-	// Glance at the Authentication card, then enter via the sidebar (the
-	// floating copilot panel covers the card's own Open button).
+	// Glance at the Authentication card, then enter via the sidebar so the
+	// tour shows off the Firebase-style navigation.
 	await glideTo(page, page.getByTestId('product-auth'), { settle: 200 });
 	await pace(500);
 	await clickEl(page, page.getByTestId('nav-auth'));
