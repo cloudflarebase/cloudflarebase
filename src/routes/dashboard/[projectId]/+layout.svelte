@@ -8,6 +8,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import * as Resizable from '$lib/components/ui/resizable';
+	import { ScrollArea } from '$lib/components/ui/scroll-area';
 	import { IsMobile } from '$lib/hooks/is-mobile.svelte';
 	import { projectIdSchema } from '$lib/schemas/auth';
 	import ModeToggle from '$lib/components/mode-toggle.svelte';
@@ -29,7 +30,7 @@
 		Zap
 	} from '@lucide/svelte';
 
-	let { children } = $props();
+	let { children, data } = $props();
 
 	const projectId = $derived(page.params.projectId ?? 'demo');
 	// Writable derived: resets to the current project on navigation, while the
@@ -37,16 +38,21 @@
 	let projectInput = $derived(page.params.projectId ?? 'demo');
 	let projectSwitchError = $state('');
 	const isMobile = new IsMobile();
-	const COPILOT_OPEN_KEY = 'cfbase:copilot-open';
-	// Desktop agent-pane visibility, persisted per browser; PaneForge's autoSaveId
-	// persists the pane widths separately. Mobile uses the bottom tab bar instead.
-	let copilotOpen = $state(browser ? localStorage.getItem(COPILOT_OPEN_KEY) !== '0' : true);
+	// Open state and pane sizes come from the cfbase-copilot cookie via the
+	// layout server load, so SSR already renders the saved layout — reopening
+	// the dashboard never flashes the default widths. Mobile uses the tab bar.
+	// Initial-value captures are deliberate: this component is the only writer.
+	// svelte-ignore state_referenced_locally
+	let copilotOpen = $state(data.copilot.open);
 	let mobileAgentOpen = $state(false);
+	// svelte-ignore state_referenced_locally
+	const initialPaneLayout = data.copilot.layout ?? [70, 30];
+	let paneSizes = initialPaneLayout;
 	let copilotInput = $state('');
 	let copilotBusy = $state(false);
 	type CopilotMessage = AgentChatMessage & { mode?: string };
 	let copilotMessages = $state<CopilotMessage[]>([]);
-	let copilotMessagesEl = $state<HTMLDivElement>();
+	let copilotMessagesEl = $state<HTMLElement | null>(null);
 	let pendingHistoryScroll = $state(false);
 	// Starts true so the first paint shows the skeleton, not a flash of the
 	// empty state, while the initial history request is in flight.
@@ -145,10 +151,27 @@
 		}
 	}
 
+	function persistCopilotCookie() {
+		if (!browser) return;
+		const value = `${copilotOpen ? 'open' : 'closed'}:${paneSizes
+			.map((size) => Math.round(size))
+			.join(':')}`;
+		document.cookie = `cfbase-copilot=${value}; path=/; max-age=31536000; samesite=lax`;
+	}
+
 	function setCopilotOpen(open: boolean) {
 		copilotOpen = open;
 		if (open) pendingHistoryScroll = copilotMessages.length > 0;
-		if (browser) localStorage.setItem(COPILOT_OPEN_KEY, open ? '1' : '0');
+		persistCopilotCookie();
+	}
+
+	function onPaneLayoutChange(layout: number[]) {
+		// [100] means the agent pane is collapsed or absent — keep the last
+		// two-pane sizes so reopening restores the user's width.
+		if (layout.length === 2) {
+			paneSizes = layout;
+			persistCopilotCookie();
+		}
 	}
 
 	function showMobileAgent(show: boolean) {
@@ -255,61 +278,64 @@
 			{/if}
 		</header>
 
-		<div
-			class="min-h-0 flex-1 space-y-3 overflow-y-auto p-4"
-			data-testid="copilot-messages"
-			bind:this={copilotMessagesEl}
+		<ScrollArea
+			type="always"
+			class="min-h-0 flex-1"
+			scrollbarYClasses="data-vertical:w-1.5 data-vertical:border-l-0"
+			bind:viewportRef={copilotMessagesEl}
 		>
-			{#if copilotHistoryLoading && copilotMessages.length === 0}
-				<div class="space-y-3" data-testid="copilot-history-loading" aria-hidden="true">
-					<div class="h-14 w-3/4 animate-pulse rounded-xl bg-muted/60"></div>
-					<div class="ml-auto h-9 w-1/2 animate-pulse rounded-xl bg-muted/60"></div>
-					<div class="h-14 w-2/3 animate-pulse rounded-xl bg-muted/60"></div>
-				</div>
-			{:else if copilotMessages.length === 0}
-				<div class="rounded-xl border bg-muted/40 p-4">
-					<div class="mb-2 flex items-center gap-2 text-sm font-medium">
-						<Bot class="h-4 w-4 text-primary" /> What can I help with?
+			<div class="space-y-3 p-4" data-testid="copilot-messages">
+				{#if copilotHistoryLoading && copilotMessages.length === 0}
+					<div class="space-y-3" data-testid="copilot-history-loading" aria-hidden="true">
+						<div class="h-14 w-3/4 animate-pulse rounded-xl bg-muted/60"></div>
+						<div class="ml-auto h-9 w-1/2 animate-pulse rounded-xl bg-muted/60"></div>
+						<div class="h-14 w-2/3 animate-pulse rounded-xl bg-muted/60"></div>
 					</div>
-					<p class="text-xs leading-relaxed text-muted-foreground">
-						I can explain usage, compare activity, and surface authentication issues from this
-						project's aggregated data.
-					</p>
-				</div>
-			{/if}
-			{#each copilotMessages as message (message.id)}
-				<div
-					class={[
-						'max-w-[88%] rounded-xl px-3 py-2.5 text-sm leading-relaxed',
-						message.role === 'user' ? 'ml-auto bg-foreground text-background' : 'border bg-card'
-					]}
-				>
-					{message.content}
-					{#if message.role === 'agent' && message.mode}
-						<p class="mt-2 text-[9px] tracking-wider uppercase opacity-60">
-							Generated by Workers AI
+				{:else if copilotMessages.length === 0}
+					<div class="rounded-xl border bg-muted/40 p-4">
+						<div class="mb-2 flex items-center gap-2 text-sm font-medium">
+							<Bot class="h-4 w-4 text-primary" /> What can I help with?
+						</div>
+						<p class="text-xs leading-relaxed text-muted-foreground">
+							I can explain usage, compare activity, and surface authentication issues from this
+							project's aggregated data.
 						</p>
-					{/if}
-				</div>
-			{/each}
-			{#if copilotBusy}
-				<p class="flex items-center gap-2 text-xs text-muted-foreground">
-					<span class="h-2 w-2 animate-pulse rounded-full bg-primary"></span>Analyzing live data…
-				</p>
-			{/if}
-			{#if !copilotHistoryLoading && !copilotBusy}
-				<div class="grid gap-2" data-testid="copilot-suggestions">
-					{#each copilotSuggestions as suggestion (suggestion)}
-						<button
-							class="rounded-lg border px-3 py-2 text-left text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-foreground"
-							onclick={() => askCopilot(suggestion)}
-						>
-							{suggestion}
-						</button>
-					{/each}
-				</div>
-			{/if}
-		</div>
+					</div>
+				{/if}
+				{#each copilotMessages as message (message.id)}
+					<div
+						class={[
+							'max-w-[88%] rounded-xl px-3 py-2.5 text-sm leading-relaxed',
+							message.role === 'user' ? 'ml-auto bg-foreground text-background' : 'border bg-card'
+						]}
+					>
+						{message.content}
+						{#if message.role === 'agent' && message.mode}
+							<p class="mt-2 text-[9px] tracking-wider uppercase opacity-60">
+								Generated by Workers AI
+							</p>
+						{/if}
+					</div>
+				{/each}
+				{#if copilotBusy}
+					<p class="flex items-center gap-2 text-xs text-muted-foreground">
+						<span class="h-2 w-2 animate-pulse rounded-full bg-primary"></span>Analyzing live data…
+					</p>
+				{/if}
+				{#if !copilotHistoryLoading && !copilotBusy}
+					<div class="grid gap-2" data-testid="copilot-suggestions">
+						{#each copilotSuggestions as suggestion (suggestion)}
+							<button
+								class="rounded-lg border px-3 py-2 text-left text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-foreground"
+								onclick={() => askCopilot(suggestion)}
+							>
+								{suggestion}
+							</button>
+						{/each}
+					</div>
+				{/if}
+			</div>
+		</ScrollArea>
 
 		<form
 			class="border-t p-3"
@@ -409,10 +435,15 @@
 	<!-- Main content and agent pane, VS Code style: backend left, agent right -->
 	<Resizable.PaneGroup
 		direction="horizontal"
-		autoSaveId="cfbase-project-layout"
+		onLayoutChange={onPaneLayoutChange}
 		class="min-w-0 flex-1"
 	>
-		<Resizable.Pane defaultSize={70} minSize={45} order={1} class="flex min-w-0 flex-col">
+		<Resizable.Pane
+			defaultSize={initialPaneLayout[0]}
+			minSize={45}
+			order={1}
+			class="flex min-w-0 flex-col"
+		>
 			<header
 				class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-border px-3 py-3 sm:px-6 md:h-14 md:flex-nowrap md:py-0"
 			>
@@ -490,13 +521,22 @@
 			{#if isMobile.current && mobileAgentOpen}
 				{@render copilotPanel(false)}
 			{:else}
-				<main class="min-h-0 min-w-0 flex-1 overflow-y-auto bg-muted/20">
-					{#key page.url.pathname}
-						<div class="min-h-full" in:fly={{ y: 6, duration: 220, easing: cubicOut, opacity: 0 }}>
-							{@render children()}
-						</div>
-					{/key}
-				</main>
+				<ScrollArea
+					type="always"
+					class="min-h-0 min-w-0 flex-1 bg-muted/20"
+					scrollbarYClasses="data-vertical:w-1.5 data-vertical:border-l-0"
+				>
+					<main class="min-w-0">
+						{#key page.url.pathname}
+							<div
+								class="min-h-full"
+								in:fly={{ y: 6, duration: 220, easing: cubicOut, opacity: 0 }}
+							>
+								{@render children()}
+							</div>
+						{/key}
+					</main>
+				</ScrollArea>
 			{/if}
 
 			<nav class="flex border-t border-border bg-card md:hidden" aria-label="Project view">
@@ -531,13 +571,19 @@
 		</Resizable.Pane>
 
 		{#if !isMobile.current && copilotOpen}
-			<Resizable.Handle withHandle />
+			<!-- hidden md:flex kills the SSR flash on phones: the server always
+			     renders this desktop pane (it cannot know the viewport), and CSS
+			     hides it at first paint until hydration removes it entirely. -->
+			<Resizable.Handle
+				withHandle
+				class="hidden after:w-2 hover:bg-primary/50 md:flex [&>div]:h-10 [&>div]:w-1.5"
+			/>
 			<Resizable.Pane
-				defaultSize={30}
+				defaultSize={initialPaneLayout[1]}
 				minSize={20}
 				maxSize={55}
 				order={2}
-				class="flex min-w-0 flex-col"
+				class="hidden min-w-0 flex-col md:flex"
 			>
 				{@render copilotPanel(true)}
 			</Resizable.Pane>
