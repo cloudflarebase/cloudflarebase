@@ -48,6 +48,34 @@ export const rolesRequestSchema = z
 		return { roles: [...byName].map(([name, permissions]) => ({ name, permissions })) };
 	});
 
+/**
+ * Project ids the registry refuses: `console` is the operator auth instance,
+ * the rest would collide with dashboard routes or read as system endpoints.
+ * Mirrored in the app's src/lib/console.ts; keep both in sync.
+ */
+export const RESERVED_PROJECT_IDS = new Set([
+	'console',
+	'admin',
+	'api',
+	'agents',
+	'auth',
+	'dashboard',
+	'login',
+	'logout',
+	'setup',
+	'new',
+	'health',
+	'fleet',
+]);
+
+export const createProjectRequestSchema = z.strictObject({
+	id: projectIdSchema.refine(
+		(value) => !RESERVED_PROJECT_IDS.has(value),
+		'that project id is reserved',
+	),
+	name: z.string().trim().min(1, 'name is required').max(64),
+});
+
 export const chatRequestSchema = z.strictObject({
 	question: z.string().trim().min(1, 'question is required').max(500),
 });

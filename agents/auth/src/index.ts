@@ -3,6 +3,7 @@ import { routeAgentRequest } from 'agents';
 import { WorkerEntrypoint } from 'cloudflare:workers';
 import { AuthAgent as AuthAgentBase } from './agent';
 import { getFleetOverview } from './fleet';
+import { ProjectRegistry as ProjectRegistryBase } from './registry';
 
 export type {
 	AgentChatReply,
@@ -14,6 +15,8 @@ export type {
 	FleetProjectCounts,
 } from './agent';
 export type { FleetOverview, FleetProject, FleetTotals } from './fleet';
+export type { ProjectRegistryState, RegistryProject } from './registry';
+export { REGISTRY_INSTANCE } from './registry';
 
 const sentryOptions = (env: Env) => ({
 	dsn: env.SENTRY_DSN,
@@ -23,6 +26,10 @@ const sentryOptions = (env: Env) => ({
 });
 
 export const AuthAgent = Sentry.instrumentDurableObjectWithSentry(sentryOptions, AuthAgentBase);
+export const ProjectRegistry = Sentry.instrumentDurableObjectWithSentry(
+	sentryOptions,
+	ProjectRegistryBase,
+);
 
 /**
  * Auth service for Cloudflarebase. Each project gets its own AuthAgent — a

@@ -92,12 +92,16 @@ function classifyAccess(pathname: string): Access {
 		return { scope: 'operator', projectId: segments[2] ?? null, kind: 'api' };
 	}
 
-	// /api/projects/<projectId>/<rest...>
-	if (segments[0] === 'api' && segments[1] === 'projects') {
-		const rest = segments.slice(3);
-		if (rest[0] === 'auth') return { scope: 'open' };
-		if (rest[0] === 'config' && rest.length === 1) return { scope: 'open' };
-		return { scope: 'operator', projectId: segments[2] ?? null, kind: 'api' };
+	// Everything under /api is operator surface unless published below, so a
+	// route added later is private until someone deliberately opens it.
+	if (segments[0] === 'api') {
+		if (segments[1] === 'projects') {
+			const rest = segments.slice(3);
+			if (rest[0] === 'auth') return { scope: 'open' };
+			if (rest[0] === 'config' && rest.length === 1) return { scope: 'open' };
+			return { scope: 'operator', projectId: segments[2] ?? null, kind: 'api' };
+		}
+		return { scope: 'operator', projectId: null, kind: 'api' };
 	}
 
 	if (segments[0] === 'dashboard') {
@@ -122,6 +126,13 @@ const consoleGuardHandle: Handle = async ({ event, resolve }) => {
 	// ids are unguessable and whose data self-destructs. Named projects always
 	// require an operator session, even on the demo deployment.
 	if (event.locals.demoMode && access.projectId && isDemoProjectId(access.projectId)) {
+		return resolve(event);
+	}
+
+	// The bare /dashboard entry decides for itself: in demo mode it hands the
+	// visitor a throwaway project, otherwise its loader lists real ones and so
+	// still needs a session.
+	if (event.locals.demoMode && access.kind === 'page' && !access.projectId) {
 		return resolve(event);
 	}
 

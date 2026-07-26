@@ -1173,6 +1173,26 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 	}
 
 	/**
+	 * Erases this project: every user, session, account, and setting. Called
+	 * over RPC when the registry deletes a project, and by the demo reaper when
+	 * an ephemeral project expires.
+	 *
+	 * deleteAll() drops the Durable Object's whole SQLite database — SQL tables
+	 * and key-value entries alike — so the abort() that follows is what makes
+	 * the next request start clean: it restarts the object, and onStart() then
+	 * re-applies the Drizzle migrations against an empty database rather than
+	 * leaving this isolate holding freed handles and stale agent state.
+	 *
+	 * The abort is deferred by a tick because it resets the object immediately,
+	 * which would destroy this RPC's own response before the caller received
+	 * it — every successful delete would surface as a failure.
+	 */
+	async destroy(): Promise<void> {
+		await this.ctx.storage.deleteAll();
+		setTimeout(() => this.ctx.abort(), 0);
+	}
+
+	/**
 	 * Counts for the fleet admin rollup, called over Durable Object RPC from the
 	 * worker entrypoint (/fleet/overview). Deliberately avoids getAnalytics() so
 	 * a fleet sweep never fans out Analytics Engine SQL queries per project.

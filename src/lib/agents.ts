@@ -160,3 +160,14 @@ export interface AgentChatMessage {
 	content: string;
 	createdAt: string;
 }
+
+/** A project this installation owns. Mirrors agents/auth/src/registry.ts. */
+export interface RegistryProject {
+	id: string;
+	name: string;
+	createdAt: string;
+}
+
+export interface ProjectRegistryState {
+	projects: RegistryProject[];
+}

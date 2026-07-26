@@ -17,12 +17,21 @@
 			"deleted_classes": ["MyDurableObject"],
 			"tag": "v2",
 		},
+		{
+			// Singleton listing every project this installation owns.
+			"new_sqlite_classes": ["ProjectRegistry"],
+			"tag": "v3",
+		},
 	],
 	"durable_objects": {
 		"bindings": [
 			{
 				"class_name": "AuthAgent",
 				"name": "AuthAgent",
+			},
+			{
+				"class_name": "ProjectRegistry",
+				"name": "ProjectRegistry",
 			},
 		],
 	},
@@ -99,6 +108,10 @@
 						"class_name": "AuthAgent",
 						"name": "AuthAgent",
 					},
+					{
+						"class_name": "ProjectRegistry",
+						"name": "ProjectRegistry",
+					},
 				],
 			},
 
@@ -133,6 +146,10 @@
 					{
 						"class_name": "AuthAgent",
 						"name": "AuthAgent",
+					},
+					{
+						"class_name": "ProjectRegistry",
+						"name": "ProjectRegistry",
 					},
 				],
 			},
@@ -172,6 +189,10 @@
 					{
 						"class_name": "AuthAgent",
 						"name": "AuthAgent",
+					},
+					{
+						"class_name": "ProjectRegistry",
+						"name": "ProjectRegistry",
 					},
 				],
 			},
