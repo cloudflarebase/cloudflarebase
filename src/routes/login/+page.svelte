@@ -1,12 +1,10 @@
 <script lang="ts">
 	import { goto, invalidateAll } from '$app/navigation';
-	import ModeToggle from '$lib/components/mode-toggle.svelte';
+	import ConsoleShell from '$lib/components/console-shell.svelte';
 	import { CONSOLE_AUTH_BASE } from '$lib/console';
 	import { Button } from '$lib/components/ui/button';
-	import * as Card from '$lib/components/ui/card';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
-	import { KeyRound, ShieldCheck } from '@lucide/svelte';
 
 	let { data } = $props();
 
@@ -58,62 +56,53 @@
 	<meta name="robots" content="noindex" />
 </svelte:head>
 
-<div class="relative flex min-h-svh items-center justify-center px-4">
-	<ModeToggle class="absolute top-4 right-4" variant="ghost" />
-
-	<Card.Root class="w-full max-w-sm" data-testid="console-login">
-		<Card.Header>
-			<Card.Title class="flex items-center gap-2">
+<ConsoleShell>
+	<div data-testid="console-login" class="space-y-6">
+		<div class="space-y-1.5">
+			<h1 class="text-2xl font-semibold tracking-tight">
+				{claiming ? 'Set up your console' : 'Sign in'}
+			</h1>
+			<p class="text-sm text-muted-foreground">
 				{#if claiming}
-					<ShieldCheck class="h-5 w-5 text-primary" /> Set up your console
+					No owner yet. Create the first account — sign-up closes as soon as it exists.
 				{:else}
-					<KeyRound class="h-5 w-5 text-primary" /> Sign in
+					Sign in to manage your projects.
 				{/if}
-			</Card.Title>
-			<Card.Description>
-				{#if claiming}
-					This console has no owner yet. Create the first account — sign-up closes as soon as it
-					exists.
-				{:else}
-					Sign in to manage your Cloudflarebase projects.
-				{/if}
-			</Card.Description>
-		</Card.Header>
+			</p>
+		</div>
 
-		<Card.Content>
-			<form class="space-y-3" onsubmit={submit}>
-				{#if claiming}
-					<div class="space-y-1.5">
-						<Label for="name">Name</Label>
-						<Input id="name" bind:value={name} required autocomplete="name" />
-					</div>
-				{/if}
-
+		<form class="space-y-4" onsubmit={submit}>
+			{#if claiming}
 				<div class="space-y-1.5">
-					<Label for="email">Email</Label>
-					<Input id="email" type="email" bind:value={email} required autocomplete="email" />
+					<Label for="name">Name</Label>
+					<Input id="name" bind:value={name} required autocomplete="name" />
 				</div>
+			{/if}
 
-				<div class="space-y-1.5">
-					<Label for="password">Password</Label>
-					<Input
-						id="password"
-						type="password"
-						bind:value={password}
-						required
-						minlength={claiming ? 8 : undefined}
-						autocomplete={claiming ? 'new-password' : 'current-password'}
-					/>
-				</div>
+			<div class="space-y-1.5">
+				<Label for="email">Email</Label>
+				<Input id="email" type="email" bind:value={email} required autocomplete="email" />
+			</div>
 
-				{#if error}
-					<p class="text-sm text-destructive" data-testid="console-login-error">{error}</p>
-				{/if}
+			<div class="space-y-1.5">
+				<Label for="password">Password</Label>
+				<Input
+					id="password"
+					type="password"
+					bind:value={password}
+					required
+					minlength={claiming ? 8 : undefined}
+					autocomplete={claiming ? 'new-password' : 'current-password'}
+				/>
+			</div>
 
-				<Button type="submit" class="w-full" disabled={submitting}>
-					{submitting ? 'Working…' : claiming ? 'Create owner account' : 'Sign in'}
-				</Button>
-			</form>
-		</Card.Content>
-	</Card.Root>
-</div>
+			{#if error}
+				<p class="text-sm text-destructive" data-testid="console-login-error">{error}</p>
+			{/if}
+
+			<Button type="submit" class="w-full" disabled={submitting}>
+				{submitting ? 'Working…' : claiming ? 'Create owner account' : 'Sign in'}
+			</Button>
+		</form>
+	</div>
+</ConsoleShell>
