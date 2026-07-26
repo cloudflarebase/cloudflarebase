@@ -5,7 +5,6 @@ One `AuthAgent` Durable Object exists per Cloudflarebase project; the instance n
 ## Key files
 
 - `src/agent.ts`: `AuthAgent` state, HTTP/admin routes, analytics, Workers AI chat, email delivery, project CORS, and Better Auth dispatch. Its DTOs are mirrored in the app's `src/lib/agents.ts`.
-- `src/registry.ts`: `ProjectRegistry`, a singleton Durable Object (instance name `registry`) listing every project this installation owns. Deliberately uses neither KV nor D1 so a fresh self-host provisions nothing beyond the two Workers; the list lives in Agent state and syncs to dashboards without polling. Deleting a project drops the listing **and** wipes that project's `AuthAgent` over RPC.
 - `src/auth.ts`: Better Auth factory with Drizzle adapter, email/password, anonymous and bearer plugins, social providers, rate limiting, project cookie prefix, and database hooks.
 - `src/index.ts`: Worker entrypoint, `/health`, and the internal `/fleet/overview`; delegates agent routes through `routeAgentRequest` without default CORS.
 - `src/fleet.ts`: cross-project fleet rollup for the dashboard's `/admin` page. Lists projects from auth-event analytics (Analytics Engine SQL API, or `LOCAL_ANALYTICS` D1 locally), then fans out to each project's Durable Object via `getAgentByName` RPC (`getFleetCounts`, capped and batched). Its DTOs are mirrored in the app's `src/lib/agents.ts`.
@@ -37,7 +36,7 @@ The Worker exposes `GET /health` and `GET /fleet/overview` (internal fleet rollu
 - `DELETE /admin/sessions/:id`: revoke one session.
 - `/api/auth/*`: Better Auth endpoints, including `GET /token` (project-signed JWT with `role` and `email` claims) and `GET /jwks` from the jwt plugin.
 
-`ProjectRegistry` serves `/agents/project-registry/registry/projects` — `GET` to list, `POST` to create (`{ id, name }`, rejecting reserved ids), and `DELETE /projects/:id` to remove a project and erase its `AuthAgent`.
+The worker also serves `DELETE /internal/projects/:projectId`, which erases one project by calling that project agent's `destroy()`. Like `/fleet/overview` it sits outside `/agents/*`, so it is reachable only over the dashboard's service binding. The console owns the fan-out across agents; this endpoint knows nothing about any agent but its own.
 
 The SvelteKit Worker exposes matching `/api/projects/<projectId>/...` same-origin proxies over the `AUTH_AGENT` service binding, plus `/api/registry/projects` for the registry. Every one of them except `/api/auth/*`, `/config`, and `/openapi.json` requires an operator session — see the console guard in the app's `src/hooks.server.ts`.
 
@@ -89,7 +88,7 @@ The ceilings are chosen to bound cost without costing a visitor what they came f
 - Run Wrangler commands from `agents/auth`; use `--env preview` for `auth-agent-preview` and `--env production` for cloudflarebase.com's own agent.
 - The top level of `wrangler.jsonc` is the **self-hosted default**, not this project's deployment: empty `TRUSTED_ORIGINS` and `EMAIL_FROM`, no `DEMO_MODE`. cloudflarebase.com's values are in `env.production`, whose `name` is pinned to `auth-agent` so the dashboard's service binding still resolves it. Wrangler does not inherit top-level config into environments, so each one repeats it in full.
 - `src/index.ts` may only export handlers and Durable Object classes. A value export — even a string constant — fails at boot with `Incorrect type for map entry`, which reads like a configuration problem rather than a stray export. Type-only exports are erased and safe.
-- `BETTER_AUTH_SECRET` is a plain variable only in local/test; preview and production require a Wrangler secret. The fixed E2E value belongs only in `env.test.vars`.
+- `BETTER_AUTH_SECRET` is optional everywhere. When unset, each project generates a 32-byte key in `onStart` and keeps it in its own Durable Object storage under `signing-secret`, so a fresh install needs no secret set by hand and no two projects share a key. Setting the variable overrides that for every project on the deployment. The fixed value in `env.test.vars` is pinned so a reused local stack keeps sessions valid across restarts, and belongs nowhere else.
 - Do not edit `worker-configuration.d.ts`. Run `npx wrangler types` after binding or variable changes.
 
 ## Development and tests

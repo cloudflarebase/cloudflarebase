@@ -48,12 +48,11 @@ Five minutes, no Cloudflare account needed.
 git clone https://github.com/cloudflarebase/cloudflarebase.com.git
 cd cloudflarebase.com
 npm install
-
-cp agents/auth/.env.example agents/auth/.dev.vars
-openssl rand -base64 32   # paste into .dev.vars as BETTER_AUTH_SECRET
-
 npm run dev
 ```
+
+No secrets to generate. Each project creates its own signing key on first
+start and keeps it in its own storage.
 
 Open <http://localhost:5173/dashboard>. The dashboard runs on `:5173`, the auth
 agent on `:8788`.
@@ -79,14 +78,12 @@ has to exist first.
 Or from a clone, which is the path to use if you want to change anything first:
 
 ```bash
-cd agents/auth
-npx wrangler secret put BETTER_AUTH_SECRET   # openssl rand -base64 32
-npm run deploy
-
-cd ../..
-npx wrangler secret put ADMIN_SECRET         # gates the /admin fleet page
-npm run deploy
+cd agents/auth && npm run deploy
+cd ../..     && npm run deploy
 ```
+
+No secrets are required. Wrangler provisions the D1 database on first deploy,
+and each project generates its own signing key.
 
 ### Then do this — it is not optional
 
@@ -109,12 +106,13 @@ console surface requires an operator session.
 
 ### Optional
 
-| Secret                                      | What it enables                                             |
-| ------------------------------------------- | ----------------------------------------------------------- |
-| `CF_ACCOUNT_ID`, `CF_ANALYTICS_API_TOKEN`   | Analytics Engine SQL reads. Writes need no credentials.     |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google sign-in. Can also be set per project in the console. |
-| `SENTRY_DSN`, `PUBLIC_SENTRY_DSN`           | Error reporting. Off entirely when unset.                   |
-| `EMAIL_FROM`                                | Verification and password-reset mail, via Cloudflare Email. |
+| Secret                                      | What it enables                                                                 |
+| ------------------------------------------- | ------------------------------------------------------------------------------- |
+| `CF_ACCOUNT_ID`, `CF_ANALYTICS_API_TOKEN`   | Analytics Engine SQL reads. Writes need no credentials.                         |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google sign-in. Can also be set per project in the console.                     |
+| `SENTRY_DSN`, `PUBLIC_SENTRY_DSN`           | Error reporting. Off entirely when unset.                                       |
+| `EMAIL_FROM`                                | Verification and password-reset mail, via Cloudflare Email.                     |
+| `BETTER_AUTH_SECRET`                        | Pins one signing key across all projects instead of per-project generated ones. |
 
 The analytics token needs Account Analytics Read. Without it the dashboard
 reports write-only mode rather than failing.
@@ -153,20 +151,22 @@ and API tools can be pointed straight at it. The console renders it under
 │  SvelteKit + console     │───────▶│                                   │
 │                          │service │  AuthAgent (DO) — one per project │
 │  /dashboard/<id>         │binding │    Better Auth + Drizzle + SQLite │
-│  /api/projects/<id>/*    │        │  ProjectRegistry (DO) — singleton │
+│  /api/projects/<id>/*    │        │                                   │
 └──────────────────────────┘        └───────────────────────────────────┘
 ```
 
 | Path          | Worker       | What it is                                         |
 | ------------- | ------------ | -------------------------------------------------- |
 | `/`           | dashboard    | SvelteKit 2 / Svelte 5, shadcn-svelte, Tailwind v4 |
-| `agents/auth` | `auth-agent` | `AuthAgent` and `ProjectRegistry` Durable Objects  |
+| `agents/auth` | `auth-agent` | `AuthAgent` Durable Object, one per project        |
 
 They are separate npm projects with separate Wrangler configs and separate
 generated types. Shared DTOs are deliberately copied, not imported.
 
-The registry deliberately uses neither KV nor D1 — a fresh install provisions
-nothing beyond the two Workers.
+Installation-wide state — the project registry — lives in D1 bound to the
+dashboard Worker; per-project state lives in that project's Durable Object. No
+agent owns the project list, because a project will have db and storage agents
+too and any agent owning it would make every other agent depend on that one.
 
 ## Validate
 
@@ -183,10 +183,10 @@ workerd, with real service bindings and Durable Object SQLite.
 
 Report vulnerabilities privately — see [SECURITY.md](SECURITY.md).
 
-Two settings decide whether an install is exposed: `DEMO_MODE` must stay unset
-anywhere real users live, and `BETTER_AUTH_SECRET` must be a real per-environment
-secret. The value committed under `env.test.vars` exists so the test suite is
-deterministic and is worthless anywhere else.
+One setting decides whether an install is exposed: `DEMO_MODE` must stay unset
+anywhere real users live. Signing keys are generated per project and never
+shared between environments; the fixed `BETTER_AUTH_SECRET` committed under
+`env.test.vars` exists only so the test suite is deterministic.
 
 ## Status
 

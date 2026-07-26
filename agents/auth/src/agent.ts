@@ -231,6 +231,8 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 	} | null = null;
 	/** Country Cloudflare resolved for the request currently being handled. */
 	private requestCountry: string | null = null;
+	/** Resolved in onStart: the env secret, or one generated for this project. */
+	private signingSecret: string | null = null;
 	private socialCredentials: SocialCredentials = {};
 
 	constructor(ctx: AgentContext, env: Env) {
@@ -239,9 +241,9 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 	}
 
 	private get auth(): ProjectAuth {
-		const secret = this.env.BETTER_AUTH_SECRET;
+		const secret = this.signingSecret;
 		if (!secret) {
-			throw new Error('BETTER_AUTH_SECRET is not configured for the auth-agent worker');
+			throw new Error('the signing secret is unavailable — onStart() has not run');
 		}
 		this._auth ??= createProjectAuth({
 			projectId: this.name,
@@ -318,7 +320,35 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 		});
 	}
 
+	/**
+	 * Resolves the secret Better Auth signs sessions and tokens with.
+	 *
+	 * BETTER_AUTH_SECRET wins when set, so an operator can supply and rotate
+	 * one deliberately. Otherwise the project generates its own on first start
+	 * and keeps it in its Durable Object storage, next to the password hashes
+	 * it already holds — which means a fresh install needs no secret set by
+	 * hand before it works, and each project ends up signing with a key no
+	 * other project shares.
+	 *
+	 * Losing it invalidates that project's sessions and nothing else. Erasing
+	 * the project drops it along with everything else it was protecting.
+	 */
+	private async resolveSigningSecret(): Promise<string> {
+		const configured = this.env.BETTER_AUTH_SECRET?.trim();
+		if (configured) return configured;
+
+		const stored = await this.ctx.storage.get<string>('signing-secret');
+		if (stored) return stored;
+
+		const bytes = crypto.getRandomValues(new Uint8Array(32));
+		const generated = btoa(String.fromCharCode(...bytes));
+		await this.ctx.storage.put('signing-secret', generated);
+		return generated;
+	}
+
 	async onStart(): Promise<void> {
+		this.signingSecret = await this.resolveSigningSecret();
+
 		// Idempotent — drizzle tracks applied migrations in its own table.
 		await migrate(this.db, migrations);
 		if (this.env.LOCAL_ANALYTICS) {
@@ -658,11 +688,8 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 		}
 
 		if (subPath === '/api/auth' || subPath.startsWith('/api/auth/')) {
-			if (!this.env.BETTER_AUTH_SECRET) {
-				return Response.json(
-					{ error: 'auth agent is missing BETTER_AUTH_SECRET' },
-					{ status: 500 },
-				);
+			if (!this.signingSecret) {
+				return Response.json({ error: 'auth agent failed to start' }, { status: 500 });
 			}
 			// The console's instance is not a customer project: it never hands out
 			// guest sessions, and it accepts exactly one sign-up — the first-run

@@ -40,12 +40,15 @@ that ships one.
 	"title": "Authentication",
 	"description": "Users, sessions, and RBAC on Durable Object SQLite.",
 
-	// Durable Object classes this agent owns. `perProject` is the one addressed
-	// as /agents/<worker>/<projectId>; `singleton` gets one instance per install.
-	"durableObjects": [
-		{ "class": "AuthAgent", "scope": "perProject" },
-		{ "class": "ProjectRegistry", "scope": "singleton", "instance": "registry" }
-	],
+	// Durable Object classes this agent owns, one instance per project,
+	// addressed as /agents/<worker>/<projectId>. An agent owns its own
+	// project's data and nothing else — installation-wide state belongs in the
+	// control plane's D1, not in an agent.
+	"durableObjects": [{ "class": "AuthAgent", "scope": "perProject" }],
+
+	// Called by the console when a project is deleted. The console drives the
+	// fan-out, so no agent needs to know that another one exists.
+	"erase": { "method": "DELETE", "path": "/internal/projects/:projectId" },
 
 	// Merged into the host's wrangler.jsonc. Everything here must be
 	// account-neutral: no ids, no domains, no dataset names tied to one account.
@@ -55,8 +58,11 @@ that ships one.
 		"analyticsEngine": [{ "binding": "AUTH_EVENTS", "dataset": "${prefix}_auth_events" }]
 	},
 
+	// `generated` secrets are created by the agent on first start and kept in
+	// its own storage, so an install needs nothing set by hand to work. An
+	// operator may still supply the env var to take ownership of the value.
 	"secrets": {
-		"required": ["BETTER_AUTH_SECRET"],
+		"generated": ["BETTER_AUTH_SECRET"],
 		"optional": ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "CF_ANALYTICS_API_TOKEN"]
 	},
 
@@ -114,40 +120,40 @@ These are already true of `agents/auth` and are what the contract formalises.
 4. **Migrations are generated, applied in `onStart`, and idempotent.** Drizzle
    tracks what it has applied; waking an agent must be safe.
 5. **Analytics writes are best-effort and must never fail the operation.**
-6. **`destroy()` erases the project.** The registry calls it, the demo reaper
-   calls it, and anything that deletes a project must leave no orphaned
+6. **An agent exposes an erase endpoint and owns no installation-wide state.**
+   The console calls it when a project is deleted; the demo reaper calls
+   `destroy()` directly. Nothing that deletes a project may leave an orphaned
    Durable Object holding user records.
 7. **Route access is declared, not implied.** The default is `operator`.
+8. **Secrets an agent can generate, it should.** Requiring one by hand is a
+   setup step between cloning and a working install. Generate on first start,
+   persist in the agent's own storage, and let an env var override.
 
-## The registry is in the wrong worker
+## Where the control plane lives
 
-`ProjectRegistry` is a **control-plane** concern — it lists projects, which will
-eventually have a db agent, a storage agent, and so on. It currently ships
-inside the **auth agent worker**, which does not survive a second agent:
+The project registry is a **D1 table bound to the dashboard Worker**, not a
+Durable Object inside an agent. It briefly was the latter, and that is worth
+recording because the reasoning generalises to every future agent.
 
-- Listing projects requires the auth worker to be running. A bad auth deploy
-  means the console cannot enumerate projects at all.
-- A db agent would depend on the auth worker just to learn which projects
-  exist — a dependency with no reason to exist.
-- You could not run only the db agent; auth becomes mandatory for everyone.
-- `deleteProject` calls `AuthAgent.destroy()` directly. With a second agent,
-  deletion has to fan out to all of them, which would put knowledge of the db
-  agent inside the auth worker. **This is the forcing function** — it is where
-  the arrangement stops being untidy and starts being wrong.
+The registry lists projects, and a project will eventually have a db agent and
+a storage agent as well as auth. Any single agent owning that list makes every
+other agent depend on that one: listing projects would require the auth worker
+to be running, a db agent would call into auth just to learn what exists, and
+nobody could run the db agent alone. The forcing function is deletion — it has
+to reach every agent, so an agent-owned registry ends up holding knowledge of
+agents it should know nothing about.
 
-It was a deployment tradeoff, taken deliberately: a separate worker means
-another service binding and another deploy step, against a goal of getting a
-self-hosted install running in fifteen minutes. It is recorded here so the next
-person reads the reasoning rather than the precedent.
+D1 avoids all of it. It binds directly to the dashboard, which is the control
+plane, and unlike a Durable Object it has no adapter limitation to work around
+— the SvelteKit Cloudflare adapter cannot export a Durable Object class at all.
+`wrangler deploy` provisions the database automatically when `database_id` is
+omitted, so it costs a self-hoster nothing.
 
-**Fix it when agent #2 starts.** A platform worker should own the registry and
-drive the delete fan-out by reading each agent's manifest, so no agent knows
-about any other. Moving it means copying data between Durable Object
-namespaces, since storage does not transfer — cheap while the registry holds
-only `{ id, name, createdAt }`, and steadily less cheap once it holds
-per-project agent enablement or anything settings- or billing-shaped. On the
-app side every caller already goes through `src/lib/server/registry.ts`, so the
-move is one file there.
+**The rule this establishes: control-plane state goes in D1 on the dashboard;
+per-project state goes in that project's Durable Object.** An agent owns its
+own project data and nothing else. `deleteProject` in
+`src/lib/server/registry.ts` fans out from the console, so a new agent adds a
+call there rather than a dependency between agents.
 
 ## What has to change to support this
 
@@ -161,8 +167,9 @@ Roughly in order, none of it blocking today:
   auth agent's routes; it should dispatch by agent name from the manifest.
 - **Make the sidebar data-driven** from `console.pages` instead of the
   hardcoded entries in `dashboard/[projectId]/+layout.svelte`.
-- **Generalise `RegistryProject`** so a project records which agents it has
-  enabled, rather than assuming auth.
+- **Record which agents a project has enabled** in the control-plane schema
+  (`src/lib/server/db/schema.ts`), rather than assuming auth. This is also what
+  turns the delete fan-out from a hardcoded list into a loop.
 - **Move OpenAPI generation behind the manifest** so each agent contributes
   paths to one document per project instead of `src/lib/openapi.ts` knowing
   every route itself.

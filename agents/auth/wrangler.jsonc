@@ -53,12 +53,18 @@
 	"send_email": [{ "name": "EMAIL" }],
 
 	/**
-	 * BETTER_AUTH_SECRET must be set as a secret for deployed environments:
-	 *   npx wrangler secret put BETTER_AUTH_SECRET [--env preview]
+	 * No secret has to be set for this Worker to work.
 	 *
-	 * Optional secrets: GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET (social
-	 * sign-in), CF_ACCOUNT_ID / CF_ANALYTICS_API_TOKEN (Analytics Engine SQL
-	 * API querying — writes need no credentials).
+	 * BETTER_AUTH_SECRET is optional: when unset, each project generates its
+	 * own signing key on first start and keeps it in its own Durable Object
+	 * storage. Set it with `wrangler secret put BETTER_AUTH_SECRET` only if you
+	 * want to own and rotate the value yourself — it then applies to every
+	 * project on this deployment.
+	 *
+	 * Also optional: GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET (social sign-in,
+	 * settable per project from the console instead), and CF_ACCOUNT_ID /
+	 * CF_ANALYTICS_API_TOKEN (Analytics Engine SQL reads — writes need no
+	 * credentials).
 	 *
 	 * Self-hosted defaults. cloudflarebase.com's own values are in
 	 * env.production — the top level must be deployable by someone who does
@@ -85,7 +91,7 @@
 	},
 
 	"secrets": {
-		"required": ["CF_ACCOUNT_ID", "CF_ANALYTICS_API_TOKEN", "BETTER_AUTH_SECRET"],
+		"required": [],
 	},
 
 	// Metrics pipeline: every auth event writes a data point (event type,
@@ -141,7 +147,7 @@
 			"preview_urls": false,
 
 			"secrets": {
-				"required": ["CF_ACCOUNT_ID", "CF_ANALYTICS_API_TOKEN", "BETTER_AUTH_SECRET"],
+				"required": [],
 			},
 		},
 
@@ -199,6 +205,9 @@
 			},
 
 			"vars": {
+				// Pinned so a reused local stack keeps sessions valid across restarts;
+				// unset, each project would generate its own. Test-only, worthless
+				// elsewhere.
 				"BETTER_AUTH_SECRET": "P6YAEopHeROWj8TE/tlIA7HnPNO8CGsF6bw+5G5UVxsVidsO5pJF8by37OWYEBlE",
 				"DISABLE_RATE_LIMIT": "true",
 				"CHAT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
@@ -261,7 +270,7 @@
 			"preview_urls": false,
 
 			"secrets": {
-				"required": ["CF_ACCOUNT_ID", "CF_ANALYTICS_API_TOKEN", "BETTER_AUTH_SECRET"],
+				"required": [],
 			},
 		},
 	},
