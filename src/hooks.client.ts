@@ -1,18 +1,25 @@
-import * as Sentry from '@sentry/sveltekit';
 import { dev } from '$app/environment';
+import { env } from '$env/dynamic/public';
+import * as Sentry from '@sentry/sveltekit';
 
-const PROD_DSN =
-	'https://50ed6e26b886124ac39e983efb72144d@o4510375271530496.ingest.de.sentry.io/4511764380778576';
-const DEV_DSN =
-	'https://093f7505d223a871223f9a15130ef116@o4510375271530496.ingest.de.sentry.io/4511764377043024';
+/**
+ * Error reporting is opt-in and off by default.
+ *
+ * The DSN used to be hardcoded here, which meant any fork deployed anywhere
+ * other than localhost reported its errors into this project's Sentry account.
+ * It now comes from PUBLIC_SENTRY_DSN, so a self-hosted install reports
+ * nowhere until its operator points it at their own project.
+ */
+const dsn = env.PUBLIC_SENTRY_DSN ?? '';
 
-const production = !dev && window.location.hostname === 'cloudflarebase.com';
-const local = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const local =
+	typeof window !== 'undefined' &&
+	(window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
 Sentry.init({
-	dsn: production ? PROD_DSN : DEV_DSN,
-	enabled: !local,
-	environment: production ? 'production' : 'preview',
+	dsn,
+	enabled: !!dsn && !dev && !local,
+	environment: env.PUBLIC_SENTRY_ENV ?? 'production',
 	tracesSampleRate: 0.1
 });
 

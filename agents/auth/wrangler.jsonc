@@ -78,7 +78,9 @@
 		"CHAT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
 		"DEMO_MODE": "true",
 		"DEMO_TTL_HOURS": "24",
-		"SENTRY_DSN": "https://50ed6e26b886124ac39e983efb72144d@o4510375271530496.ingest.de.sentry.io/4511764380778576",
+		// Empty on purpose: a committed DSN would collect every fork's errors.
+		// Set your own with `wrangler secret put SENTRY_DSN` to turn it on.
+		"SENTRY_DSN": "",
 		"SENTRY_ENV": "production",
 		"TRUSTED_ORIGINS": "https://cloudflarebase.com",
 		"WAE_DATASET": "cloudflarebase_auth_events",
@@ -211,7 +213,7 @@
 				"DEMO_MODE": "true",
 				"DEMO_TTL_HOURS": "24",
 				"EMAIL_FROM": "auth@notifications.cloudflarebase.com",
-				"SENTRY_DSN": "https://093f7505d223a871223f9a15130ef116@o4510375271530496.ingest.de.sentry.io/4511764377043024",
+				"SENTRY_DSN": "",
 				"SENTRY_ENV": "preview",
 				"TRUSTED_ORIGINS": "https://preview.cloudflarebase.com",
 				"WAE_DATASET": "cloudflarebase_auth_events_preview",

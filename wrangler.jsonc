@@ -28,9 +28,15 @@
 	// projects only — it is what keeps cloudflarebase.com playable. Named
 	// projects always require an operator session. Self-hosted installs leave
 	// it unset, so a fresh deployment is private by default.
+	// SENTRY_DSN (server) and PUBLIC_SENTRY_DSN (browser) are intentionally
+	// empty in the repository. Error reporting stays off until an operator
+	// points them at their own Sentry project — a committed DSN would send
+	// every fork's errors to whoever published it.
 	"vars": {
 		"DEMO_MODE": "true",
-		"SENTRY_DSN": "https://50ed6e26b886124ac39e983efb72144d@o4510375271530496.ingest.de.sentry.io/4511764380778576"
+		"SENTRY_DSN": "",
+		"PUBLIC_SENTRY_DSN": "",
+		"PUBLIC_SENTRY_ENV": "production"
 	},
 	"secrets": {
 		"required": ["ADMIN_SECRET"]
@@ -130,7 +136,10 @@
 		"preview": {
 			"routes": [],
 			"vars": {
-				"SENTRY_DSN": "https://093f7505d223a871223f9a15130ef116@o4510375271530496.ingest.de.sentry.io/4511764377043024"
+				"DEMO_MODE": "true",
+				"SENTRY_DSN": "",
+				"PUBLIC_SENTRY_DSN": "",
+				"PUBLIC_SENTRY_ENV": "preview"
 			},
 			"ratelimits": [
 				{
