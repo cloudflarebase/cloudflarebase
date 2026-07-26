@@ -5,6 +5,7 @@ One `AuthAgent` Durable Object exists per Cloudflarebase project; the instance n
 ## Key files
 
 - `src/agent.ts`: `AuthAgent` state, HTTP/admin routes, analytics, Workers AI chat, email delivery, project CORS, and Better Auth dispatch. Its DTOs are mirrored in the app's `src/lib/agents.ts`.
+- `src/registry.ts`: `ProjectRegistry`, a singleton Durable Object (instance name `registry`) listing every project this installation owns. Deliberately uses neither KV nor D1 so a fresh self-host provisions nothing beyond the two Workers; the list lives in Agent state and syncs to dashboards without polling. Deleting a project drops the listing **and** wipes that project's `AuthAgent` over RPC.
 - `src/auth.ts`: Better Auth factory with Drizzle adapter, email/password, anonymous and bearer plugins, social providers, rate limiting, project cookie prefix, and database hooks.
 - `src/index.ts`: Worker entrypoint, `/health`, and the internal `/fleet/overview`; delegates agent routes through `routeAgentRequest` without default CORS.
 - `src/fleet.ts`: cross-project fleet rollup for the dashboard's `/admin` page. Lists projects from auth-event analytics (Analytics Engine SQL API, or `LOCAL_ANALYTICS` D1 locally), then fans out to each project's Durable Object via `getAgentByName` RPC (`getFleetCounts`, capped and batched). Its DTOs are mirrored in the app's `src/lib/agents.ts`.
@@ -36,7 +37,9 @@ The Worker exposes `GET /health` and `GET /fleet/overview` (internal fleet rollu
 - `DELETE /admin/sessions/:id`: revoke one session.
 - `/api/auth/*`: Better Auth endpoints, including `GET /token` (project-signed JWT with `role` and `email` claims) and `GET /jwks` from the jwt plugin.
 
-The SvelteKit Worker exposes matching `/api/projects/<projectId>/...` same-origin proxies over the `AUTH_AGENT` service binding.
+`ProjectRegistry` serves `/agents/project-registry/registry/projects` — `GET` to list, `POST` to create (`{ id, name }`, rejecting reserved ids), and `DELETE /projects/:id` to remove a project and erase its `AuthAgent`.
+
+The SvelteKit Worker exposes matching `/api/projects/<projectId>/...` same-origin proxies over the `AUTH_AGENT` service binding, plus `/api/registry/projects` for the registry. Every one of them except `/api/auth/*`, `/config`, and `/openapi.json` requires an operator session — see the console guard in the app's `src/hooks.server.ts`.
 
 ## Authentication and CORS
 
@@ -64,13 +67,28 @@ The SvelteKit Worker exposes matching `/api/projects/<projectId>/...` same-origi
 - Behavioral results are cached for 5 seconds. Cache entries include the validated IANA timezone because daily activity (sign-ups and sign-ins, 90-day window) is grouped in the viewer's local day.
 - `/chat` does not require Better Auth. It stores successful user/agent message pairs in `chat_message`, scoped by a project-specific SHA-256 hash of `CF-Connecting-IP` (with proxy-header and local fallbacks). Never persist the raw address. Shared IPs share history; changed IPs start a new history. Recent history is model context. It is the only route that calls the `AI` binding; inference errors return 502 and must not affect auth or analytics. Workers AI has no local simulator, so the local binding is remote.
 
+## Console instance and demo projects
+
+Two project ids get behaviour no other project has. Both are decided in `onRequest` before Better Auth sees the request, because `/api/auth/*` is deliberately public and never passes through the dashboard's console guard.
+
+- **`console`** is the dashboard's own operator auth. It refuses guest sign-in outright, and accepts exactly one `sign-up/email` — the first-run owner claim — rejecting the rest with 403. Mirrored as `CONSOLE_PROJECT_ID` in the app's `src/lib/console.ts`.
+- **`demo-<20 hex>`** projects are throwaway, but only when `DEMO_MODE=true`. Both halves matter: a self-hosted install must never expire a project merely named `demo-...`, and the public deployment must never expire a named one. They cap users (`DEMO_MAX_USERS`, counting guests, since anonymous sign-in is the cheapest way to fill someone else's database), cap inference per day (`DEMO_MAX_CHAT_PER_DAY`, because Workers AI neurons are an account-level quota), send no mail, and erase themselves after `DEMO_TTL_HOURS`.
+
+Expiry uses `this.schedule(seconds, 'expireDemoProject', undefined, { idempotent: true })` from `onStart`, so repeated Durable Object wakes reuse one row instead of stacking them — which also means the deadline runs from first provision rather than the visitor's last page load. `expireDemoProject()` re-checks the flag before erasing, so pending timers cannot delete real projects if `DEMO_MODE` is later turned off.
+
+`destroy()` wipes the project: `ctx.storage.deleteAll()` drops the whole SQLite database, SQL tables and key-value entries alike. The `ctx.abort()` that follows is deferred by a tick, because aborting immediately destroys the RPC's own response and every successful delete would surface to the caller as a failure.
+
+The ceilings are chosen to bound cost without costing a visitor what they came for. `e2e/demo-project.api.spec.ts` pins that: a demo project still serves the whole REST flow the Integration tab advertises, unauthenticated.
+
 ## Constraints and gotchas
 
 - DO SQLite blocks `pragma_table_info()` and explicit `BEGIN`/`COMMIT` (`SQLITE_AUTH`). This is why the adapter disables transactions and migrations use Drizzle instead of Better Auth's Kysely path.
 - `AuthAgentState` is broadcast to every connected dashboard. Keep it small; activity is capped by `MAX_EVENTS`.
 - SQL files are Wrangler Text modules. Preserve the Wrangler `rules` entry and `src/modules.d.ts` declaration.
 - Service-binding calls through Node/miniflare must use `fetch(url, init)`, not a Node-realm `Request`.
-- Run Wrangler commands from `agents/auth`; use `--env preview` for `auth-agent-preview`.
+- Run Wrangler commands from `agents/auth`; use `--env preview` for `auth-agent-preview` and `--env production` for cloudflarebase.com's own agent.
+- The top level of `wrangler.jsonc` is the **self-hosted default**, not this project's deployment: empty `TRUSTED_ORIGINS` and `EMAIL_FROM`, no `DEMO_MODE`. cloudflarebase.com's values are in `env.production`, whose `name` is pinned to `auth-agent` so the dashboard's service binding still resolves it. Wrangler does not inherit top-level config into environments, so each one repeats it in full.
+- `src/index.ts` may only export handlers and Durable Object classes. A value export — even a string constant — fails at boot with `Incorrect type for map entry`, which reads like a configuration problem rather than a stray export. Type-only exports are erased and safe.
 - `BETTER_AUTH_SECRET` is a plain variable only in local/test; preview and production require a Wrangler secret. The fixed E2E value belongs only in `env.test.vars`.
 - Do not edit `worker-configuration.d.ts`. Run `npx wrangler types` after binding or variable changes.
 
