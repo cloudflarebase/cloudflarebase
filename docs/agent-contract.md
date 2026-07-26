@@ -119,6 +119,36 @@ These are already true of `agents/auth` and are what the contract formalises.
    Durable Object holding user records.
 7. **Route access is declared, not implied.** The default is `operator`.
 
+## The registry is in the wrong worker
+
+`ProjectRegistry` is a **control-plane** concern — it lists projects, which will
+eventually have a db agent, a storage agent, and so on. It currently ships
+inside the **auth agent worker**, which does not survive a second agent:
+
+- Listing projects requires the auth worker to be running. A bad auth deploy
+  means the console cannot enumerate projects at all.
+- A db agent would depend on the auth worker just to learn which projects
+  exist — a dependency with no reason to exist.
+- You could not run only the db agent; auth becomes mandatory for everyone.
+- `deleteProject` calls `AuthAgent.destroy()` directly. With a second agent,
+  deletion has to fan out to all of them, which would put knowledge of the db
+  agent inside the auth worker. **This is the forcing function** — it is where
+  the arrangement stops being untidy and starts being wrong.
+
+It was a deployment tradeoff, taken deliberately: a separate worker means
+another service binding and another deploy step, against a goal of getting a
+self-hosted install running in fifteen minutes. It is recorded here so the next
+person reads the reasoning rather than the precedent.
+
+**Fix it when agent #2 starts.** A platform worker should own the registry and
+drive the delete fan-out by reading each agent's manifest, so no agent knows
+about any other. Moving it means copying data between Durable Object
+namespaces, since storage does not transfer — cheap while the registry holds
+only `{ id, name, createdAt }`, and steadily less cheap once it holds
+per-project agent enablement or anything settings- or billing-shaped. On the
+app side every caller already goes through `src/lib/server/registry.ts`, so the
+move is one file there.
+
 ## What has to change to support this
 
 Roughly in order, none of it blocking today:
