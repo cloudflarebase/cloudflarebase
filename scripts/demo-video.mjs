@@ -38,7 +38,7 @@ const opt = (name, fallback) => {
 	return i >= 0 && args[i + 1] ? args[i + 1] : fallback;
 };
 
-const BASE = (opt('--base', 'http://localhost:5173')).replace(/\/$/, '');
+const BASE = opt('--base', 'http://localhost:5173').replace(/\/$/, '');
 const PROJECT = opt('--project', 'demo-a3f8c2d4e5b6a7f80912');
 const CHECK = flag('--check');
 const SPEED = Number(opt('--speed', CHECK ? '0.12' : '1'));
@@ -77,26 +77,70 @@ function pick(rand, weighted) {
 }
 
 const COUNTRIES = [
-	['US', 30], ['DE', 12], ['GB', 10], ['IN', 10], ['JP', 8],
-	['BR', 7], ['FR', 6], ['CA', 5], ['AU', 4], ['NL', 3], ['SE', 3], ['SG', 2]
+	['US', 30],
+	['DE', 12],
+	['GB', 10],
+	['IN', 10],
+	['JP', 8],
+	['BR', 7],
+	['FR', 6],
+	['CA', 5],
+	['AU', 4],
+	['NL', 3],
+	['SE', 3],
+	['SG', 2]
 ];
-const PROVIDERS = [['credential', 7], ['google', 2], ['github', 1]];
-const DOMAINS = [['gmail.com', 4], ['example.com', 3], ['outlook.com', 2], ['proton.me', 1]];
+const PROVIDERS = [
+	['credential', 7],
+	['google', 2],
+	['github', 1]
+];
+const DOMAINS = [
+	['gmail.com', 4],
+	['example.com', 3],
+	['outlook.com', 2],
+	['proton.me', 1]
+];
 
 const ROSTER = [
-	'Ava Martinez', 'Liam Oconnor', 'Sofia Rossi', 'Noah Kim', 'Maya Patel',
-	'Lucas Weber', 'Emma Johansson', 'Kenji Tanaka', 'Zoe Laurent',
-	'Diego Fernandez', 'Amara Okafor', 'Felix Novak', 'Ines Almeida',
-	'Omar Haddad', 'Freya Nielsen', 'Marco Ricci', 'Priya Sharma', 'Jonas Berg'
+	'Ava Martinez',
+	'Liam Oconnor',
+	'Sofia Rossi',
+	'Noah Kim',
+	'Maya Patel',
+	'Lucas Weber',
+	'Emma Johansson',
+	'Kenji Tanaka',
+	'Zoe Laurent',
+	'Diego Fernandez',
+	'Amara Okafor',
+	'Felix Novak',
+	'Ines Almeida',
+	'Omar Haddad',
+	'Freya Nielsen',
+	'Marco Ricci',
+	'Priya Sharma',
+	'Jonas Berg'
 ].map((name) => ({
 	name,
-	email: `${name.toLowerCase().replace(/[^a-z ]/g, '').replace(/ /g, '.')}@example.com`,
+	email: `${name
+		.toLowerCase()
+		.replace(/[^a-z ]/g, '')
+		.replace(/ /g, '.')}@example.com`,
 	password: 'Cloudbase-demo-2026'
 }));
 
 const FRESH_NAMES = [
-	'Nina Alvarez', 'Theo Lindqvist', 'Lea Fontaine', 'Ravi Menon', 'Hana Suzuki',
-	'Carlos Duarte', 'Greta Keller', 'Sam Whitfield', 'Aisha Bello', 'Mateo Silva'
+	'Nina Alvarez',
+	'Theo Lindqvist',
+	'Lea Fontaine',
+	'Ravi Menon',
+	'Hana Suzuki',
+	'Carlos Duarte',
+	'Greta Keller',
+	'Sam Whitfield',
+	'Aisha Bello',
+	'Mateo Silva'
 ];
 
 // ---------------------------------------------------------------------------
@@ -166,8 +210,26 @@ function buildBackfillSql() {
 	for (const s of subjects) {
 		const createdAt = now - s.createdDaysAgo * day + Math.floor(rand() * day * 0.8);
 		rows.push([PROJECT, createdAt, 'user.created', s.country, s.provider, s.id, 'none', s.domain]);
-		rows.push([PROJECT, createdAt + 900, 'session.created', s.country, s.provider, s.id, `demo-bf-${++session}`, s.domain]);
-		rows.push([PROJECT, createdAt + 900, 'user.active', s.country, s.provider, s.id, `demo-bf-${session}`, s.domain]);
+		rows.push([
+			PROJECT,
+			createdAt + 900,
+			'session.created',
+			s.country,
+			s.provider,
+			s.id,
+			`demo-bf-${++session}`,
+			s.domain
+		]);
+		rows.push([
+			PROJECT,
+			createdAt + 900,
+			'user.active',
+			s.country,
+			s.provider,
+			s.id,
+			`demo-bf-${session}`,
+			s.domain
+		]);
 
 		for (let d = s.createdDaysAgo - 1; d >= 1; d--) {
 			const date = new Date(now - d * day);
@@ -177,8 +239,26 @@ function buildBackfillSql() {
 			for (let k = 0; k < visits; k++) {
 				const ts = now - d * day + Math.floor(rand() * day * 0.9);
 				const country = rand() < 0.1 ? pick(rand, COUNTRIES) : s.country;
-				rows.push([PROJECT, ts, 'session.created', country, s.provider, s.id, `demo-bf-${++session}`, s.domain]);
-				rows.push([PROJECT, ts, 'user.active', country, s.provider, s.id, `demo-bf-${session}`, s.domain]);
+				rows.push([
+					PROJECT,
+					ts,
+					'session.created',
+					country,
+					s.provider,
+					s.id,
+					`demo-bf-${++session}`,
+					s.domain
+				]);
+				rows.push([
+					PROJECT,
+					ts,
+					'user.active',
+					country,
+					s.provider,
+					s.id,
+					`demo-bf-${session}`,
+					s.domain
+				]);
 			}
 		}
 	}
@@ -186,16 +266,52 @@ function buildBackfillSql() {
 	// Guarantee a healthy DAU: ten subjects active in the last 20 hours.
 	for (const s of subjects.slice(0, 10)) {
 		const ts = now - Math.floor(rand() * 20 * 3_600_000);
-		rows.push([PROJECT, ts, 'session.created', s.country, s.provider, s.id, `demo-bf-${++session}`, s.domain]);
-		rows.push([PROJECT, ts, 'user.active', s.country, s.provider, s.id, `demo-bf-${session}`, s.domain]);
+		rows.push([
+			PROJECT,
+			ts,
+			'session.created',
+			s.country,
+			s.provider,
+			s.id,
+			`demo-bf-${++session}`,
+			s.domain
+		]);
+		rows.push([
+			PROJECT,
+			ts,
+			'user.active',
+			s.country,
+			s.provider,
+			s.id,
+			`demo-bf-${session}`,
+			s.domain
+		]);
 	}
 
 	// A sprinkle of anonymous guests across the last month.
 	for (let i = 0; i < 22; i++) {
 		const ts = now - Math.floor(rand() * 30 * day);
 		const id = `demo-user-anon-${i}`;
-		rows.push([PROJECT, ts, 'user.created', pick(rand, COUNTRIES), 'anonymous', id, 'none', 'none']);
-		rows.push([PROJECT, ts + 500, 'session.created', pick(rand, COUNTRIES), 'anonymous', id, `demo-bf-${++session}`, 'none']);
+		rows.push([
+			PROJECT,
+			ts,
+			'user.created',
+			pick(rand, COUNTRIES),
+			'anonymous',
+			id,
+			'none',
+			'none'
+		]);
+		rows.push([
+			PROJECT,
+			ts + 500,
+			'session.created',
+			pick(rand, COUNTRIES),
+			'anonymous',
+			id,
+			`demo-bf-${++session}`,
+			'none'
+		]);
 	}
 
 	const escape = (v) => (typeof v === 'number' ? v : `'${String(v).replace(/'/g, "''")}'`);
@@ -222,7 +338,9 @@ function runWrangler(argv, cwd) {
 		let output = '';
 		child.stdout.on('data', (d) => (output += d));
 		child.stderr.on('data', (d) => (output += d));
-		child.on('close', (code) => (code === 0 ? resolve(output) : reject(new Error(output.slice(-800)))));
+		child.on('close', (code) =>
+			code === 0 ? resolve(output) : reject(new Error(output.slice(-800)))
+		);
 	});
 }
 
@@ -236,7 +354,9 @@ async function backfillAnalytics() {
 			});
 			const analytics = await res.json();
 			if ((analytics.mau ?? 0) >= 15) {
-				log(`analytics already backfilled (MAU ${analytics.mau}) — skipping; use --force-backfill to redo`);
+				log(
+					`analytics already backfilled (MAU ${analytics.mau}) — skipping; use --force-backfill to redo`
+				);
 				return;
 			}
 		} catch {
@@ -250,15 +370,23 @@ async function backfillAnalytics() {
 	try {
 		await runWrangler(
 			[
-				'wrangler', 'd1', 'execute', 'cloudflarebase-auth-analytics-local',
-				'--env', 'local', '--local', '--persist-to=../../.wrangler/state/',
+				'wrangler',
+				'd1',
+				'execute',
+				'cloudflarebase-auth-analytics-local',
+				'--env',
+				'local',
+				'--local',
+				'--persist-to=../../.wrangler/state/',
 				`--file=${file}`
 			],
 			path.resolve(import.meta.dirname, '..', 'agents', 'auth')
 		);
 		log('backfill done — charts, DAU/MAU, countries and providers now have history');
 	} catch (error) {
-		log(`WARNING: backfill failed (often a lock while the dev stack runs). Charts will only show live data.`);
+		log(
+			`WARNING: backfill failed (often a lock while the dev stack runs). Charts will only show live data.`
+		);
 		log(`         Retry once with the stack stopped: node scripts/demo-video.mjs --force-backfill`);
 		if (!CHECK) log(String(error.message).split('\n').slice(-3).join(' '));
 	} finally {
@@ -377,7 +505,11 @@ async function preflightChat() {
 	} catch {
 		chatWorks = false;
 	}
-	log(chatWorks ? 'Workers AI reachable — copilot scene enabled' : 'Workers AI not reachable — skipping the copilot scene');
+	log(
+		chatWorks
+			? 'Workers AI reachable — copilot scene enabled'
+			: 'Workers AI not reachable — skipping the copilot scene'
+	);
 }
 
 let trafficTimer = null;
@@ -509,7 +641,8 @@ async function countdown(page, seconds) {
 	await page.evaluate((s) => {
 		const pill = document.createElement('div');
 		pill.id = 'cfb-demo-countdown';
-		pill.style.cssText = 'position:fixed;right:18px;bottom:18px;z-index:2147483647;' +
+		pill.style.cssText =
+			'position:fixed;right:18px;bottom:18px;z-index:2147483647;' +
 			'background:rgba(10,10,12,.82);color:#fff;font:600 13px/1 system-ui;' +
 			'padding:10px 14px;border-radius:999px;pointer-events:none;letter-spacing:.02em;';
 		pill.textContent = 'tour starts in ' + s + 's';
@@ -619,7 +752,9 @@ async function runTour() {
 	const tourStart = Date.now();
 
 	await pace(1000);
-	await page.evaluate(() => document.getElementById('live')?.scrollIntoView({ behavior: 'smooth' }));
+	await page.evaluate(() =>
+		document.getElementById('live')?.scrollIntoView({ behavior: 'smooth' })
+	);
 	await pace(1400);
 	await page.evaluate(() => document.getElementById('api')?.scrollIntoView({ behavior: 'smooth' }));
 	await pace(1400);
@@ -630,9 +765,12 @@ async function runTour() {
 	await pace(600);
 	if (DEMO_PATTERN.test(PROJECT)) {
 		await clickEl(page, cta);
-		await page
-			.waitForURL('**/dashboard/**', { timeout: 15_000 })
-			.catch(() => page.goto(`${BASE}/dashboard/${PROJECT}`, { waitUntil: 'domcontentloaded', timeout: 60_000 }));
+		await page.waitForURL('**/dashboard/**', { timeout: 15_000 }).catch(() =>
+			page.goto(`${BASE}/dashboard/${PROJECT}`, {
+				waitUntil: 'domcontentloaded',
+				timeout: 60_000
+			})
+		);
 	} else {
 		await page.goto(`${BASE}/dashboard/${PROJECT}`);
 	}
@@ -646,15 +784,20 @@ async function runTour() {
 	await glideTo(page, page.getByTestId('product-auth'), { settle: 200 });
 	await pace(500);
 	await clickEl(page, page.getByTestId('nav-auth'));
-	await page
-		.waitForURL('**/auth', { timeout: 15_000 })
-		.catch(() => page.goto(`${BASE}/dashboard/${PROJECT}/auth`, { waitUntil: 'domcontentloaded', timeout: 60_000 }));
+	await page.waitForURL('**/auth', { timeout: 15_000 }).catch(() =>
+		page.goto(`${BASE}/dashboard/${PROJECT}/auth`, {
+			waitUntil: 'domcontentloaded',
+			timeout: 60_000
+		})
+	);
 
 	// --- Scene 3: auth dashboard ------------------------------------------
 	const authPage = page.getByTestId('auth-page');
 	await authPage.waitFor({ timeout: 20_000 });
 	await page
-		.waitForFunction(() => document.querySelector('[data-testid="auth-page"]')?.dataset.hydrated === 'true')
+		.waitForFunction(
+			() => document.querySelector('[data-testid="auth-page"]')?.dataset.hydrated === 'true'
+		)
 		.catch(() => {});
 	await pace(1500);
 	await screenshot(page, '03-auth-dashboard');

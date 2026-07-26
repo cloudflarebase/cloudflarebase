@@ -1,8 +1,6 @@
 {
 	"prefix": "name",
-	"killOthersOn": [
-		"failure"
-	],
+	"killOthersOn": ["failure"],
 	"restartTries": 0,
 	"commands": [
 		{
