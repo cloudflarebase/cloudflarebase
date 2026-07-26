@@ -82,7 +82,9 @@ test.describe('console guard', () => {
 		});
 		expect(second.status(), 'the console must accept exactly one owner').toBe(403);
 
-		const guest = await request.post(consoleAuthPath('sign-in/anonymous'));
+		// Sent with a body so a rejection can only come from the console rule,
+		// never from Better Auth's content-type check.
+		const guest = await request.post(consoleAuthPath('sign-in/anonymous'), { data: {} });
 		expect(guest.status(), 'the console must never issue guest sessions').toBe(403);
 	});
 

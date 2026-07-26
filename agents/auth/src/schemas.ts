@@ -3,6 +3,16 @@ import { z } from 'zod';
 export const resourceIdSchema = z.string().min(1).max(128);
 export const projectIdSchema = z.string().regex(/^[a-z0-9][a-z0-9-]{0,31}$/);
 
+/**
+ * Projects minted for anonymous visitors of the public demo. They are
+ * throwaway by construction: capped, and erased on a schedule. Mirrored in the
+ * app's src/lib/console.ts; keep both in sync.
+ */
+export const DEMO_PROJECT_PATTERN = /^demo-[a-f0-9]{20}$/;
+
+/** Hours a demo project survives before it erases itself. */
+export const demoTtlHoursSchema = z.coerce.number().int().min(1).max(720).catch(24);
+
 export const timeZoneSchema = z
 	.string()
 	.trim()

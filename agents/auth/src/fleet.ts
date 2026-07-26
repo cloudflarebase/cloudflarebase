@@ -1,6 +1,6 @@
 import { getAgentByName } from 'agents';
 import type { AuthAgent, FleetProjectCounts } from './agent';
-import { analyticsApiResponseSchema, projectIdSchema } from './schemas';
+import { analyticsApiResponseSchema, DEMO_PROJECT_PATTERN, projectIdSchema } from './schemas';
 
 /**
  * Cross-project fleet rollup for the platform admin dashboard.
@@ -63,8 +63,6 @@ interface ProjectListing {
 const DEFAULT_COUNT_LIMIT = 100;
 const MAX_COUNT_LIMIT = 500;
 const COUNT_CONCURRENCY = 10;
-
-const DEMO_PROJECT_PATTERN = /^demo-[a-f0-9]{20}$/;
 
 /** Accepts D1 epoch millis and Analytics Engine 'YYYY-MM-DD HH:MM:SS' (UTC). */
 function toIso(value: unknown): string | null {

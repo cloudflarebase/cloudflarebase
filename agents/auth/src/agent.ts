@@ -8,6 +8,8 @@ import * as schema from './db/schema';
 import {
 	analyticsApiResponseSchema,
 	chatRequestSchema,
+	DEMO_PROJECT_PATTERN,
+	demoTtlHoursSchema,
 	projectIdSchema,
 	resourceIdSchema,
 	roleRequestSchema,
@@ -28,6 +30,16 @@ const MAX_EVENTS = 50;
  * app's src/lib/server/console.ts; keep both in sync.
  */
 const CONSOLE_PROJECT_ID = 'console';
+
+/**
+ * Ceilings that apply only to throwaway demo projects on the public
+ * deployment. They exist because the demo is an open, unauthenticated door:
+ * without them it is a free anonymous auth backend and a free Workers AI
+ * proxy, both billed to whoever runs the demo. Self-hosted installs never see
+ * them — DEMO_MODE is unset by default.
+ */
+const DEMO_MAX_USERS = 50;
+const DEMO_MAX_CHAT_PER_DAY = 50;
 // Analytics Engine ingestion is asynchronous. Keep this short so a query that
 // races a new write is retried quickly instead of holding stale graph data.
 const ANALYTICS_CACHE_MS = 5_000;
@@ -246,8 +258,10 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 					? { clientId: this.env.GOOGLE_CLIENT_ID, clientSecret: this.env.GOOGLE_CLIENT_SECRET }
 					: undefined),
 			github: this.socialCredentials.github,
+			// Demo projects never send mail: the addresses are strangers' and the
+			// sending domain's reputation is not worth a throwaway signup flow.
 			sendEmail:
-				this.env.EMAIL && this.env.EMAIL_FROM
+				this.env.EMAIL && this.env.EMAIL_FROM && !this.isEphemeral
 					? (message) => this.sendAuthEmail(message)
 					: undefined,
 			onUserCreated: async (user) => {
@@ -269,6 +283,16 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 			},
 		});
 		return this._auth;
+	}
+
+	/**
+	 * Whether this project is a throwaway demo instance. Both halves matter: a
+	 * self-hosted install must never expire a project just because someone
+	 * named it `demo-...`, and the public deployment must never expire a named
+	 * one.
+	 */
+	private get isEphemeral(): boolean {
+		return this.env.DEMO_MODE === 'true' && DEMO_PROJECT_PATTERN.test(this.name);
 	}
 
 	private get trustedOrigins(): string[] {
@@ -340,6 +364,27 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 				enabledSocialProviders: this.configuredSocialProviders,
 			});
 		}
+
+		if (this.isEphemeral) {
+			// idempotent so repeated wakes reuse the existing row instead of
+			// stacking new ones — which also means the deadline runs from first
+			// provision rather than from the visitor's last page load.
+			const hours = demoTtlHoursSchema.parse(this.env.DEMO_TTL_HOURS);
+			await this.schedule(hours * 3600, 'expireDemoProject', undefined, { idempotent: true });
+		}
+	}
+
+	/**
+	 * Scheduled callback that erases an expired demo project. Without it every
+	 * visitor to the public demo would leave behind a Durable Object that lives
+	 * forever, so a launch-day traffic spike becomes a permanent bill.
+	 *
+	 * Re-checks isEphemeral because the schedule outlives config: if DEMO_MODE
+	 * is ever turned off, pending timers must not delete real projects.
+	 */
+	async expireDemoProject(): Promise<void> {
+		if (!this.isEphemeral) return;
+		await this.destroy();
 	}
 
 	private get configuredSocialProviders(): string[] {
@@ -460,6 +505,59 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 		this.writeAuthEvent('user.active', dimensions);
 	}
 
+	/** Current user count, used for the demo ceiling. */
+	private async userCount(): Promise<number> {
+		const [row] = await this.db.select({ value: count() }).from(schema.user);
+		return row?.value ?? 0;
+	}
+
+	/**
+	 * Caps identity creation on demo projects. Anonymous sign-in is the cheapest
+	 * way to fill someone else's database, so it counts against the same
+	 * ceiling as registration.
+	 */
+	private async denyDemoAuthRoute(subPath: string): Promise<Response | null> {
+		if (!/\/sign-up\/email$|\/sign-in\/anonymous$/.test(subPath)) return null;
+
+		if ((await this.userCount()) >= DEMO_MAX_USERS) {
+			return Response.json(
+				{
+					error: `this demo project is limited to ${DEMO_MAX_USERS} users — deploy your own instance for unlimited projects`,
+				},
+				{ status: 429 },
+			);
+		}
+
+		return null;
+	}
+
+	/**
+	 * Daily ceiling on demo inference. /chat is the only route that spends
+	 * Workers AI neurons, it needs no authentication, and neurons are an
+	 * account-level quota — so one demo visitor could otherwise starve every
+	 * other project on the deployment.
+	 */
+	private async denyDemoChat(): Promise<Response | null> {
+		const today = new Date().toISOString().slice(0, 10);
+		const usage = (await this.ctx.storage.get<{ day: string; count: number }>(
+			'demo-chat-usage',
+		)) ?? {
+			day: today,
+			count: 0,
+		};
+		const count = usage.day === today ? usage.count : 0;
+
+		if (count >= DEMO_MAX_CHAT_PER_DAY) {
+			return Response.json(
+				{ error: 'this demo project has reached its daily AI limit — it resets tomorrow' },
+				{ status: 429 },
+			);
+		}
+
+		await this.ctx.storage.put('demo-chat-usage', { day: today, count: count + 1 });
+		return null;
+	}
+
 	/**
 	 * Extra rules that apply only to the console's own auth instance. Returns a
 	 * rejection response, or null when the route is permitted.
@@ -520,6 +618,10 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 			if (!body.success) {
 				return Response.json({ error: 'question is required' }, { status: 400 });
 			}
+			if (this.isEphemeral) {
+				const denied = await this.denyDemoChat();
+				if (denied) return denied;
+			}
 			const clientKey = await this.chatClientKey(request);
 			try {
 				return Response.json(await this.answerQuestion(body.data.question, clientKey));
@@ -568,6 +670,11 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 			// so the dashboard's console guard never sees these requests.
 			if (this.name === CONSOLE_PROJECT_ID) {
 				const denied = await this.denyConsoleAuthRoute(subPath);
+				if (denied) return denied;
+			}
+
+			if (this.isEphemeral) {
+				const denied = await this.denyDemoAuthRoute(subPath);
 				if (denied) return denied;
 			}
 
