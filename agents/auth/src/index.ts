@@ -1,9 +1,9 @@
 import * as Sentry from '@sentry/cloudflare';
-import { routeAgentRequest } from 'agents';
+import { getAgentByName, routeAgentRequest } from 'agents';
 import { WorkerEntrypoint } from 'cloudflare:workers';
 import { AuthAgent as AuthAgentBase } from './agent';
 import { getFleetOverview } from './fleet';
-import { ProjectRegistry as ProjectRegistryBase } from './registry';
+import { projectIdSchema } from './schemas';
 
 export type {
 	AgentChatReply,
@@ -15,9 +15,6 @@ export type {
 	FleetProjectCounts,
 } from './agent';
 export type { FleetOverview, FleetProject, FleetTotals } from './fleet';
-// Type-only: a value export here would be read as a Worker entrypoint and
-// workerd rejects anything that is not a handler or Durable Object class.
-export type { ProjectRegistryState, RegistryProject } from './registry';
 
 const sentryOptions = (env: Env) => ({
 	dsn: env.SENTRY_DSN,
@@ -27,10 +24,6 @@ const sentryOptions = (env: Env) => ({
 });
 
 export const AuthAgent = Sentry.instrumentDurableObjectWithSentry(sentryOptions, AuthAgentBase);
-export const ProjectRegistry = Sentry.instrumentDurableObjectWithSentry(
-	sentryOptions,
-	ProjectRegistryBase,
-);
 
 /**
  * Auth service for Cloudflarebase. Each project gets its own AuthAgent — a
@@ -46,6 +39,21 @@ class AuthService extends WorkerEntrypoint<Env> {
 
 		if (url.pathname === '/health') {
 			return Response.json({ service: 'auth-agent', status: 'ok' });
+		}
+
+		// Erases one project's auth data. Outside /agents/* for the same reason
+		// the fleet rollup is: reachable only over the dashboard's service
+		// binding. The console owns the fan-out across agents, so this endpoint
+		// knows nothing about any agent but its own.
+		const erase = url.pathname.match(/^\/internal\/projects\/([^/]+)$/);
+		if (erase && request.method === 'DELETE') {
+			const projectId = decodeURIComponent(erase[1]);
+			if (!projectIdSchema.safeParse(projectId).success) {
+				return Response.json({ error: 'invalid project id' }, { status: 400 });
+			}
+			const agent = await getAgentByName<Env, AuthAgentBase>(this.env.AuthAgent, projectId);
+			await agent.destroy();
+			return Response.json({ erased: true });
 		}
 
 		// Fleet rollup for the platform admin dashboard. Not under /agents/*, so

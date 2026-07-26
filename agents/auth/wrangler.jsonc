@@ -17,21 +17,12 @@
 			"deleted_classes": ["MyDurableObject"],
 			"tag": "v2",
 		},
-		{
-			// Singleton listing every project this installation owns.
-			"new_sqlite_classes": ["ProjectRegistry"],
-			"tag": "v3",
-		},
 	],
 	"durable_objects": {
 		"bindings": [
 			{
 				"class_name": "AuthAgent",
 				"name": "AuthAgent",
-			},
-			{
-				"class_name": "ProjectRegistry",
-				"name": "ProjectRegistry",
 			},
 		],
 	},
@@ -64,14 +55,11 @@
 	/**
 	 * BETTER_AUTH_SECRET must be set as a secret for deployed environments:
 	 *   npx wrangler secret put BETTER_AUTH_SECRET [--env preview]
-	 * TRUSTED_ORIGINS is a comma-separated list of origins allowed to call
-	 * the per-project auth endpoints (CSRF protection).
 	 *
 	 * Optional secrets: GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET (social
 	 * sign-in), CF_ACCOUNT_ID / CF_ANALYTICS_API_TOKEN (Analytics Engine SQL
 	 * API querying — writes need no credentials).
-	 */
-	/**
+	 *
 	 * Self-hosted defaults. cloudflarebase.com's own values are in
 	 * env.production — the top level must be deployable by someone who does
 	 * not own this project's domain or mail sender.
@@ -128,10 +116,6 @@
 						"class_name": "AuthAgent",
 						"name": "AuthAgent",
 					},
-					{
-						"class_name": "ProjectRegistry",
-						"name": "ProjectRegistry",
-					},
 				],
 			},
 
@@ -174,10 +158,6 @@
 						"class_name": "AuthAgent",
 						"name": "AuthAgent",
 					},
-					{
-						"class_name": "ProjectRegistry",
-						"name": "ProjectRegistry",
-					},
 				],
 			},
 
@@ -214,10 +194,6 @@
 					{
 						"class_name": "AuthAgent",
 						"name": "AuthAgent",
-					},
-					{
-						"class_name": "ProjectRegistry",
-						"name": "ProjectRegistry",
 					},
 				],
 			},
@@ -259,10 +235,6 @@
 					{
 						"class_name": "AuthAgent",
 						"name": "AuthAgent",
-					},
-					{
-						"class_name": "ProjectRegistry",
-						"name": "ProjectRegistry",
 					},
 				],
 			},

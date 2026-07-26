@@ -54,6 +54,19 @@
 	},
 
 	"services": [{ "binding": "AUTH_AGENT", "service": "auth-agent" }],
+
+	// Control plane: the project registry. `database_id` is deliberately
+	// omitted so `wrangler deploy` provisions the database on first deploy and
+	// writes the id back here — a self-hosted install has no setup step, and
+	// the Deploy to Cloudflare button provisions it the same way. The schema is
+	// applied at runtime by src/lib/server/db.
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "cloudflarebase-control-plane"
+		}
+	],
+
 	"ratelimits": [
 		{
 			"name": "API_RATE_LIMITER",
@@ -77,10 +90,9 @@
 
 			"d1_databases": [
 				{
-					"binding": "D1",
-					"database_name": "D1",
-					"database_id": "local",
-					"preview_database_id": "D1"
+					"binding": "DB",
+					"database_name": "cloudflarebase-control-plane",
+					"database_id": "local"
 				}
 			],
 
@@ -114,10 +126,9 @@
 
 			"d1_databases": [
 				{
-					"binding": "D1",
-					"database_name": "D1",
-					"database_id": "local",
-					"preview_database_id": "D1"
+					"binding": "DB",
+					"database_name": "cloudflarebase-control-plane",
+					"database_id": "local"
 				}
 			],
 
@@ -156,6 +167,12 @@
 				"PUBLIC_SENTRY_DSN": "",
 				"PUBLIC_SENTRY_ENV": "production"
 			},
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "cloudflarebase-control-plane"
+				}
+			],
 			"services": [{ "binding": "AUTH_AGENT", "service": "auth-agent" }],
 			"ratelimits": [
 				{
@@ -184,6 +201,12 @@
 					"name": "API_RATE_LIMITER",
 					"namespace_id": "4511764384",
 					"simple": { "limit": 100, "period": 60 }
+				}
+			],
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "cloudflarebase-control-plane"
 				}
 			],
 			"services": [{ "binding": "AUTH_AGENT", "service": "auth-agent-preview" }],

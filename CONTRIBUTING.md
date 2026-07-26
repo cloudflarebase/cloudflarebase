@@ -31,6 +31,11 @@ production-mirroring stack — the built SvelteKit worker and the auth agent, bo
 in real workerd, with real service bindings and Durable Object SQLite. It takes
 a few minutes and it is the check that actually catches things.
 
+One gotcha: `npm run build` writes the bundled Worker to `.svelte-kit/cloudflare/`,
+which `svelte-check` then scans, so running `check` after `build` reports
+thousands of errors in generated code. Delete that directory first. CI is
+unaffected — it checks a fresh checkout before building.
+
 Typecheck the agent separately, since it is its own TypeScript project:
 
 ```bash

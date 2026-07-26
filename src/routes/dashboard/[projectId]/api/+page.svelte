@@ -36,7 +36,11 @@
 				darkMode: mode.current === 'dark',
 				hideDarkModeToggle: true,
 				hideClientButton: true,
-				showSidebar: true
+				showSidebar: true,
+				mcp: undefined,
+				agent: {
+					disabled: true
+				}
 			});
 		})();
 

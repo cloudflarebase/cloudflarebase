@@ -1,5 +1,4 @@
-import { forwardToRegistry, listProjects } from '$lib/server/registry';
-import { toNativeResponse } from '$lib/server/auth-agent';
+import { createProject, listProjects } from '$lib/server/registry';
 import type { RequestHandler } from './$types';
 
 /**
@@ -8,14 +7,15 @@ import type { RequestHandler } from './$types';
  * so these handlers never run without a session.
  */
 
-export const GET: RequestHandler = async ({ platform, url }) => {
-	return Response.json({ projects: await listProjects(platform, url.origin) });
+export const GET: RequestHandler = async ({ platform }) => {
+	return Response.json({ projects: await listProjects(platform) });
 };
 
-export const POST: RequestHandler = async ({ platform, request, url }) => {
-	const response = await forwardToRegistry(platform, url.origin, '/projects', {
-		method: 'POST',
-		body: await request.arrayBuffer()
-	});
-	return toNativeResponse(response);
+export const POST: RequestHandler = async ({ platform, request }) => {
+	const result = await createProject(platform, await request.json().catch(() => null));
+
+	if (!result.ok) {
+		return Response.json({ error: result.error }, { status: result.status });
+	}
+	return Response.json({ project: result.project }, { status: 201 });
 };

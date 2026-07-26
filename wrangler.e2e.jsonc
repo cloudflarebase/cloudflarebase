@@ -10,8 +10,8 @@
 	},
 	"d1_databases": [
 		{
-			"binding": "D1",
-			"database_name": "D1",
+			"binding": "DB",
+			"database_name": "cloudflarebase-control-plane",
 			"database_id": "local",
 			"preview_database_id": "D1"
 		}
