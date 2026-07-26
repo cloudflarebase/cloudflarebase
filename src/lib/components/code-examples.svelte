@@ -46,6 +46,10 @@
 		return () => clearTimeout(id);
 	});
 
+	// Deliberately a plain Map, not SvelteMap: this is a memo read inside the
+	// effect below that also writes it. A reactive map would make each write
+	// re-trigger that effect.
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity
 	const highlightCache = new Map<string, string>();
 	$effect(() => {
 		if (!ready) return;

@@ -4,170 +4,228 @@
  * Kept as local copies (not imported from agents/auth) so the two workers stay
  * separate TypeScript projects with their own generated Env types. Keep in
  * sync with agents/auth/src/agent.ts.
+ *
+ * These are zod schemas rather than bare interfaces so one definition serves
+ * three jobs: the exported types, runtime parsing of responses that cross the
+ * service binding, and the OpenAPI document in $lib/openapi. `.meta({ id })`
+ * names the component in that document; `.describe()` becomes its docs.
  */
+import { z } from 'zod';
 
-export interface AuthActivityEvent {
-	id: string;
-	type:
-		| 'project.provisioned'
-		| 'user.created'
-		| 'user.deleted'
-		| 'user.role-changed'
-		| 'session.created'
-		| 'session.revoked';
-	message: string;
-	at: string;
-}
+export const authActivityEventSchema = z
+	.object({
+		id: z.string(),
+		type: z.enum([
+			'project.provisioned',
+			'user.created',
+			'user.deleted',
+			'user.role-changed',
+			'session.created',
+			'session.revoked'
+		]),
+		message: z.string(),
+		at: z.iso.datetime()
+	})
+	.meta({ id: 'AuthActivityEvent' });
 
-/** An assignable RBAC role and the permission keys it grants. */
-export interface RoleDefinition {
-	name: string;
-	permissions: string[];
-}
+export const roleDefinitionSchema = z
+	.object({
+		name: z.string().describe('Lowercase role slug, e.g. "admin".'),
+		permissions: z
+			.array(z.string())
+			.describe('Permission keys like "posts:write", or "*" for everything.')
+	})
+	.meta({ id: 'RoleDefinition', description: 'An assignable RBAC role and the keys it grants.' });
 
-/** Synced in realtime from the AuthAgent via WebSocket state sync. */
-export interface AuthAgentState {
-	projectId: string;
-	provisionedAt: string | null;
-	/** Role registry; always contains the built-in `user` and `admin`. */
-	roles: RoleDefinition[];
-	allowedOrigins: string[];
-	enabledSocialProviders: string[];
-	users: number;
-	activeSessions: number;
-	totalEvents: number;
-	lastEventAt: string | null;
-	events: AuthActivityEvent[];
-}
+export const authAgentStateSchema = z
+	.object({
+		projectId: z.string(),
+		provisionedAt: z.iso.datetime().nullable(),
+		roles: z
+			.array(roleDefinitionSchema)
+			.describe('Role registry; always contains the built-in `user` and `admin`.'),
+		allowedOrigins: z.array(z.string()),
+		enabledSocialProviders: z.array(z.string()),
+		users: z.number().int(),
+		activeSessions: z.number().int(),
+		totalEvents: z.number().int(),
+		lastEventAt: z.iso.datetime().nullable(),
+		events: z.array(authActivityEventSchema)
+	})
+	.meta({
+		id: 'AuthAgentState',
+		description: 'Synced in realtime from the AuthAgent via WebSocket state sync.'
+	});
 
-export interface OverviewUser {
-	id: string;
-	name: string;
-	email: string;
-	emailVerified: boolean;
-	isAnonymous: boolean;
-	role: string;
-	providers: string[];
-	createdAt: string;
-}
+export const overviewUserSchema = z
+	.object({
+		id: z.string(),
+		name: z.string(),
+		email: z.string(),
+		emailVerified: z.boolean(),
+		isAnonymous: z.boolean(),
+		role: z.string(),
+		providers: z.array(z.string()),
+		createdAt: z.iso.datetime()
+	})
+	.meta({ id: 'OverviewUser' });
 
-export interface OverviewSession {
-	id: string;
-	userId: string;
-	email: string | null;
-	ipAddress: string | null;
-	userAgent: string | null;
-	country: string | null;
-	createdAt: string;
-	expiresAt: string;
-}
+export const overviewSessionSchema = z
+	.object({
+		id: z.string(),
+		userId: z.string(),
+		email: z.string().nullable(),
+		ipAddress: z.string().nullable(),
+		userAgent: z.string().nullable(),
+		country: z.string().nullable(),
+		createdAt: z.iso.datetime(),
+		expiresAt: z.iso.datetime()
+	})
+	.meta({ id: 'OverviewSession' });
 
-export interface AuthOverview {
-	projectId: string;
-	users: OverviewUser[];
-	sessions: OverviewSession[];
-	state: AuthAgentState;
-}
+export const authOverviewSchema = z
+	.object({
+		projectId: z.string(),
+		users: z.array(overviewUserSchema),
+		sessions: z.array(overviewSessionSchema),
+		state: authAgentStateSchema
+	})
+	.meta({ id: 'AuthOverview' });
 
-export interface AuthAnalytics {
-	projectId: string;
-	dau: number;
-	wau: number;
-	mau: number;
-	totalUsers: number;
-	registeredUsers: number;
-	anonymousUsers: number;
-	gmailUsers: number;
-	activeSessions: number;
-	providers: { provider: string; users: number }[];
-	countries: { country: string; sessions: number }[];
-	activityByDay: { day: string; signups: number; signins: number }[];
-	/** Workers Analytics Engine metrics pipeline. */
-	engine: {
-		dataset: string;
-		enabled: boolean;
-		status: 'connected' | 'local' | 'write-only' | 'error';
-		error?: string;
-	};
-	/** Event counts from the Analytics Engine SQL API — only when enabled. */
-	eventsLast24h?: { eventType: string; count: number }[];
-}
+export const authAnalyticsSchema = z
+	.object({
+		projectId: z.string(),
+		dau: z.number().int().describe('Daily active users.'),
+		wau: z.number().int().describe('Weekly active users.'),
+		mau: z.number().int().describe('Monthly active users.'),
+		totalUsers: z.number().int(),
+		registeredUsers: z.number().int(),
+		anonymousUsers: z.number().int(),
+		gmailUsers: z.number().int(),
+		activeSessions: z.number().int(),
+		providers: z.array(z.object({ provider: z.string(), users: z.number().int() })),
+		countries: z.array(z.object({ country: z.string(), sessions: z.number().int() })),
+		activityByDay: z.array(
+			z.object({
+				day: z.string(),
+				signups: z.number().int(),
+				signins: z.number().int()
+			})
+		),
+		engine: z
+			.object({
+				dataset: z.string(),
+				enabled: z.boolean(),
+				status: z.enum(['connected', 'local', 'write-only', 'error']),
+				error: z.string().optional()
+			})
+			.describe('Workers Analytics Engine metrics pipeline.'),
+		eventsLast24h: z
+			.array(z.object({ eventType: z.string(), count: z.number().int() }))
+			.optional()
+			.describe('Event counts from the Analytics Engine SQL API — only when enabled.')
+	})
+	.meta({ id: 'AuthAnalytics' });
 
-/** Per-project counts for the platform admin fleet view — cheap SQLite reads only. */
-export interface FleetProjectCounts {
-	projectId: string;
-	users: number;
-	registeredUsers: number;
-	anonymousUsers: number;
-	activeSessions: number;
-	provisionedAt: string | null;
-	lastEventAt: string | null;
-	/** Cloudflare data center (IATA code) this project's Durable Object runs in. */
-	colo: string | null;
-	/** ISO country of that data center — approximates where the demo's visitor is. */
-	coloCountry: string | null;
-}
+export const fleetProjectCountsSchema = z
+	.object({
+		projectId: z.string(),
+		users: z.number().int(),
+		registeredUsers: z.number().int(),
+		anonymousUsers: z.number().int(),
+		activeSessions: z.number().int(),
+		provisionedAt: z.iso.datetime().nullable(),
+		lastEventAt: z.iso.datetime().nullable(),
+		colo: z
+			.string()
+			.nullable()
+			.describe('Cloudflare data center (IATA code) this project runs in.'),
+		coloCountry: z.string().nullable().describe('ISO country of that data center.')
+	})
+	.meta({ id: 'FleetProjectCounts' });
 
-/** One project row in the fleet admin rollup. Keep in sync with agents/auth/src/fleet.ts. */
-export interface FleetProject {
-	projectId: string;
-	/** Matches the dashboard's browser-demo naming convention (`demo-<hex>`). */
-	demo: boolean;
-	/** Event-derived and approximate (sampling, 90-day retention window). */
-	firstSeenAt: string | null;
-	lastSeenAt: string | null;
-	events: number;
-	/**
-	 * Authoritative Durable Object counts; null when the project was beyond the
-	 * fan-out limit or its agent could not be reached.
-	 */
-	counts: FleetProjectCounts | null;
-}
+export const fleetProjectSchema = z
+	.object({
+		projectId: z.string(),
+		demo: z.boolean().describe('Matches the browser-demo naming convention (`demo-<hex>`).'),
+		firstSeenAt: z.iso.datetime().nullable(),
+		lastSeenAt: z.iso.datetime().nullable(),
+		events: z.number().int(),
+		counts: fleetProjectCountsSchema
+			.nullable()
+			.describe('Null when the project was beyond the fan-out limit or unreachable.')
+	})
+	.meta({ id: 'FleetProject' });
 
-export interface FleetTotals {
-	projects: number;
-	demoProjects: number;
-	/** Sums over projects with authoritative counts only. */
-	users: number;
-	registeredUsers: number;
-	anonymousUsers: number;
-	activeSessions: number;
-	uncountedProjects: number;
-}
+export const fleetTotalsSchema = z
+	.object({
+		projects: z.number().int(),
+		demoProjects: z.number().int(),
+		users: z.number().int(),
+		registeredUsers: z.number().int(),
+		anonymousUsers: z.number().int(),
+		activeSessions: z.number().int(),
+		uncountedProjects: z.number().int()
+	})
+	.meta({ id: 'FleetTotals' });
 
-export interface FleetOverview {
-	generatedAt: string;
-	/** Where the project list came from. */
-	source: 'analytics-engine' | 'local-d1' | 'none';
-	projects: FleetProject[];
-	totals: FleetTotals;
-	error?: string;
-}
+export const fleetOverviewSchema = z
+	.object({
+		generatedAt: z.iso.datetime(),
+		source: z
+			.enum(['analytics-engine', 'local-d1', 'none'])
+			.describe('Where the project list came from.'),
+		projects: z.array(fleetProjectSchema),
+		totals: fleetTotalsSchema,
+		error: z.string().optional()
+	})
+	.meta({ id: 'FleetOverview' });
 
-export interface AgentChatReply {
-	question: string;
-	topic: 'ai-analysis';
-	answer: string;
-	mode: 'workers-ai';
-	model: string;
-	userMessage: AgentChatMessage;
-	agentMessage: AgentChatMessage;
-}
+export const agentChatMessageSchema = z
+	.object({
+		id: z.string(),
+		role: z.enum(['user', 'agent']),
+		content: z.string(),
+		createdAt: z.iso.datetime()
+	})
+	.meta({ id: 'AgentChatMessage' });
 
-export interface AgentChatMessage {
-	id: string;
-	role: 'user' | 'agent';
-	content: string;
-	createdAt: string;
-}
+export const agentChatReplySchema = z
+	.object({
+		question: z.string(),
+		topic: z.literal('ai-analysis'),
+		answer: z.string(),
+		mode: z.literal('workers-ai'),
+		model: z.string(),
+		userMessage: agentChatMessageSchema,
+		agentMessage: agentChatMessageSchema
+	})
+	.meta({ id: 'AgentChatReply' });
 
-/** A project this installation owns. Mirrors agents/auth/src/registry.ts. */
-export interface RegistryProject {
-	id: string;
-	name: string;
-	createdAt: string;
-}
+export const registryProjectSchema = z
+	.object({
+		id: z.string(),
+		name: z.string(),
+		createdAt: z.iso.datetime()
+	})
+	.meta({ id: 'RegistryProject', description: 'A project this installation owns.' });
 
-export interface ProjectRegistryState {
-	projects: RegistryProject[];
-}
+export const projectRegistryStateSchema = z
+	.object({ projects: z.array(registryProjectSchema) })
+	.meta({ id: 'ProjectRegistryState' });
+
+export type AuthActivityEvent = z.infer<typeof authActivityEventSchema>;
+export type RoleDefinition = z.infer<typeof roleDefinitionSchema>;
+export type AuthAgentState = z.infer<typeof authAgentStateSchema>;
+export type OverviewUser = z.infer<typeof overviewUserSchema>;
+export type OverviewSession = z.infer<typeof overviewSessionSchema>;
+export type AuthOverview = z.infer<typeof authOverviewSchema>;
+export type AuthAnalytics = z.infer<typeof authAnalyticsSchema>;
+export type FleetProjectCounts = z.infer<typeof fleetProjectCountsSchema>;
+export type FleetProject = z.infer<typeof fleetProjectSchema>;
+export type FleetTotals = z.infer<typeof fleetTotalsSchema>;
+export type FleetOverview = z.infer<typeof fleetOverviewSchema>;
+export type AgentChatMessage = z.infer<typeof agentChatMessageSchema>;
+export type AgentChatReply = z.infer<typeof agentChatReplySchema>;
+export type RegistryProject = z.infer<typeof registryProjectSchema>;
+export type ProjectRegistryState = z.infer<typeof projectRegistryStateSchema>;

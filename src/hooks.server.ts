@@ -98,7 +98,11 @@ function classifyAccess(pathname: string): Access {
 		if (segments[1] === 'projects') {
 			const rest = segments.slice(3);
 			if (rest[0] === 'auth') return { scope: 'open' };
-			if (rest[0] === 'config' && rest.length === 1) return { scope: 'open' };
+			// /config and /openapi.json both describe the public product API and
+			// carry no secrets; being fetchable is the point for API tooling.
+			if (rest.length === 1 && (rest[0] === 'config' || rest[0] === 'openapi.json')) {
+				return { scope: 'open' };
+			}
 			return { scope: 'operator', projectId: segments[2] ?? null, kind: 'api' };
 		}
 		return { scope: 'operator', projectId: null, kind: 'api' };

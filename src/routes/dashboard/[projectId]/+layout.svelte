@@ -17,6 +17,7 @@
 	import { fly } from 'svelte/transition';
 	import {
 		ArrowRight,
+		BookOpen,
 		Bot,
 		Clock,
 		Database,
@@ -60,6 +61,8 @@
 
 	const overviewHref = $derived(resolve('/dashboard/[projectId]', { projectId }));
 	const authHref = $derived(resolve('/dashboard/[projectId]/auth', { projectId }));
+	const apiHref = $derived(resolve('/dashboard/[projectId]/api', { projectId }));
+	const isApi = $derived(page.url.pathname.startsWith(apiHref));
 
 	const isOverview = $derived(page.url.pathname === overviewHref);
 	const isAuth = $derived(page.url.pathname.startsWith(authHref));
@@ -452,6 +455,27 @@
 						>
 					</span>
 				{/each}
+			</div>
+
+			<div>
+				<p
+					class="px-3 pb-2 text-[11px] font-medium tracking-wider text-muted-foreground/70 uppercase"
+				>
+					Reference
+				</p>
+				<a
+					href={apiHref}
+					data-testid="nav-api"
+					class={[
+						'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+						isApi
+							? 'bg-primary/10 text-primary'
+							: 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+					]}
+				>
+					<BookOpen class="h-4 w-4" />
+					API Reference
+				</a>
 			</div>
 		</nav>
 
