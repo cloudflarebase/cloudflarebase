@@ -71,20 +71,29 @@
 	 * sign-in), CF_ACCOUNT_ID / CF_ANALYTICS_API_TOKEN (Analytics Engine SQL
 	 * API querying — writes need no credentials).
 	 */
-	// DEMO_MODE makes `demo-<hex>` projects throwaway: capped users, a daily
-	// AI ceiling, no outbound mail, and self-erasure after DEMO_TTL_HOURS.
-	// Self-hosted installs leave it unset and none of that applies.
+	/**
+	 * Self-hosted defaults. cloudflarebase.com's own values are in
+	 * env.production — the top level must be deployable by someone who does
+	 * not own this project's domain or mail sender.
+	 *
+	 * TRUSTED_ORIGINS is the one value you MUST set after your first deploy:
+	 * it is the CSRF allowlist, and sign-in is refused from an origin that is
+	 * not on it. Set it to the origin your console is served from, e.g.
+	 * https://cloudflarebase.<your-subdomain>.workers.dev
+	 *
+	 * DEMO_MODE is absent on purpose. It makes demo-<hex> projects throwaway —
+	 * capped, mail-less, and self-erasing after DEMO_TTL_HOURS — which is only
+	 * wanted on a public demo.
+	 */
 	"vars": {
 		"CHAT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
-		"DEMO_MODE": "true",
-		"DEMO_TTL_HOURS": "24",
 		// Empty on purpose: a committed DSN would collect every fork's errors.
 		// Set your own with `wrangler secret put SENTRY_DSN` to turn it on.
 		"SENTRY_DSN": "",
 		"SENTRY_ENV": "production",
-		"TRUSTED_ORIGINS": "https://cloudflarebase.com",
+		"TRUSTED_ORIGINS": "",
 		"WAE_DATASET": "cloudflarebase_auth_events",
-		"EMAIL_FROM": "auth@notifications.cloudflarebase.com",
+		"EMAIL_FROM": "",
 	},
 
 	"secrets": {
@@ -102,6 +111,56 @@
 	],
 
 	"env": {
+		/**
+		 * cloudflarebase.com's own agent. The name is pinned rather than derived
+		 * so it stays `auth-agent`, which is what the dashboard Worker's
+		 * AUTH_AGENT service binding resolves. Wrangler does not inherit
+		 * top-level configuration into an environment, so this repeats it.
+		 */
+		"production": {
+			"name": "auth-agent",
+			"ai": { "binding": "AI" },
+			"send_email": [{ "name": "EMAIL" }],
+
+			"durable_objects": {
+				"bindings": [
+					{
+						"class_name": "AuthAgent",
+						"name": "AuthAgent",
+					},
+					{
+						"class_name": "ProjectRegistry",
+						"name": "ProjectRegistry",
+					},
+				],
+			},
+
+			"vars": {
+				"CHAT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+				"DEMO_MODE": "true",
+				"DEMO_TTL_HOURS": "24",
+				"SENTRY_DSN": "",
+				"SENTRY_ENV": "production",
+				"TRUSTED_ORIGINS": "https://cloudflarebase.com",
+				"WAE_DATASET": "cloudflarebase_auth_events",
+				"EMAIL_FROM": "auth@notifications.cloudflarebase.com",
+			},
+
+			"analytics_engine_datasets": [
+				{
+					"binding": "AUTH_EVENTS",
+					"dataset": "cloudflarebase_auth_events",
+				},
+			],
+
+			"workers_dev": false,
+			"preview_urls": false,
+
+			"secrets": {
+				"required": ["CF_ACCOUNT_ID", "CF_ANALYTICS_API_TOKEN", "BETTER_AUTH_SECRET"],
+			},
+		},
+
 		"local": {
 			"name": "auth-agent-local",
 			"ai": {

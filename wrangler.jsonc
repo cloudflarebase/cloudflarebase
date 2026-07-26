@@ -3,8 +3,17 @@
  * https://developers.cloudflare.com/workers/wrangler/configuration/
  */
 {
+	/**
+	 * The top level is the SELF-HOSTED default: `wrangler deploy` from a fresh
+	 * clone works, publishes to workers.dev, and leaves the console private
+	 * because DEMO_MODE is unset.
+	 *
+	 * cloudflarebase.com's own settings — its name, custom domain, and the
+	 * public demo — live under env.production, so this project's deployment is
+	 * one environment among several rather than the thing everyone inherits.
+	 */
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "cloudflarebase-com",
+	"name": "cloudflarebase",
 	"main": ".svelte-kit/cloudflare/_worker.js",
 	"compatibility_date": "2026-07-10",
 	"compatibility_flags": ["nodejs_compat", "nodejs_als"],
@@ -23,17 +32,19 @@
 	},
 	"upload_source_maps": true,
 	"preview_urls": true,
-	"workers_dev": false,
-	// DEMO_MODE opens the console to anonymous visitors for ephemeral demo
-	// projects only — it is what keeps cloudflarebase.com playable. Named
-	// projects always require an operator session. Self-hosted installs leave
-	// it unset, so a fresh deployment is private by default.
-	// SENTRY_DSN (server) and PUBLIC_SENTRY_DSN (browser) are intentionally
-	// empty in the repository. Error reporting stays off until an operator
-	// points them at their own Sentry project — a committed DSN would send
-	// every fork's errors to whoever published it.
+	// A self-hosted deploy needs a URL it can reach immediately; add a custom
+	// domain later by copying the routes block from env.production.
+	"workers_dev": true,
+
+	// DEMO_MODE is deliberately absent here. Setting it opens ephemeral
+	// demo-<hex> projects to anonymous visitors, which is what makes
+	// cloudflarebase.com playable and exactly what a private install must not
+	// do. Unset means the console requires an operator session.
+	//
+	// SENTRY_DSN (server) and PUBLIC_SENTRY_DSN (browser) are empty for the
+	// same reason a DSN is never committed: it would make this project the
+	// sink for every fork's errors.
 	"vars": {
-		"DEMO_MODE": "true",
 		"SENTRY_DSN": "",
 		"PUBLIC_SENTRY_DSN": "",
 		"PUBLIC_SENTRY_ENV": "production"
@@ -42,18 +53,12 @@
 		"required": ["ADMIN_SECRET"]
 	},
 
-	"routes": [
-		{
-			"pattern": "cloudflarebase.com",
-			"custom_domain": true
-		}
-	],
-
 	"services": [{ "binding": "AUTH_AGENT", "service": "auth-agent" }],
 	"ratelimits": [
 		{
 			"name": "API_RATE_LIMITER",
-			"namespace_id": "4511764381",
+			// Namespace ids are per-account and arbitrary; any stable number works.
+			"namespace_id": "1001",
 			"simple": { "limit": 100, "period": 60 }
 		}
 	],
@@ -133,7 +138,40 @@
 			]
 		},
 
+		// cloudflarebase.com itself. Deployed with `npm run deploy:production`;
+		// nobody else needs this environment. Wrangler does not inherit
+		// top-level vars into an environment, so they are repeated in full.
+		"production": {
+			"name": "cloudflarebase-com",
+			"workers_dev": false,
+			"routes": [
+				{
+					"pattern": "cloudflarebase.com",
+					"custom_domain": true
+				}
+			],
+			"vars": {
+				"DEMO_MODE": "true",
+				"SENTRY_DSN": "",
+				"PUBLIC_SENTRY_DSN": "",
+				"PUBLIC_SENTRY_ENV": "production"
+			},
+			"services": [{ "binding": "AUTH_AGENT", "service": "auth-agent" }],
+			"ratelimits": [
+				{
+					"name": "API_RATE_LIMITER",
+					"namespace_id": "4511764381",
+					"simple": { "limit": 100, "period": 60 }
+				}
+			],
+			"secrets": {
+				"required": ["ADMIN_SECRET"]
+			}
+		},
+
 		"preview": {
+			"name": "cloudflarebase-com-preview",
+			"workers_dev": false,
 			"routes": [],
 			"vars": {
 				"DEMO_MODE": "true",

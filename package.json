@@ -18,7 +18,8 @@
 		"postinstall": "cross-env POSTINSTALL=true node scripts/dev.js",
 		"test": "playwright test",
 		"test:e2e": "playwright test",
-		"test:e2e:ui": "playwright test --ui"
+		"test:e2e:ui": "playwright test --ui",
+		"deploy:production": "npm run build && wrangler deploy --env production"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",

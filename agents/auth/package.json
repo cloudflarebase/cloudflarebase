@@ -7,7 +7,8 @@
 		"dev": "wrangler dev --env local --persist-to=../../.wrangler/state/ --ip 0.0.0.0 --port 8788",
 		"start": "wrangler dev",
 		"cf-typegen": "wrangler types",
-		"dev:test": "wrangler dev --env test --ip 127.0.0.1 --port 8798 --persist-to ../../.wrangler/test-state/auth-agent"
+		"dev:test": "wrangler dev --env test --ip 127.0.0.1 --port 8798 --persist-to ../../.wrangler/test-state/auth-agent",
+		"deploy:production": "wrangler deploy --env production"
 	},
 	"devDependencies": {
 		"@types/node": "^26.1.1",
