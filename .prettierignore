@@ -8,3 +8,7 @@ AGENTS.md
 agents/auth/AGENTS.md
 **/package-lock.json
 agents/auth/.prettierrc
+
+# The Apache license text is canonical and must not be reformatted.
+LICENSE
+NOTICE

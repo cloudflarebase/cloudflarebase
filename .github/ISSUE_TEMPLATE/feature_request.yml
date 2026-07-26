@@ -1,0 +1,38 @@
+name: Feature request
+description: Suggest something Cloudflarebase should do
+labels: ['enhancement']
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do
+      description: >
+        Describe the problem rather than the solution. What are you building,
+        and where does Cloudflarebase get in the way?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you have in mind
+      description: Optional. If you already have a shape in mind, describe it.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Auth agent (users, sessions, providers, RBAC)
+        - Console and dashboard
+        - Self-hosting and deployment
+        - API and client integration
+        - A new backend primitive
+        - Something else
+    validations:
+      required: true
+
+  - type: textarea
+    id: workaround
+    attributes:
+      label: How you are working around it today

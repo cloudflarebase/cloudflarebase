@@ -1,0 +1,56 @@
+name: Bug report
+description: Something does not work the way it should
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Found a security issue? Do not file it here — see
+        [SECURITY.md](https://github.com/cloudflarebase/cloudflarebase/blob/main/SECURITY.md).
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you expected, and what you got instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Ideally against a local `npm run dev` stack.
+      placeholder: |
+        1. Run `npm run dev`
+        2. Open http://localhost:5173/dashboard
+        3. ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where does this happen
+      options:
+        - Local development (npm run dev)
+        - Self-hosted deployment on my own Cloudflare account
+        - The hosted demo at cloudflarebase.com
+        - Playwright e2e suite
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: 'commit sha, or the tag you deployed'
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: >
+        Relevant output from `wrangler tail`, the browser console, or the test
+        run. Redact tokens and anything from a real user.
+      render: shell

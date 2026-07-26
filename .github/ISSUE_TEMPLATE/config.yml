@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/cloudflarebase/cloudflarebase/security/advisories/new
+    about: Report privately. Please do not open a public issue.
+  - name: Questions and ideas
+    url: https://github.com/cloudflarebase/cloudflarebase/discussions
+    about: For usage questions and open-ended discussion.

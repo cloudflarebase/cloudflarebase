@@ -1,0 +1,39 @@
+name: Quality
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - main
+      - preview
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    name: Lint and typecheck
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          # Falls back so pull requests from forks, which cannot rely on the
+          # repository variable being set for them, still run.
+          node-version: ${{ vars.NODE_VERSION || '22' }}
+
+      # Root postinstall also installs agents/auth dependencies.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck the web app
+        run: npm run check
+
+      # agents/auth is a separate TypeScript project with its own generated
+      # Env types, so it is not covered by the check above.
+      - name: Typecheck the auth agent
+        run: npx tsc --noEmit
+        working-directory: agents/auth
