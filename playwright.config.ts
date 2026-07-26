@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { CONSOLE_STORAGE_STATE } from './e2e/helpers';
 
 /**
  * E2E tests against a production-mirroring local stack:
@@ -31,26 +32,37 @@ export default defineConfig({
 		trace: 'on-first-retry'
 	},
 	projects: [
+		// Claims the console owner and saves the operator session. Runs first:
+		// every console surface (including the endpoints the seed reads back)
+		// requires that session.
+		{
+			name: 'console',
+			testMatch: /console\.setup\.ts/,
+			use: { extraHTTPHeaders: { origin: baseURL } }
+		},
 		// Seeds baseline data through the public API; everything depends on it.
 		// Better Auth requires an Origin header on cookie-carrying POSTs, which
 		// browsers send automatically — API contexts must set it themselves
 		// (individual tests can still override it, e.g. the CSRF spec).
 		{
 			name: 'seed',
-			testMatch: /.*\.setup\.ts/,
-			use: { extraHTTPHeaders: { origin: baseURL } }
+			testMatch: /seed\.setup\.ts/,
+			dependencies: ['console'],
+			use: { extraHTTPHeaders: { origin: baseURL }, storageState: CONSOLE_STORAGE_STATE }
 		},
 		// Backend/API tests — no browser, Playwright request contexts only.
+		// Specs that need to prove a route is closed opt out of the stored
+		// session with their own `test.use({ storageState: ... })`.
 		{
 			name: 'api',
 			testMatch: /.*\.api\.spec\.ts/,
 			dependencies: ['seed'],
-			use: { extraHTTPHeaders: { origin: baseURL } }
+			use: { extraHTTPHeaders: { origin: baseURL }, storageState: CONSOLE_STORAGE_STATE }
 		},
 		// Frontend tests — real browser against the built app.
 		{
 			name: 'chromium',
-			use: { ...devices['Desktop Chrome'] },
+			use: { ...devices['Desktop Chrome'], storageState: CONSOLE_STORAGE_STATE },
 			testMatch: /.*\.ui\.spec\.ts/,
 			dependencies: ['seed']
 		}

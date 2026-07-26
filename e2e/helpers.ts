@@ -3,6 +3,32 @@
 /** Project seeded once per stack by seed.setup.ts — treat as read-only in tests. */
 export const SEED_PROJECT = 'e2e-seed';
 
+/**
+ * Scratch project for tests that must create users. The seed project's counts
+ * are asserted exactly, so writing into it breaks unrelated specs.
+ */
+export const SCRATCH_PROJECT = 'e2e-scratch';
+
+/**
+ * Reserved project id backing the console's own operator auth. Every console
+ * surface requires a session on it, so the suite claims an owner before
+ * anything else runs (console.setup.ts) and reuses that storage state.
+ */
+export const CONSOLE_PROJECT = 'console';
+
+export const CONSOLE_OWNER = {
+	name: 'E2E Operator',
+	email: 'operator@example.com',
+	password: 'e2e-console-owner-1'
+} as const;
+
+/** Where console.setup.ts parks the operator session for the other projects. */
+export const CONSOLE_STORAGE_STATE = 'e2e/.auth/console.json';
+
+export function consoleAuthPath(endpoint: string): string {
+	return authPath(CONSOLE_PROJECT, endpoint);
+}
+
 export const SEED_PASSWORD = 'seeded-user-password-1';
 
 export const SEED_USERS = [

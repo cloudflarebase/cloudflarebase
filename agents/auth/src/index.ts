@@ -15,8 +15,9 @@ export type {
 	FleetProjectCounts,
 } from './agent';
 export type { FleetOverview, FleetProject, FleetTotals } from './fleet';
+// Type-only: a value export here would be read as a Worker entrypoint and
+// workerd rejects anything that is not a handler or Durable Object class.
 export type { ProjectRegistryState, RegistryProject } from './registry';
-export { REGISTRY_INSTANCE } from './registry';
 
 const sentryOptions = (env: Env) => ({
 	dsn: env.SENTRY_DSN,

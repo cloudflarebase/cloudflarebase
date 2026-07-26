@@ -31,3 +31,6 @@ vite.config.ts.timestamp-*
 /playwright-report
 /blob-report
 /playwright/.cache
+
+# Operator session captured by e2e/console.setup.ts
+/e2e/.auth
