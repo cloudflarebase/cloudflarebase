@@ -211,8 +211,12 @@
 				"BETTER_AUTH_SECRET": "P6YAEopHeROWj8TE/tlIA7HnPNO8CGsF6bw+5G5UVxsVidsO5pJF8by37OWYEBlE",
 				"DISABLE_RATE_LIMIT": "true",
 				"CHAT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
-				"DEMO_MODE": "true",
-				"DEMO_TTL_HOURS": "24",
+				// DEMO_MODE is deliberately NOT set on the agent here, while the web
+				// Worker does set it. The web flag is what lets anonymous demo
+				// traffic past the console guard, which the demo specs need; the
+				// agent flag would additionally refuse the console owner claim,
+				// which console.setup.ts performs and every operator spec depends
+				// on. A real demo deployment sets both.
 				"TRUSTED_ORIGINS": "http://localhost:8797,http://127.0.0.1:8797",
 				"WAE_DATASET": "cloudflarebase_auth_events_test",
 			},

@@ -72,6 +72,16 @@ test.describe('console guard', () => {
 		expect(config.ok()).toBeTruthy();
 	});
 
+	test('the demo dashboard needs no operator to be useful', async ({ request }) => {
+		// The three surfaces are distinct: the demo is anonymous, /admin is the
+		// operator's own monitoring, and the dashboard needs a session only where
+		// it holds real projects. A demo deployment refuses console claims
+		// entirely — nobody is meant to operate it — which is why the agent under
+		// test does not set DEMO_MODE even though the web Worker does.
+		const config = await request.get(configPath('console'));
+		expect(config.ok(), 'the console instance is reachable for the login page').toBeTruthy();
+	});
+
 	test('the console instance refuses a second owner and guest sign-in', async ({ request }) => {
 		const second = await request.post(consoleAuthPath('sign-up/email'), {
 			data: {

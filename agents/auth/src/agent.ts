@@ -598,6 +598,19 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 		}
 
 		if (/\/sign-up\/email$/.test(subPath)) {
+			// A demo deployment has no operators. Every visitor is anonymous with
+			// a throwaway project, and named projects — the only thing an operator
+			// session unlocks — are not part of it. Leaving the claim open would
+			// just let a stranger take ownership of a console nobody is meant to
+			// use, since the claim is otherwise first-come and the endpoint has to
+			// stay public for the login page to reach it.
+			if (this.env.DEMO_MODE === 'true') {
+				return Response.json(
+					{ error: 'this deployment does not have console operators' },
+					{ status: 403 },
+				);
+			}
+
 			const [row] = await this.db.select({ value: count() }).from(schema.user);
 			if ((row?.value ?? 0) > 0) {
 				return Response.json({ error: 'this console already has an owner' }, { status: 403 });
