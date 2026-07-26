@@ -56,7 +56,7 @@
 
 		<div class="relative flex items-center gap-4 text-sm text-muted-foreground">
 			<a
-				href="https://github.com/cloudflarebase/cloudflarebase"
+				href="https://github.com/cloudflarebase/cloudflarebase.com"
 				class="flex items-center gap-1.5 transition-colors hover:text-foreground"
 				rel="noreferrer noopener"
 				target="_blank"

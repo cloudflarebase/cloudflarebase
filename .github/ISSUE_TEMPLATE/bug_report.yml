@@ -6,7 +6,7 @@ body:
     attributes:
       value: |
         Found a security issue? Do not file it here — see
-        [SECURITY.md](https://github.com/cloudflarebase/cloudflarebase/blob/main/SECURITY.md).
+        [SECURITY.md](https://github.com/cloudflarebase/cloudflarebase.com/blob/main/SECURITY.md).
 
   - type: textarea
     id: what-happened
