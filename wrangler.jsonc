@@ -24,7 +24,12 @@
 	"upload_source_maps": true,
 	"preview_urls": true,
 	"workers_dev": false,
+	// DEMO_MODE opens the console to anonymous visitors for ephemeral demo
+	// projects only — it is what keeps cloudflarebase.com playable. Named
+	// projects always require an operator session. Self-hosted installs leave
+	// it unset, so a fresh deployment is private by default.
 	"vars": {
+		"DEMO_MODE": "true",
 		"SENTRY_DSN": "https://50ed6e26b886124ac39e983efb72144d@o4510375271530496.ingest.de.sentry.io/4511764380778576"
 	},
 	"secrets": {
@@ -55,7 +60,8 @@
 			// local/test; set it with `wrangler secret put ADMIN_SECRET` (and
 			// `--env preview`) for deployed environments.
 			"vars": {
-				"ADMIN_SECRET": "local-admin-secret"
+				"ADMIN_SECRET": "local-admin-secret",
+				"DEMO_MODE": "true"
 			},
 
 			"d1_databases": [
@@ -91,7 +97,8 @@
 
 			// Fixed test-only admin password; keep aligned with wrangler.e2e.jsonc.
 			"vars": {
-				"ADMIN_SECRET": "e2e-admin-secret"
+				"ADMIN_SECRET": "e2e-admin-secret",
+				"DEMO_MODE": "true"
 			},
 
 			"d1_databases": [

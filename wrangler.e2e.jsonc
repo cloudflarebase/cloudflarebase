@@ -25,7 +25,10 @@
 	"services": [{ "binding": "AUTH_AGENT", "service": "auth-agent-test" }],
 	// Fixed test-only admin password for the /admin fleet dashboard; keep
 	// aligned with root wrangler.jsonc env.test and e2e/admin.ui.spec.ts.
+	// DEMO_MODE mirrors env.test so dashboard specs can drive demo projects
+	// without an operator session; named projects still require one.
 	"vars": {
-		"ADMIN_SECRET": "e2e-admin-secret"
+		"ADMIN_SECRET": "e2e-admin-secret",
+		"DEMO_MODE": "true"
 	}
 }

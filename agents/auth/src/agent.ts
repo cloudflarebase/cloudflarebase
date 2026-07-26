@@ -22,6 +22,12 @@ import {
 } from './schemas';
 
 const MAX_EVENTS = 50;
+/**
+ * Reserved project id for the dashboard's own operator auth — Cloudflarebase
+ * authenticating its console with the same stack it sells. Mirrored in the
+ * app's src/lib/server/console.ts; keep both in sync.
+ */
+const CONSOLE_PROJECT_ID = 'console';
 // Analytics Engine ingestion is asynchronous. Keep this short so a query that
 // races a new write is retried quickly instead of holding stale graph data.
 const ANALYTICS_CACHE_MS = 5_000;
@@ -454,6 +460,25 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 		this.writeAuthEvent('user.active', dimensions);
 	}
 
+	/**
+	 * Extra rules that apply only to the console's own auth instance. Returns a
+	 * rejection response, or null when the route is permitted.
+	 */
+	private async denyConsoleAuthRoute(subPath: string): Promise<Response | null> {
+		if (/\/sign-in\/anonymous$/.test(subPath)) {
+			return Response.json({ error: 'guest sign-in is disabled for the console' }, { status: 403 });
+		}
+
+		if (/\/sign-up\/email$/.test(subPath)) {
+			const [row] = await this.db.select({ value: count() }).from(schema.user);
+			if ((row?.value ?? 0) > 0) {
+				return Response.json({ error: 'this console already has an owner' }, { status: 403 });
+			}
+		}
+
+		return null;
+	}
+
 	async onRequest(request: Request): Promise<Response> {
 		const url = new URL(request.url);
 		if (!projectIdSchema.safeParse(this.name).success) {
@@ -537,6 +562,15 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 					{ status: 500 },
 				);
 			}
+			// The console's instance is not a customer project: it never hands out
+			// guest sessions, and it accepts exactly one sign-up — the first-run
+			// owner claim. Enforced here because /api/auth/* is deliberately public,
+			// so the dashboard's console guard never sees these requests.
+			if (this.name === CONSOLE_PROJECT_ID) {
+				const denied = await this.denyConsoleAuthRoute(subPath);
+				if (denied) return denied;
+			}
+
 			const cors = this.corsHeaders(request);
 			if (request.method === 'OPTIONS') {
 				return cors
