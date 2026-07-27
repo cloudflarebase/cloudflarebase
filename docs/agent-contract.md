@@ -1,13 +1,13 @@
 # The agent contract
 
-> Design document. The manifest described here is not implemented yet — it is
+> Design document. The manifest described here is not implemented yet - it is
 > written down now, while exactly one agent exists, so the second one is built
 > to a shape rather than copied from the first.
 
 Cloudflarebase is agent-first: every backend capability is a Cloudflare Agent
 with one Durable Object instance per project. `agents/auth` is the only one
 today, and everything about how it plugs into the console is currently
-hardcoded — its sidebar entry, its routes, its proxies, its permission keys.
+hardcoded - its sidebar entry, its routes, its proxies, its permission keys.
 
 That is fine for one. It stops being fine at two, because the second agent
 either gets its own hardcoded copy of all of it, or the shape gets extracted
@@ -42,7 +42,7 @@ that ships one.
 
 	// Durable Object classes this agent owns, one instance per project,
 	// addressed as /agents/<worker>/<projectId>. An agent owns its own
-	// project's data and nothing else — installation-wide state belongs in the
+	// project's data and nothing else - installation-wide state belongs in the
 	// control plane's D1, not in an agent.
 	"durableObjects": [{ "class": "AuthAgent", "scope": "perProject" }],
 
@@ -139,15 +139,16 @@ The registry lists projects, and a project will eventually have a db agent and
 a storage agent as well as auth. Any single agent owning that list makes every
 other agent depend on that one: listing projects would require the auth worker
 to be running, a db agent would call into auth just to learn what exists, and
-nobody could run the db agent alone. The forcing function is deletion — it has
+nobody could run the db agent alone. The forcing function is deletion - it has
 to reach every agent, so an agent-owned registry ends up holding knowledge of
 agents it should know nothing about.
 
 D1 avoids all of it. It binds directly to the dashboard, which is the control
 plane, and unlike a Durable Object it has no adapter limitation to work around
-— the SvelteKit Cloudflare adapter cannot export a Durable Object class at all.
-`wrangler deploy` provisions the database automatically when `database_id` is
-omitted, so it costs a self-hoster nothing.
+
+- the SvelteKit Cloudflare adapter cannot export a Durable Object class at all.
+  `wrangler deploy` provisions the database automatically when `database_id` is
+  omitted, so it costs a self-hoster nothing.
 
 **The rule this establishes: control-plane state goes in D1 on the dashboard;
 per-project state goes in that project's Durable Object.** An agent owns its
@@ -177,7 +178,7 @@ Roughly in order, none of it blocking today:
 ## What this is not
 
 It is not a plugin runtime. Agents are deployed Workers, not code loaded at
-runtime into a host — the manifest describes how to _install and mount_ one,
+runtime into a host - the manifest describes how to _install and mount_ one,
 and installation still means deploying a Worker and adding a service binding.
 That keeps the isolation guarantees that make per-project Durable Objects
 worth having.
@@ -191,7 +192,7 @@ worth having.
   deploy step per agent. Auth and the registry already share a worker, which
   suggests grouping is acceptable when agents are closely related.
 - **Migration ordering across agents.** Each agent owns its own Durable Object
-  storage, so there is no shared schema to order — but a project-level "which
+  storage, so there is no shared schema to order - but a project-level "which
   agents are enabled" record does need migrating.
 - **Third-party trust.** If `cloudflarebase add stripe-agent` fetches a
   manifest from a registry, what stops a manifest declaring `"access":

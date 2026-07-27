@@ -50,14 +50,14 @@ test.describe('console guard', () => {
 
 	test('the agents passthrough is guarded too', async ({ request }) => {
 		// The same Durable Object, reached by its public path rather than the
-		// dashboard proxy — the guard has to cover both or it covers neither.
+		// dashboard proxy - the guard has to cover both or it covers neither.
 		const response = await request.get(`/agents/auth-agent/${SEED_PROJECT}/overview`);
 		expect(response.status()).toBe(401);
 	});
 
 	test('the product API stays public', async ({ request }) => {
 		// A customer's app must be able to sign users up without an operator.
-		// Writes go to the scratch project — the seed project's counts are
+		// Writes go to the scratch project - the seed project's counts are
 		// asserted exactly elsewhere.
 		const signUp = await request.post(authPath(SCRATCH_PROJECT, 'sign-up/email'), {
 			data: {
@@ -76,7 +76,7 @@ test.describe('console guard', () => {
 		// The three surfaces are distinct: the demo is anonymous, /admin is the
 		// operator's own monitoring, and the dashboard needs a session only where
 		// it holds real projects. A demo deployment refuses console claims
-		// entirely — nobody is meant to operate it — which is why the agent under
+		// entirely - nobody is meant to operate it - which is why the agent under
 		// test does not set DEMO_MODE even though the web Worker does.
 		const config = await request.get(configPath('console'));
 		expect(config.ok(), 'the console instance is reachable for the login page').toBeTruthy();

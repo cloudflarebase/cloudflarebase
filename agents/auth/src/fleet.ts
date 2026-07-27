@@ -5,13 +5,13 @@ import { analyticsApiResponseSchema, DEMO_PROJECT_PATTERN, projectIdSchema } fro
 /**
  * Cross-project fleet rollup for the platform admin dashboard.
  *
- * There is no registry of projects — an AuthAgent exists lazily per project
+ * There is no registry of projects - an AuthAgent exists lazily per project
  * id. The only fleet-wide trace is the auth-event stream (Analytics Engine in
  * deployed environments, the LOCAL_ANALYTICS D1 mirror in local/test), so the
  * project list is derived from event data and each listed project's Durable
  * Object is then asked for authoritative counts over RPC.
  *
- * Served by the worker entrypoint at /fleet/overview — deliberately outside
+ * Served by the worker entrypoint at /fleet/overview - deliberately outside
  * /agents/*, so it is reachable only through the dashboard's AUTH_AGENT
  * service binding: the agent worker has no public route and the dashboard
  * only forwards /agents/* paths.

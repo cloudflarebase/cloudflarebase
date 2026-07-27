@@ -1,4 +1,4 @@
-// Optional secrets set via `wrangler secret put` — not present in wrangler.jsonc
+// Optional secrets set via `wrangler secret put` - not present in wrangler.jsonc
 // vars, so they are augmented here instead of hand-editing the generated
 // worker-configuration.d.ts.
 interface Env {

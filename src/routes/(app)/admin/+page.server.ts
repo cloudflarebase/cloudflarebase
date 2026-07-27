@@ -4,7 +4,7 @@ import { error, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
 /**
- * Platform admin fleet dashboard, gated by ADMIN_SECRET — a plain var in
+ * Platform admin fleet dashboard, gated by ADMIN_SECRET - a plain var in
  * local/test and a Wrangler secret in deployed environments. The session
  * cookie stores a SHA-256 digest of the secret (never the secret itself), so
  * rotating the secret signs every admin out. Both sides of the password check

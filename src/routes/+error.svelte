@@ -9,7 +9,7 @@
 	const heading = $derived(is404 ? "This page doesn't exist" : 'Something went wrong');
 	const detail = $derived(
 		is404
-			? 'The route may have moved, or the project id might be misspelled. Your backend is fine — this page just isn’t part of it.'
+			? 'The route may have moved, or the project id might be misspelled. Your backend is fine - this page just isn’t part of it.'
 			: (page.error?.message ?? 'An unexpected error occurred while rendering this page.')
 	);
 </script>

@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { authPath, configPath, overviewPath, settingsPath, uniqueEmail } from './helpers';
 
 /**
- * A demo project has to be a real, working backend — everything the dashboard's
+ * A demo project has to be a real, working backend - everything the dashboard's
  * Integration tab tells a visitor to paste must actually run against it, with
  * no account and no operator session. The demo's ceilings (user cap, daily AI
  * cap, no outbound mail, self-erasure) exist to bound cost and abuse, and none
@@ -20,7 +20,7 @@ test.describe('demo project', () => {
 		const password = 'demo-rest-password-1';
 		const base = (endpoint: string) => authPath(DEMO_PROJECT, endpoint);
 
-		// 1. Sign up — the first snippet on the Integration tab.
+		// 1. Sign up - the first snippet on the Integration tab.
 		const signUp = await request.post(base('sign-up/email'), {
 			data: { name: 'Demo Visitor', email, password }
 		});

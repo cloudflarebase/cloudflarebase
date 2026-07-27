@@ -5,12 +5,12 @@ import { blank, bold, dim, info, step, success, UserError } from '../lib/log.js'
 import { runOrFail } from '../lib/run.js';
 
 /**
- * `cloudflarebase init <name>` — scaffold a Worker and install the auth agent
+ * `cloudflarebase init <name>` - scaffold a Worker and install the auth agent
  * into it.
  *
  * The scaffold is deliberately thin: a name, an empty entrypoint, and dev
- * tooling. Everything that makes it a Cloudflarebase backend — bindings,
- * migrations, compatibility flags, vars — arrives through `add auth` from the
+ * tooling. Everything that makes it a Cloudflarebase backend - bindings,
+ * migrations, compatibility flags, vars - arrives through `add auth` from the
  * agent package's own fragment, so there is exactly one definition of a
  * working configuration and `init` can never drift from it.
  */
@@ -92,7 +92,7 @@ function scaffold(name: string): Record<string, string> {
 
 		// The entrypoint starts empty; \`add\` prepends each agent's re-export.
 		'src/index.ts': `/**
- * ${name} — a Cloudflarebase backend.
+ * ${name} - a Cloudflarebase backend.
  *
  * Agents are wired in by \`cloudflarebase add <agent>\`, which re-exports each
  * agent's Durable Object class and fetch handler above this comment.

@@ -6,7 +6,7 @@
  *
  * - `worker-configuration.d.ts` is a `types` entry rather than an input, so it
  *   is never emitted. Shipping it would declare a global `interface Env` in the
- *   consumer's project and clobber their own generated bindings — the exact
+ *   consumer's project and clobber their own generated bindings - the exact
  *   opposite of what makes this package portable.
  * - `src/env.d.ts` is a declaration input, which tsc does not copy to `outDir`.
  *   Its optional-secret augmentation describes this repository's deployment,

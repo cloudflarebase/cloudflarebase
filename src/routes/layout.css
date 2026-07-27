@@ -15,7 +15,7 @@
  * Light mode sits on a warm "linen" off-white ground (hue ~76–85, chroma
  * ≤0.022) instead of pure white; cards are *lighter* than the background so
  * elevation still reads on tinted paper. `accent` stays a *subtle* hover
- * surface (shadcn semantics), tinted warm — never the loud gold (charts only).
+ * surface (shadcn semantics), tinted warm - never the loud gold (charts only).
  */
 :root {
 	--background: oklch(0.976 0.008 80);
@@ -54,7 +54,7 @@
 
 /*
  * Dark linen: the same warm hue family as the light ground (~58–80), pushed
- * dark — espresso rather than gray. Deeper background with cards lifted
+ * dark - espresso rather than gray. Deeper background with cards lifted
  * further off it and brighter muted text for contrast; borders are warm
  * paper at low alpha so hairlines never read cold.
  */

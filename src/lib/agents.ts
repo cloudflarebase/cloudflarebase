@@ -123,7 +123,7 @@ export const authAnalyticsSchema = z
 		eventsLast24h: z
 			.array(z.object({ eventType: z.string(), count: z.number().int() }))
 			.optional()
-			.describe('Event counts from the Analytics Engine SQL API — only when enabled.')
+			.describe('Event counts from the Analytics Engine SQL API - only when enabled.')
 	})
 	.meta({ id: 'AuthAnalytics' });
 

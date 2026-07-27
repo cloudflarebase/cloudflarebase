@@ -25,7 +25,7 @@ import {
 
 const MAX_EVENTS = 50;
 /**
- * Reserved project id for the dashboard's own operator auth — Cloudflarebase
+ * Reserved project id for the dashboard's own operator auth - Cloudflarebase
  * authenticating its console with the same stack it sells. Mirrored in the
  * app's src/lib/server/console.ts; keep both in sync.
  */
@@ -36,7 +36,7 @@ const CONSOLE_PROJECT_ID = 'console';
  * deployment. They exist because the demo is an open, unauthenticated door:
  * without them it is a free anonymous auth backend and a free Workers AI
  * proxy, both billed to whoever runs the demo. Self-hosted installs never see
- * them — DEMO_MODE is unset by default.
+ * them - DEMO_MODE is unset by default.
  */
 const DEMO_MAX_USERS = 50;
 const DEMO_MAX_CHAT_PER_DAY = 50;
@@ -144,11 +144,11 @@ export interface AuthAnalytics {
 		status: 'connected' | 'local' | 'write-only' | 'error';
 		error?: string;
 	};
-	/** Event counts from the Analytics Engine SQL API — only when enabled. */
+	/** Event counts from the Analytics Engine SQL API - only when enabled. */
 	eventsLast24h?: { eventType: string; count: number }[];
 }
 
-/** Per-project counts for the platform admin fleet view — cheap SQLite reads only. */
+/** Per-project counts for the platform admin fleet view - cheap SQLite reads only. */
 export interface FleetProjectCounts {
 	projectId: string;
 	users: number;
@@ -159,7 +159,7 @@ export interface FleetProjectCounts {
 	lastEventAt: string | null;
 	/** Cloudflare data center (IATA code) this project's Durable Object runs in. */
 	colo: string | null;
-	/** ISO country of that data center — approximates where the demo's visitor is. */
+	/** ISO country of that data center - approximates where the demo's visitor is. */
 	coloCountry: string | null;
 }
 
@@ -195,9 +195,9 @@ const DEFAULT_CHAT_MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
 
 /**
  * One AuthAgent per Cloudflarebase project. The agent is a SQLite-backed
- * Durable Object that runs a full Better Auth stack for the project — users,
+ * Durable Object that runs a full Better Auth stack for the project - users,
  * sessions, accounts and verifications all live in the agent's own database
- * (via Drizzle ORM) — pushes live auth activity to connected dashboards
+ * (via Drizzle ORM) - pushes live auth activity to connected dashboards
  * through the Agents SDK state sync, and answers analytics questions about
  * its own data (/analytics, /chat).
  *
@@ -243,7 +243,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 	private get auth(): ProjectAuth {
 		const secret = this.signingSecret;
 		if (!secret) {
-			throw new Error('the signing secret is unavailable — onStart() has not run');
+			throw new Error('the signing secret is unavailable - onStart() has not run');
 		}
 		this._auth ??= createProjectAuth({
 			projectId: this.name,
@@ -266,7 +266,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 				this.env.EMAIL && this.env.EMAIL_FROM && !this.isEphemeral
 					? (message) => this.sendAuthEmail(message)
 					: undefined,
-			// The console has at most one user — the owner — and none at all under
+			// The console has at most one user - the owner - and none at all under
 			// DEMO_MODE. denyConsoleAuthRoute covers the sign-up route, but social
 			// sign-in creates users implicitly on the OAuth callback, so the
 			// invariant is enforced where every path converges: user creation.
@@ -342,7 +342,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 	 * BETTER_AUTH_SECRET wins when set, so an operator can supply and rotate
 	 * one deliberately. Otherwise the project generates its own on first start
 	 * and keeps it in its Durable Object storage, next to the password hashes
-	 * it already holds — which means a fresh install needs no secret set by
+	 * it already holds - which means a fresh install needs no secret set by
 	 * hand before it works, and each project ends up signing with a key no
 	 * other project shares.
 	 *
@@ -365,7 +365,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 	async onStart(): Promise<void> {
 		this.signingSecret = await this.resolveSigningSecret();
 
-		// Idempotent — drizzle tracks applied migrations in its own table.
+		// Idempotent - drizzle tracks applied migrations in its own table.
 		await migrate(this.db, migrations);
 		if (this.env.LOCAL_ANALYTICS) {
 			await this.env.LOCAL_ANALYTICS.batch([
@@ -413,7 +413,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 
 		if (this.isEphemeral) {
 			// idempotent so repeated wakes reuse the existing row instead of
-			// stacking new ones — which also means the deadline runs from first
+			// stacking new ones - which also means the deadline runs from first
 			// provision rather than from the visitor's last page load.
 			const hours = demoTtlHoursSchema.parse(this.env.DEMO_TTL_HOURS);
 			await this.schedule(hours * 3600, 'expireDemoProject', undefined, { idempotent: true });
@@ -446,7 +446,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 	/**
 	 * Streams one data point per auth event to Workers Analytics Engine.
 	 * Indexed by project id (fair per-project sampling); blob order is part of
-	 * the dataset schema — keep it stable and documented below.
+	 * the dataset schema - keep it stable and documented below.
 	 * Writes are fire-and-forget and must never break auth.
 	 */
 	private writeAuthEvent(
@@ -568,7 +568,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 		if ((await this.userCount()) >= DEMO_MAX_USERS) {
 			return Response.json(
 				{
-					error: `this demo project is limited to ${DEMO_MAX_USERS} users — deploy your own instance for unlimited projects`,
+					error: `this demo project is limited to ${DEMO_MAX_USERS} users - deploy your own instance for unlimited projects`,
 				},
 				{ status: 429 },
 			);
@@ -580,7 +580,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 	/**
 	 * Daily ceiling on demo inference. /chat is the only route that spends
 	 * Workers AI neurons, it needs no authentication, and neurons are an
-	 * account-level quota — so one demo visitor could otherwise starve every
+	 * account-level quota - so one demo visitor could otherwise starve every
 	 * other project on the deployment.
 	 */
 	private async denyDemoChat(): Promise<Response | null> {
@@ -595,7 +595,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 
 		if (count >= DEMO_MAX_CHAT_PER_DAY) {
 			return Response.json(
-				{ error: 'this demo project has reached its daily AI limit — it resets tomorrow' },
+				{ error: 'this demo project has reached its daily AI limit - it resets tomorrow' },
 				{ status: 429 },
 			);
 		}
@@ -615,8 +615,8 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 
 		if (/\/sign-up\/email$/.test(subPath)) {
 			// A demo deployment has no operators. Every visitor is anonymous with
-			// a throwaway project, and named projects — the only thing an operator
-			// session unlocks — are not part of it. Leaving the claim open would
+			// a throwaway project, and named projects - the only thing an operator
+			// session unlocks - are not part of it. Leaving the claim open would
 			// just let a stranger take ownership of a console nobody is meant to
 			// use, since the claim is otherwise first-come and the endpoint has to
 			// stay public for the login page to reach it.
@@ -721,7 +721,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 				return Response.json({ error: 'auth agent failed to start' }, { status: 500 });
 			}
 			// The console's instance is not a customer project: it never hands out
-			// guest sessions, and it accepts exactly one sign-up — the first-run
+			// guest sessions, and it accepts exactly one sign-up - the first-run
 			// owner claim. Enforced here because /api/auth/* is deliberately public,
 			// so the dashboard's console guard never sees these requests.
 			if (this.name === CONSOLE_PROJECT_ID) {
@@ -751,7 +751,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 			const authRequest = new Request(`${url.origin}${subPath}${url.search}`, request);
 			const response = await this.auth.handler(authRequest);
 
-			// Sign-out deletes the session row without a database hook — refresh
+			// Sign-out deletes the session row without a database hook - refresh
 			// counters after any mutation so connected dashboards stay accurate.
 			if (response.ok && signingOut) {
 				this.writeAuthEvent('session.revoked', {
@@ -816,7 +816,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 		const body = rolesRequestSchema.safeParse(await request.json().catch(() => null));
 		if (!body.success) {
 			return Response.json(
-				{ error: 'invalid roles — use 1-32 lowercase letters, digits or dashes' },
+				{ error: 'invalid roles - use 1-32 lowercase letters, digits or dashes' },
 				{ status: 400 },
 			);
 		}
@@ -831,14 +831,14 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 		const body = roleRequestSchema.safeParse(await request.json().catch(() => null));
 		if (!body.success) {
 			return Response.json(
-				{ error: 'invalid role — use 1-32 lowercase letters, digits or dashes' },
+				{ error: 'invalid role - use 1-32 lowercase letters, digits or dashes' },
 				{ status: 400 },
 			);
 		}
 		const knownRoles = this.state.roles ?? DEFAULT_ROLES;
 		if (!knownRoles.some((entry) => entry.name === body.data.role)) {
 			return Response.json(
-				{ error: `unknown role "${body.data.role}" — define it in the Roles tab first` },
+				{ error: `unknown role "${body.data.role}" - define it in the Roles tab first` },
 				{ status: 400 },
 			);
 		}
@@ -1340,15 +1340,15 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 	 * over RPC when the registry deletes a project, and by the demo reaper when
 	 * an ephemeral project expires.
 	 *
-	 * deleteAll() drops the Durable Object's whole SQLite database — SQL tables
-	 * and key-value entries alike — so the abort() that follows is what makes
+	 * deleteAll() drops the Durable Object's whole SQLite database - SQL tables
+	 * and key-value entries alike - so the abort() that follows is what makes
 	 * the next request start clean: it restarts the object, and onStart() then
 	 * re-applies the Drizzle migrations against an empty database rather than
 	 * leaving this isolate holding freed handles and stale agent state.
 	 *
 	 * The abort is deferred by a tick because it resets the object immediately,
 	 * which would destroy this RPC's own response before the caller received
-	 * it — every successful delete would surface as a failure.
+	 * it - every successful delete would surface as a failure.
 	 */
 	async destroy(): Promise<void> {
 		await this.ctx.storage.deleteAll();

@@ -6,7 +6,7 @@
 
 	/**
 	 * Live API reference for this project, rendered by Scalar from the OpenAPI
-	 * document at /api/projects/<id>/openapi.json — which is generated from the
+	 * document at /api/projects/<id>/openapi.json - which is generated from the
 	 * same zod schemas the routes validate with, so it cannot drift.
 	 *
 	 * Because the document carries this project's real base URL, every example

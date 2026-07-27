@@ -3,7 +3,7 @@ import { agentUrl, requireAuthAgent } from '$lib/server/auth-agent';
 import { z } from 'zod';
 
 /**
- * The console authenticates its operators against a dedicated AuthAgent — the
+ * The console authenticates its operators against a dedicated AuthAgent - the
  * same stack every customer project runs. Cloudflarebase's own dashboard is
  * therefore its first customer.
  *

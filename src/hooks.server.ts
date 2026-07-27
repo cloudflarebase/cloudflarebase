@@ -74,8 +74,8 @@ type Access =
  *
  * Two things must stay public because they *are* the product: the Better Auth
  * endpoints a customer's app calls, and the safe client config. Everything
- * else — overview, analytics, chat, admin mutations, and the realtime
- * WebSocket — reads or mutates a project's user data and needs an operator.
+ * else - overview, analytics, chat, admin mutations, and the realtime
+ * WebSocket - reads or mutates a project's user data and needs an operator.
  *
  * This is the single enforcement point for the `/agents/*` passthrough too.
  * The agent worker has no public route (`workers_dev` and `preview_urls` are

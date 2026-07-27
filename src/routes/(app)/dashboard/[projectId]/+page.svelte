@@ -47,8 +47,8 @@
 	<div>
 		<h1 class="text-2xl font-semibold">Project Overview</h1>
 		<p class="mt-1 text-sm text-muted-foreground">
-			Your browser's isolated Auth Agent sandbox. Build against it immediately—no account or credit
-			card.
+			Your browser's isolated Auth Agent sandbox. Build against it immediately - no account or
+			credit card.
 		</p>
 	</div>
 
@@ -92,7 +92,7 @@
 	</div>
 
 	<div class="grid grid-cols-1 gap-4">
-		<!-- Authentication — live -->
+		<!-- Authentication - live -->
 		<Card.Root class="border-primary/30" data-testid="product-auth">
 			<Card.Header>
 				<div class="flex items-center justify-between">
@@ -108,7 +108,7 @@
 				</div>
 				<Card.Title class="pt-2">Authentication</Card.Title>
 				<Card.Description>
-					Better Auth running inside this project's own agent — email/password, guests, and social
+					Better Auth running inside this project's own agent - email/password, guests, and social
 					sign-in.
 				</Card.Description>
 			</Card.Header>

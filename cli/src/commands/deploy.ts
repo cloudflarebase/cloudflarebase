@@ -5,12 +5,12 @@ import { run, runOrFail } from '../lib/run.js';
 import { readTrustedOrigins, setTrustedOrigins } from '../lib/wrangler-config.js';
 
 /**
- * `cloudflarebase deploy` — deploy the Worker and close the TRUSTED_ORIGINS
+ * `cloudflarebase deploy` - deploy the Worker and close the TRUSTED_ORIGINS
  * trap.
  *
  * An empty TRUSTED_ORIGINS is the single most common first-run failure: it is
  * the CSRF allowlist, and sign-in from an unlisted origin is refused as a bad
- * credential rather than a configuration error — so people go looking for an
+ * credential rather than a configuration error - so people go looking for an
  * auth bug they do not have. The Worker's own URL is not knowable until the
  * first deploy assigns it, so the fix is mechanical: deploy, read the URL
  * back, write it into the allowlist, deploy again. That is exactly the kind
@@ -23,7 +23,7 @@ export async function deployCommand(projectDir: string): Promise<void> {
 		configText = await readFile(configPath, 'utf8');
 	} catch {
 		throw new UserError(
-			'No wrangler.jsonc found — nothing to deploy.',
+			'No wrangler.jsonc found - nothing to deploy.',
 			'Run `cloudflarebase init <name>` to scaffold a project.'
 		);
 	}
@@ -57,7 +57,7 @@ export async function deployCommand(projectDir: string): Promise<void> {
 	if (!url) {
 		blank();
 		warn('TRUSTED_ORIGINS is empty and no workers.dev URL was found in the deploy output.');
-		info('  Sign-in is refused from origins not on that allowlist — and the failure looks');
+		info('  Sign-in is refused from origins not on that allowlist - and the failure looks');
 		info('  like a bad credential, not a config error. Set it to your Worker or console');
 		info(`  origin in wrangler.jsonc, then deploy again.`);
 		return;

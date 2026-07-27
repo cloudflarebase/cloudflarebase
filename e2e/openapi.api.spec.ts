@@ -4,7 +4,7 @@ import { SEED_PROJECT } from './helpers';
 /**
  * The OpenAPI document is generated from the same zod schemas the routes
  * validate with, so these assertions are really checking that the generator
- * still produces a usable document — not that someone updated a hand-written
+ * still produces a usable document - not that someone updated a hand-written
  * file.
  */
 test.describe('openapi document', () => {
@@ -50,7 +50,7 @@ test.describe('openapi document', () => {
 		const components = doc.components.schemas;
 
 		// A $ref pointing at a component that was never emitted renders as a
-		// broken, empty section in the reference — catch it here instead.
+		// broken, empty section in the reference - catch it here instead.
 		const refs = [...JSON.stringify(doc).matchAll(/"#\/components\/schemas\/([A-Za-z0-9_]+)"/g)];
 		expect(refs.length).toBeGreaterThan(0);
 

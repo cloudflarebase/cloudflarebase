@@ -27,7 +27,7 @@ const sentryOptions = (env: Env) => ({
 export const AuthAgent = Sentry.instrumentDurableObjectWithSentry(sentryOptions, AuthAgentBase);
 
 /**
- * Auth service for Cloudflarebase. Each project gets its own AuthAgent — a
+ * Auth service for Cloudflarebase. Each project gets its own AuthAgent - a
  * SQLite-backed Durable Object running Better Auth with realtime state sync.
  *
  * Reached two ways:
@@ -58,7 +58,7 @@ class AuthService extends WorkerEntrypoint<Env> {
 		}
 
 		// Fleet rollup for the platform admin dashboard. Not under /agents/*, so
-		// it is only reachable via the dashboard's service binding — the worker
+		// it is only reachable via the dashboard's service binding - the worker
 		// has no public route and the dashboard forwards only /agents/* paths.
 		if (url.pathname === '/fleet/overview') {
 			const requestedLimit = Number(url.searchParams.get('limit'));

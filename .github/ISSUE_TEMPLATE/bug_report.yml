@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Found a security issue? Do not file it here — see
+        Found a security issue? Do not file it here - see
         [SECURITY.md](https://github.com/cloudflarebase/cloudflarebase.com/blob/main/SECURITY.md).
 
   - type: textarea

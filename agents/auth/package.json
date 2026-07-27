@@ -1,7 +1,7 @@
 {
 	"name": "@cloudflarebase/auth",
 	"version": "0.1.0",
-	"description": "Better Auth on a Cloudflare Durable Object, one instance per project — the auth primitive behind Cloudflarebase.",
+	"description": "Better Auth on a Cloudflare Durable Object, one instance per project - the auth primitive behind Cloudflarebase.",
 	"license": "Apache-2.0",
 	"type": "module",
 	"repository": {

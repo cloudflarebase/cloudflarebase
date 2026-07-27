@@ -25,14 +25,14 @@ In scope:
 - the console guard and anything that reaches project data without an operator
   session
 - authentication, session handling, JWT issuance, and the JWKS endpoint
-- cross-project isolation — one project reading or mutating another
+- cross-project isolation - one project reading or mutating another
 - CORS and trusted-origin handling
 - privilege escalation through the role registry or the admin routes
 
 Out of scope:
 
 - anything requiring a compromised Cloudflare account or `wrangler` credentials
-- rate limits on a deployment you control — tune them yourself
+- rate limits on a deployment you control - tune them yourself
 - self-hosted installs that set `DEMO_MODE=true`, which is intended to be
   publicly reachable and is documented as such
 - missing hardening headers with no demonstrated impact
@@ -48,7 +48,7 @@ directly rather than assuming:
 - **`BETTER_AUTH_SECRET` must be a real secret**, set with
   `wrangler secret put`, and different in every environment. The value committed
   in `env.test.vars` exists so the e2e suite is deterministic and is worthless
-  anywhere else — never reuse it.
+  anywhere else - never reuse it.
 
 `ADMIN_SECRET` gates the fleet page at `/admin`; rotating it signs every admin
 out, because the cookie stores a digest of the secret rather than a session.

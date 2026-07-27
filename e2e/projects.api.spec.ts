@@ -48,7 +48,7 @@ test.describe('project agents (backend)', () => {
 		const overview = await (await request.get(overviewPath(SEED_PROJECT))).json();
 
 		expect(overview.state.users).toBe(SEED_TOTAL_USERS);
-		// Sessions accumulate across runs on a reused local stack — only the
+		// Sessions accumulate across runs on a reused local stack - only the
 		// lower bound is deterministic.
 		expect(overview.state.activeSessions).toBeGreaterThanOrEqual(1);
 		const emails = overview.users.map((u: { email: string }) => u.email);

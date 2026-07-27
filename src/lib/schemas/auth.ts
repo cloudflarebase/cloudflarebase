@@ -34,7 +34,7 @@ export const createProjectSchema = z
 	})
 	.meta({ id: 'CreateProjectRequest' });
 
-// Mirrors the AuthAgent's rules in agents/auth/src/schemas.ts — keep both in sync
+// Mirrors the AuthAgent's rules in agents/auth/src/schemas.ts - keep both in sync
 // so requests that pass here are never rejected by the agent with a vaguer error.
 export const allowedOriginSchema = z
 	.string()
@@ -49,7 +49,7 @@ export const allowedOriginSchema = z
 		} catch {
 			return false;
 		}
-	}, 'Must be an exact origin like https://app.example.com — HTTPS required except for localhost.');
+	}, 'Must be an exact origin like https://app.example.com - HTTPS required except for localhost.');
 
 const providerCredentialsSchema = z.union([
 	z.object({ preserve: z.literal(true) }),

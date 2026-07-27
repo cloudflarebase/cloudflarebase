@@ -15,7 +15,7 @@ export interface AuthHookUser {
 }
 
 export interface ProjectAuthConfig {
-	/** Cloudflarebase project id — one AuthAgent (and one auth database) per project. */
+	/** Cloudflarebase project id - one AuthAgent (and one auth database) per project. */
 	projectId: string;
 	/** Drizzle handle over the Durable Object's embedded SQLite database. */
 	db: AuthDatabase;
@@ -39,8 +39,8 @@ export interface ProjectAuthConfig {
 	/**
 	 * Veto over user creation, consulted at the database layer. Returning a
 	 * reason string rejects the creation with 403. Route-level checks cannot
-	 * cover every path that creates a user — social sign-in creates one
-	 * implicitly on the OAuth callback without touching any sign-up route — so
+	 * cover every path that creates a user - social sign-in creates one
+	 * implicitly on the OAuth callback without touching any sign-up route - so
 	 * an instance that must not grow (the console) enforces it here.
 	 */
 	denyUserCreation?: () => Promise<string | null>;
@@ -95,7 +95,7 @@ export function createProjectAuth(config: ProjectAuthConfig) {
 				'/sign-in/anonymous': { window: 60, max: 20 },
 			},
 		},
-		// Guest sign-in (POST /sign-in/anonymous) — adds user.isAnonymous.
+		// Guest sign-in (POST /sign-in/anonymous) - adds user.isAnonymous.
 		plugins: [
 			anonymous(),
 			bearer(),

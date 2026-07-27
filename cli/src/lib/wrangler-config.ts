@@ -15,7 +15,7 @@ import { UserError } from './log.js';
  *    matched on their identifying field and appended only when missing.
  *
  * Edits go through jsonc-parser so comments and formatting in the user's file
- * survive — the fragment is heavily commented, and so is anything they wrote.
+ * survive - the fragment is heavily commented, and so is anything they wrote.
  */
 
 export interface WranglerFragment {
@@ -60,7 +60,7 @@ export function parseJsonc<T>(text: string, filename: string): T {
  * not.
  */
 function detectFormatting(text: string): FormattingOptions {
-	// Only structural lines count — an indented ` * comment` line would
+	// Only structural lines count - an indented ` * comment` line would
 	// otherwise read as one-space indentation.
 	const indented = text.split('\n').find((line) => /^[\t ]+["{[\]}]/.test(line)) ?? '\t"';
 	const usesSpaces = indented.startsWith(' ');

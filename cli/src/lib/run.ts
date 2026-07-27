@@ -18,14 +18,14 @@ export interface RunOptions {
  * Node refuses to spawn `.cmd` shims without a shell (CVE-2024-27980), and on
  * Windows `npm` and `npx` are exactly that. So Windows needs `shell: true`,
  * which in turn means every argument reaching this function must already be
- * trusted — see `assertSafeArg`.
+ * trusted - see `assertSafeArg`.
  */
 const isWindows = process.platform === 'win32';
 
 const SAFE_ARG = /^[A-Za-z0-9@/._:=+-]+$/;
 
 /**
- * Arguments are built by this CLI, but some carry user input — a package name,
+ * Arguments are built by this CLI, but some carry user input - a package name,
  * a project directory. On Windows they are handed to a shell, so anything
  * outside a conservative allowlist is refused rather than quoted and hoped for.
  */

@@ -7,7 +7,7 @@ import { assertSafeArg, run, runOrFail } from '../lib/run.js';
 import { mergeWranglerConfig, parseJsonc, type WranglerFragment } from '../lib/wrangler-config.js';
 
 /**
- * `cloudflarebase add <agent>` — install an agent into an existing Worker.
+ * `cloudflarebase add <agent>` - install an agent into an existing Worker.
  *
  * Four steps, in dependency order, each idempotent so a failed run can simply
  * be re-run: install the package, merge its wrangler fragment, wire the
@@ -70,12 +70,12 @@ export async function addCommand(projectDir: string, args: string[]): Promise<vo
 	const typegen = await run('npx', ['wrangler', 'types'], { cwd: projectDir, capture: true });
 	if (typegen.code !== 0) {
 		// Types are a developer convenience, not a deploy prerequisite.
-		warn('`wrangler types` failed — run it yourself before relying on Env.');
+		warn('`wrangler types` failed - run it yourself before relying on Env.');
 	}
 
 	blank();
 	success(`${spec.packageName} is installed.`);
-	info(`  Deploy with ${dim('cloudflarebase deploy')} — it will set TRUSTED_ORIGINS for you.`);
+	info(`  Deploy with ${dim('cloudflarebase deploy')} - it will set TRUSTED_ORIGINS for you.`);
 }
 
 /**
@@ -105,7 +105,7 @@ async function findWranglerConfig(projectDir: string): Promise<string> {
 		if (cause instanceof UserError) throw cause;
 	}
 	throw new UserError(
-		'No wrangler.jsonc found — this does not look like a Worker project.',
+		'No wrangler.jsonc found - this does not look like a Worker project.',
 		'Run `cloudflarebase init <name>` to scaffold one.'
 	);
 }

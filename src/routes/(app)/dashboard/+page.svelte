@@ -98,7 +98,7 @@
 					{data.projects.length ? 'New project' : 'Create your first project'}
 				</Card.Title>
 				<Card.Description>
-					The id becomes the project's Durable Object name and its API base path — it cannot be
+					The id becomes the project's Durable Object name and its API base path - it cannot be
 					changed later.
 				</Card.Description>
 			</Card.Header>

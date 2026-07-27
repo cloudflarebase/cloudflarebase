@@ -125,7 +125,7 @@
 			<Card.Header>
 				<Card.Title>Admin dashboard is not configured</Card.Title>
 				<Card.Description>
-					Set an <code>ADMIN_SECRET</code> for this environment — a var in
+					Set an <code>ADMIN_SECRET</code> for this environment - a var in
 					<code>wrangler.jsonc</code> for local/test, or
 					<code>wrangler secret put ADMIN_SECRET</code> for deployed workers.
 				</Card.Description>
@@ -235,7 +235,7 @@
 				{/if}
 				{#if fleet.projects.length === 0}
 					<p class="py-8 text-center text-sm text-muted-foreground" data-testid="admin-empty">
-						No projects yet — they appear here as soon as a visitor's demo emits its first auth
+						No projects yet - they appear here as soon as a visitor's demo emits its first auth
 						event.
 					</p>
 				{:else}

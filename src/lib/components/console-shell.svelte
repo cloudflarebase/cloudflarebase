@@ -6,7 +6,7 @@
 	import type { Snippet } from 'svelte';
 
 	/**
-	 * Shell for the pre-project console surfaces — sign-in, first-run claim, and
+	 * Shell for the pre-project console surfaces - sign-in, first-run claim, and
 	 * the project list. The brand panel is the only place a self-hosted install
 	 * says what it is, so it carries the positioning rather than decoration.
 	 *
@@ -42,14 +42,14 @@
 				The open-source backend built on Cloudflare.
 			</h2>
 			<p class="text-sm leading-relaxed text-muted-foreground">
-				Every project gets its own agent — a Durable Object running Better Auth over its own SQLite
+				Every project gets its own agent - a Durable Object running Better Auth over its own SQLite
 				database, at the edge, in your account.
 			</p>
 
 			<div class="flex items-start gap-3 rounded-lg border bg-background/60 p-4">
 				<ShieldCheck class="mt-0.5 h-5 w-5 shrink-0 text-primary" />
 				<p class="text-sm text-muted-foreground">
-					This console runs on its own auth agent — the same stack your projects use.
+					This console runs on its own auth agent - the same stack your projects use.
 				</p>
 			</div>
 		</div>

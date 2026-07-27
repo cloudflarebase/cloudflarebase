@@ -19,7 +19,7 @@ import { z } from 'zod';
 
 /**
  * OpenAPI 3.1 document for a single project's API, generated from the same zod
- * schemas the routes validate with — so the reference cannot drift from the
+ * schemas the routes validate with - so the reference cannot drift from the
  * implementation the way hand-written docs do.
  *
  * The document is per project and carries that project's real base URL, which
@@ -109,12 +109,12 @@ export function buildOpenApiDocument({ projectId, origin }: OpenApiOptions) {
 	return {
 		openapi: '3.1.0',
 		info: {
-			title: `Cloudflarebase — ${projectId}`,
+			title: `Cloudflarebase - ${projectId}`,
 			version: '1.0.0',
 			description: [
 				`API for the \`${projectId}\` project.`,
 				'',
-				'**Authentication** endpoints are public — they are what your application calls.',
+				'**Authentication** endpoints are public - they are what your application calls.',
 				'Browsers on the same origin receive a session cookie; other clients read the',
 				'`set-auth-token` response header and send it as a bearer token.',
 				'',

@@ -8,8 +8,8 @@
 	 * clone works, publishes to workers.dev, and leaves the console private
 	 * because DEMO_MODE is unset.
 	 *
-	 * cloudflarebase.com's own settings — its name, custom domain, and the
-	 * public demo — live under env.production, so this project's deployment is
+	 * cloudflarebase.com's own settings - its name, custom domain, and the
+	 * public demo - live under env.production, so this project's deployment is
 	 * one environment among several rather than the thing everyone inherits.
 	 */
 	"$schema": "node_modules/wrangler/config-schema.json",
@@ -57,7 +57,7 @@
 
 	// Control plane: the project registry. `database_id` is deliberately
 	// omitted so `wrangler deploy` provisions the database on first deploy and
-	// writes the id back here — a self-hosted install has no setup step, and
+	// writes the id back here - a self-hosted install has no setup step, and
 	// the Deploy to Cloudflare button provisions it the same way. The schema is
 	// applied at runtime by src/lib/server/db.
 	"d1_databases": [
@@ -113,7 +113,7 @@
 			]
 		},
 
-		// Isolated environment for Playwright e2e runs — same shape as production
+		// Isolated environment for Playwright e2e runs - same shape as production
 		// (built worker in workerd + service binding), but bound to auth-agent-test.
 		"test": {
 			"routes": [],

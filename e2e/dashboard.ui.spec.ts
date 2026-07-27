@@ -8,7 +8,7 @@ import {
 	uniqueEmail
 } from './helpers';
 
-/** Project used by the interactive flows — separate from the read-only seed. */
+/** Project used by the interactive flows - separate from the read-only seed. */
 const UI_PROJECT = 'e2e-ui';
 
 function statValue(page: Page, id: string) {

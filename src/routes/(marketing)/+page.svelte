@@ -79,7 +79,7 @@
 		{
 			icon: Globe,
 			title: 'Trusted origins & CORS',
-			desc: 'Per-project allowed origins. The agent echoes the exact trusted origin — no wildcards.'
+			desc: 'Per-project allowed origins. The agent echoes the exact trusted origin - no wildcards.'
 		},
 		{
 			icon: UserX,
@@ -113,7 +113,7 @@
 		{
 			icon: Boxes,
 			title: 'One agent per project',
-			desc: 'Your project maps to a single AuthAgent Durable Object — Better Auth and Drizzle on embedded SQLite. Strongly consistent, no connection pool, no separate database to run.'
+			desc: 'Your project maps to a single AuthAgent Durable Object - Better Auth and Drizzle on embedded SQLite. Strongly consistent, no connection pool, no separate database to run.'
 		},
 		{
 			icon: Radio,
@@ -138,7 +138,7 @@
 		},
 		{
 			q: 'Can I run it on my own Cloudflare account?',
-			a: 'Yes — it is open source under Apache-2.0 at github.com/cloudflarebase/cloudflarebase.com. It is two Workers deployed with Wrangler, and the README walks through the deploy order for your own account. No secrets are required: each project generates its own signing key.'
+			a: 'Yes - it is open source under Apache-2.0 at github.com/cloudflarebase/cloudflarebase.com. It is two Workers deployed with Wrangler, and the README walks through the deploy order for your own account. No secrets are required: each project generates its own signing key.'
 		},
 		{
 			q: 'Is this production-ready?',
@@ -146,7 +146,7 @@
 		},
 		{
 			q: 'What does the AI copilot see?',
-			a: "Chat is grounded in the project's operational and aggregate auth data. Conversations are stored under a project-scoped hash of the connecting IP — raw IPs and user IDs are never written to chat rows. If inference fails you get a 502 on chat, and auth keeps working."
+			a: "Chat is grounded in the project's operational and aggregate auth data. Conversations are stored under a project-scoped hash of the connecting IP - raw IPs and user IDs are never written to chat rows. If inference fails you get a 502 on chat, and auth keeps working."
 		}
 	];
 
@@ -236,17 +236,17 @@
 </script>
 
 <svelte:head>
-	<title>Cloudflarebase — The open-source Firebase for Cloudflare</title>
+	<title>Cloudflarebase - The open-source Firebase for Cloudflare</title>
 	<meta
 		name="description"
-		content="The open-source Firebase for Cloudflare. Every backend primitive is a Cloudflare Agent — one Durable Object per project. Auth is live today with realtime sync, analytics, and an AI copilot."
+		content="The open-source Firebase for Cloudflare. Every backend primitive is a Cloudflare Agent - one Durable Object per project. Auth is live today with realtime sync, analytics, and an AI copilot."
 	/>
-	<meta property="og:title" content="Cloudflarebase — The open-source Firebase for Cloudflare" />
+	<meta property="og:title" content="Cloudflarebase - The open-source Firebase for Cloudflare" />
 	<meta
 		property="og:description"
 		content="Ship authentication on Cloudflare with isolated Durable Objects, realtime analytics, and an AI copilot."
 	/>
-	<meta name="twitter:title" content="Cloudflarebase — The open-source Firebase for Cloudflare" />
+	<meta name="twitter:title" content="Cloudflarebase - The open-source Firebase for Cloudflare" />
 	<meta
 		name="twitter:description"
 		content="Ship authentication on Cloudflare with isolated Durable Objects, realtime analytics, and an AI copilot."
@@ -304,7 +304,7 @@
 						<p
 							class="mx-auto mt-6 max-w-2xl text-base text-balance text-muted-foreground sm:mt-8 sm:text-lg"
 						>
-							Every backend primitive is a Cloudflare Agent — one Durable Object per project, zero
+							Every backend primitive is a Cloudflare Agent - one Durable Object per project, zero
 							servers, no regions to pick. Auth is live today, with realtime sync, analytics, and an
 							AI copilot built in.
 						</p>
@@ -555,8 +555,8 @@
 						Auth shipped first. It's live right now.
 					</h2>
 					<p class="mt-3 text-muted-foreground">
-						Not a waitlist, not a mockup. Open the demo and a real, isolated project — with its own
-						Durable Object — spins up for your browser.
+						Not a waitlist, not a mockup. Open the demo and a real, isolated project - with its own
+						Durable Object - spins up for your browser.
 					</p>
 				</div>
 				<div
@@ -589,7 +589,7 @@
 						Two Workers. One Durable Object per project.
 					</h2>
 					<p class="mt-3 text-muted-foreground">
-						That's the whole diagram. No origin fleet, no connection pools — your backend state
+						That's the whole diagram. No origin fleet, no connection pools - your backend state
 						lives with the compute that serves it.
 					</p>
 				</div>
@@ -625,7 +625,7 @@
 					</h2>
 					<p class="mt-4 text-muted-foreground">
 						Point <code class="font-mono">fetch</code> at your project's endpoint and you're integrated.
-						The routes are Better Auth's, scoped to your project — this is the exact API the demo dashboard
+						The routes are Better Auth's, scoped to your project - this is the exact API the demo dashboard
 						uses.
 					</p>
 					<ul class="mt-6 space-y-3 text-sm">
@@ -642,7 +642,7 @@
 						</li>
 						<li class="flex gap-2.5">
 							<Check class="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
-							Per-project trusted origins — add yours under Authentication → Settings
+							Per-project trusted origins - add yours under Authentication → Settings
 						</li>
 						<li class="flex gap-2.5">
 							<Check class="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />

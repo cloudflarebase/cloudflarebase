@@ -39,7 +39,7 @@
 	<meta property="og:image" content="https://cloudflarebase.com/brand/github-header.png" />
 	<meta
 		property="og:image:alt"
-		content="Cloudflarebase — the open-source backend built for Cloudflare"
+		content="Cloudflarebase - the open-source backend built for Cloudflare"
 	/>
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:image" content="https://cloudflarebase.com/brand/github-header.png" />

@@ -4,7 +4,7 @@
  * Copy this to the file your `wrangler.jsonc` names as `main`.
  *
  * A Durable Object class has to be exported from the Worker's own entrypoint
- * for Wrangler to find it, so re-exporting is not optional plumbing — it is how
+ * for Wrangler to find it, so re-exporting is not optional plumbing - it is how
  * the binding resolves. The default export is the fetch handler that routes
  * `/agents/auth-agent/<projectId>/...` to the right instance.
  */

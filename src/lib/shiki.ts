@@ -3,7 +3,7 @@ import type { HighlighterCore } from 'shiki/core';
 // Fine-grained shiki instead of the full bundle: the full `shiki` entry pulls
 // every grammar plus the Oniguruma WASM engine onto the main thread. Here only
 // the grammars used by `buildIntegrationExamples` are loaded (keep this list in
-// sync — dynamic import specifiers must stay static for the bundler), and the
+// sync - dynamic import specifiers must stay static for the bundler), and the
 // pure-JS regex engine avoids the WASM fetch/compile entirely.
 let highlighterPromise: Promise<HighlighterCore> | null = null;
 

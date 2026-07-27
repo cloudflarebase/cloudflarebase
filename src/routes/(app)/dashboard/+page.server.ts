@@ -11,7 +11,7 @@ const PROJECT_PATTERN = /^demo-[a-f0-9]{20}$/;
  *
  * On the public demo an anonymous visitor is handed their own throwaway
  * project, remembered in a cookie so a reload returns to the same one. For a
- * signed-in operator — the only case on a self-hosted install — it lists the
+ * signed-in operator - the only case on a self-hosted install - it lists the
  * projects in the registry, skipping the list when there is exactly one.
  */
 export const load: PageServerLoad = async ({ cookies, locals, platform }) => {

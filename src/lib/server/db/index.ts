@@ -9,7 +9,7 @@ export type ControlPlaneDatabase = DrizzleD1Database<typeof schema>;
  *
  * Applied at runtime rather than through `wrangler d1 migrations apply`, which
  * would be a setup step between cloning this repository and having a working
- * console — and the whole point of the D1 binding auto-provisioning is that
+ * console - and the whole point of the D1 binding auto-provisioning is that
  * there are none. `schema.ts` stays the typed source of truth for queries;
  * when this grows past a couple of tables it should become drizzle-kit
  * generated migrations with an applied-migrations table.
@@ -53,7 +53,7 @@ function ensureSchema(d1: D1Database): Promise<void> {
 export async function getDb(platform: App.Platform | undefined): Promise<ControlPlaneDatabase> {
 	const d1 = platform?.env?.DB;
 	if (!d1) {
-		error(500, 'the DB binding is not available — add a d1_databases entry named DB');
+		error(500, 'the DB binding is not available - add a d1_databases entry named DB');
 	}
 
 	await ensureSchema(d1);

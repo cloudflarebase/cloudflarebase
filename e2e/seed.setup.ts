@@ -9,18 +9,18 @@ import {
 } from './helpers';
 
 /**
- * Seeds the baseline dataset through the public API — the same path a real
+ * Seeds the baseline dataset through the public API - the same path a real
  * client takes. Idempotent so it works both against a freshly-wiped stack
  * (CI) and a reused local server: existing users sign in instead of signing
  * up (which also records today's activity for DAU), and the single anonymous
  * guest is only created once per stack.
  */
 setup('seed baseline auth data', async ({ request }) => {
-	// One anonymous guest — created first (before any session cookie exists).
+	// One anonymous guest - created first (before any session cookie exists).
 	for (const user of SEED_USERS) {
 		const signUp = await request.post(authPath(SEED_PROJECT, 'sign-up/email'), { data: user });
 		if (!signUp.ok()) {
-			// Already seeded on this stack — sign in to record today's activity.
+			// Already seeded on this stack - sign in to record today's activity.
 			const signIn = await request.post(authPath(SEED_PROJECT, 'sign-in/email'), {
 				data: { email: user.email, password: user.password }
 			});

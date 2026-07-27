@@ -3,7 +3,7 @@
  *
  * Merge this into your own `wrangler.jsonc`, then run `npx wrangler types` so
  * the generated `Env` carries these bindings. The agent reads `Env` from your
- * configuration, not from the package — see `AssertAuthAgentEnv` for a
+ * configuration, not from the package - see `AssertAuthAgentEnv` for a
  * compile-time check that you declared everything it needs.
  *
  * The `migrations` block below is a FRESH v1. Do not copy the tag history from
@@ -19,7 +19,7 @@
 	"compatibility_flags": ["nodejs_compat", "nodejs_als"],
 
 	// The agent is a SQLite-backed Durable Object: one instance per project,
-	// named by project id. `new_sqlite_classes` is required — the classic
+	// named by project id. `new_sqlite_classes` is required - the classic
 	// key-value backend cannot run the embedded database.
 	"migrations": [
 		{
@@ -60,7 +60,7 @@
 	"vars": {
 		/**
 		 * The one value you MUST set after your first deploy. It is the CSRF
-		 * allowlist, and sign-in is refused from an origin that is not on it —
+		 * allowlist, and sign-in is refused from an origin that is not on it -
 		 * which surfaces as a rejected credential rather than a configuration
 		 * error, so it is worth getting right before you go looking for bugs.
 		 * Comma separated, no trailing slash.
@@ -82,7 +82,7 @@
 	 *
 	 * BETTER_AUTH_SECRET is optional: when unset, each project generates its own
 	 * signing key on first start and keeps it in its own Durable Object storage.
-	 * Set it only if you want to own and rotate the value yourself — it then
+	 * Set it only if you want to own and rotate the value yourself - it then
 	 * applies to every project on the deployment.
 	 */
 	"secrets": {

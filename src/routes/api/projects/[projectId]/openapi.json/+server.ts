@@ -7,7 +7,7 @@ import type { RequestHandler } from './$types';
  *
  * Deliberately public, like /config: it documents the endpoints a customer's
  * application already calls, contains no secrets, and being fetchable is the
- * point — client generators and API tools can be pointed straight at it.
+ * point - client generators and API tools can be pointed straight at it.
  */
 export const GET: RequestHandler = async ({ params, url }) => {
 	const projectId = assertProjectId(params.projectId);

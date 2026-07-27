@@ -6,7 +6,7 @@ import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
  *
  * This is deliberately not in an agent. The registry lists projects, and a
  * project will eventually have a db agent and a storage agent as well as auth
- * — so no single agent can own it without every other agent depending on that
+ * - so no single agent can own it without every other agent depending on that
  * one. D1 binds directly to the dashboard, which is the control plane, and
  * needs no Durable Object (the SvelteKit adapter cannot export one anyway).
  */

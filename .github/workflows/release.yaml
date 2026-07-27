@@ -7,7 +7,7 @@ name: Release
 #
 # Publishing uses npm trusted publishing (OIDC): npmjs.com is configured to
 # accept publishes from exactly this repository, this workflow file, and the
-# `release` environment — no npm token exists anywhere, so there is nothing to
+# `release` environment - no npm token exists anywhere, so there is nothing to
 # steal or rotate. After this repository's supply-chain incident, that is the
 # point. Required reviewers on the `release` environment make every publish
 # wait for an approval click on the exact ref being released.
@@ -20,7 +20,7 @@ name: Release
 # publisher, and use this workflow from then on.
 #
 # Publishes carry npm provenance, attesting the exact commit and workflow that
-# built the artifact — verifiable by consumers with `npm audit signatures`.
+# built the artifact - verifiable by consumers with `npm audit signatures`.
 # Provenance requires the repository to be public; push release tags only
 # after open-sourcing.
 
@@ -83,7 +83,7 @@ jobs:
       - name: Update npm
         run: npm install -g npm@latest
 
-      # prepublishOnly builds dist/ — publish cannot ship a stale build.
+      # prepublishOnly builds dist/ - publish cannot ship a stale build.
       # No token: npm exchanges this workflow's OIDC identity with npmjs.com.
       - name: Publish
         run: npm publish --provenance --access public

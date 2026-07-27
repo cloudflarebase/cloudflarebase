@@ -40,7 +40,7 @@
 	let projectSwitchError = $state('');
 	const isMobile = new IsMobile();
 	// Open state and pane sizes come from the cfbase-copilot cookie via the
-	// layout server load, so SSR already renders the saved layout — reopening
+	// layout server load, so SSR already renders the saved layout - reopening
 	// the dashboard never flashes the default widths. Mobile uses the tab bar.
 	// Initial-value captures are deliberate: this component is the only writer.
 	// svelte-ignore state_referenced_locally
@@ -579,7 +579,7 @@
 				<!--
 					The API reference owns its scrolling. Scalar pins its sidebar with
 					position: sticky against its nearest scroll container, so it needs
-					the pane's fixed height and a scrollport of its own — inside the
+					the pane's fixed height and a scrollport of its own - inside the
 					shared ScrollArea the page wrapper is content-sized, nothing
 					scrolls within it, and the sidebar rides away with the content.
 					This mirrors Scalar's official embedded layout: a height-

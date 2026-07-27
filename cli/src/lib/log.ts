@@ -1,5 +1,5 @@
 /**
- * Terminal output. No dependency — a CLI that installs things on someone's
+ * Terminal output. No dependency - a CLI that installs things on someone's
  * machine should be auditable in one sitting, so the whole package carries a
  * single runtime dependency and this is not it.
  */
@@ -26,7 +26,7 @@ export const blank = (): void => console.log('');
 export const error = (message: string): void => console.error(`${red('✗')} ${message}`);
 
 /**
- * A failure that is the user's to fix — a missing config, a name that is
+ * A failure that is the user's to fix - a missing config, a name that is
  * already taken. Reported as a plain message with no stack trace, because a
  * stack tells them nothing they can act on.
  */

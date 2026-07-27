@@ -1,11 +1,11 @@
 import { error } from '@sveltejs/kit';
 import { projectIdSchema } from '$lib/schemas/auth';
 
-/** Project ids become Durable Object names and cookie prefixes — keep them tame. */
+/** Project ids become Durable Object names and cookie prefixes - keep them tame. */
 export function assertProjectId(projectId: string | undefined): string {
 	const parsed = projectIdSchema.safeParse(projectId);
 	if (!parsed.success) {
-		error(400, 'invalid project id — use lowercase letters, digits and dashes (max 32 chars)');
+		error(400, 'invalid project id - use lowercase letters, digits and dashes (max 32 chars)');
 	}
 	return parsed.data;
 }

@@ -1,6 +1,6 @@
 /** Shared constants + helpers for the e2e suite. */
 
-/** Project seeded once per stack by seed.setup.ts — treat as read-only in tests. */
+/** Project seeded once per stack by seed.setup.ts - treat as read-only in tests. */
 export const SEED_PROJECT = 'e2e-seed';
 
 /**

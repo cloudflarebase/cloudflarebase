@@ -13,7 +13,7 @@
 	// signing in. The agent permits exactly one sign-up on this instance.
 	const claiming = $derived(!data.ownerExists);
 
-	// A demo deployment has no operators at all — the agent refuses the claim,
+	// A demo deployment has no operators at all - the agent refuses the claim,
 	// so offering the form would only collect a doomed submission. The web and
 	// agent DEMO_MODE flags only diverge in the e2e harness, which never
 	// renders this page.
@@ -65,7 +65,7 @@
 	/**
 	 * Better Auth's social flow: the POST returns the provider's authorization
 	 * URL and the browser navigates there; the OAuth callback lands the session
-	 * cookie and redirects to callbackURL. Sign-in only — the console instance
+	 * cookie and redirects to callbackURL. Sign-in only - the console instance
 	 * refuses to create users beyond the owner, so an unknown account bounces
 	 * rather than registering.
 	 */
@@ -131,7 +131,7 @@
 				</h1>
 				<p class="text-sm text-muted-foreground">
 					{#if claiming}
-						No owner yet. Create the first account — sign-up closes as soon as it exists.
+						No owner yet. Create the first account - sign-up closes as soon as it exists.
 					{:else}
 						Sign in to manage your projects.
 					{/if}

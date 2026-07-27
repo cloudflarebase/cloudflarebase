@@ -5,8 +5,8 @@ import { parseJsonc, type WranglerFragment } from './wrangler-config.js';
 
 /**
  * The registry of installable agents. Adding a primitive here is all the CLI
- * work a new agent needs: everything else — the wrangler fragment, the
- * entrypoint line, the binding contract — ships inside that agent's own npm
+ * work a new agent needs: everything else - the wrangler fragment, the
+ * entrypoint line, the binding contract - ships inside that agent's own npm
  * package under `template/`, so the CLI never hard-codes knowledge that
  * belongs to the agent.
  */
@@ -23,7 +23,7 @@ export interface AgentSpec {
 export const AGENTS: Record<string, AgentSpec> = {
 	auth: {
 		packageName: '@cloudflarebase/auth',
-		description: 'Better Auth on a Durable Object — one isolated instance per project',
+		description: 'Better Auth on a Durable Object - one isolated instance per project',
 		// The type assertion travels with the wiring on purpose: it is what
 		// turns a missing binding into a named compile-time error instead of a
 		// runtime failure on the first request.
@@ -38,7 +38,7 @@ export const AGENTS: Record<string, AgentSpec> = {
 /**
  * What `npm install` is actually given. Normally the package name, resolving
  * to the latest release; `CLOUDFLAREBASE_<AGENT>_SPEC` overrides it for
- * pinning a prerelease — or, in this repository's own e2e tests, a packed
+ * pinning a prerelease - or, in this repository's own e2e tests, a packed
  * tarball that has never been published.
  */
 export function installSpec(agentName: string, spec: AgentSpec): string {
@@ -58,7 +58,7 @@ export function resolveAgent(name: string): AgentSpec {
 
 /**
  * Reads the wrangler fragment out of the *installed* package rather than
- * bundling a copy in the CLI. The fragment is versioned with the agent — a new
+ * bundling a copy in the CLI. The fragment is versioned with the agent - a new
  * binding lands in the same release that starts reading it, and a CLI from
  * last month still installs it correctly.
  */
@@ -78,7 +78,7 @@ export async function readFragment(
 	} catch {
 		throw new UserError(
 			`${spec.packageName} is installed but ships no template/wrangler-fragment.jsonc.`,
-			'The package may be too old for this CLI — upgrade it and try again.'
+			'The package may be too old for this CLI - upgrade it and try again.'
 		);
 	}
 	const text = await readFile(fragmentPath, 'utf8');

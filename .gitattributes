@@ -4,7 +4,7 @@
 # CI stays green. Attributes win over any contributor's core.autocrlf setting.
 * text=auto eol=lf
 
-# Binary assets — never subject to line-ending conversion.
+# Binary assets - never subject to line-ending conversion.
 *.png binary
 *.jpg binary
 *.jpeg binary

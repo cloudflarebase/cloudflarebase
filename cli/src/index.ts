@@ -8,7 +8,7 @@ import { initCommand } from './commands/init.js';
 import { blank, bold, dim, error, info, UserError } from './lib/log.js';
 
 const usage = (): void => {
-	info(`${bold('cloudflarebase')} — your backend, on your Cloudflare account`);
+	info(`${bold('cloudflarebase')} - your backend, on your Cloudflare account`);
 	blank();
 	info('Usage:');
 	info(`  cloudflarebase init <name>    ${dim('scaffold a Worker with the auth agent installed')}`);

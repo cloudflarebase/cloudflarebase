@@ -4,7 +4,7 @@
  */
 
 /**
- * Reserved project id for the dashboard's own operator auth — Cloudflarebase
+ * Reserved project id for the dashboard's own operator auth - Cloudflarebase
  * authenticating its console with the same stack it sells. Mirrored in
  * agents/auth/src/agent.ts; keep both in sync.
  */

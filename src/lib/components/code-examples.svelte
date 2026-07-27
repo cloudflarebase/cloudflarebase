@@ -13,7 +13,7 @@
 
 	// Highlighting is client-only and deferred: shiki stays out of the SSR pass
 	// and the initial bundle, and nothing loads or runs until the block nears
-	// the viewport and the main thread goes idle — the plain <pre> renders
+	// the viewport and the main thread goes idle - the plain <pre> renders
 	// until then, so hydration and first paint never wait on grammar work.
 	let container = $state<HTMLElement | null>(null);
 	let nearViewport = $state(false);
@@ -76,7 +76,7 @@
 			clearTimeout(copyResetTimer);
 			copyResetTimer = setTimeout(() => (copied = false), 1500);
 		} catch {
-			// clipboard unavailable — the code stays selectable
+			// clipboard unavailable - the code stays selectable
 		}
 	}
 </script>

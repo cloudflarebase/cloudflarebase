@@ -40,7 +40,7 @@
 	},
 
 	/*
-	 * `dist` is this project's own build output — with allowJs on it would be
+	 * `dist` is this project's own build output - with allowJs on it would be
 	 * typechecked alongside the sources it was emitted from. `template` holds
 	 * files meant to be copied into a consumer's project, so they import
 	 * `@cloudflarebase/auth` by package name, which does not resolve from

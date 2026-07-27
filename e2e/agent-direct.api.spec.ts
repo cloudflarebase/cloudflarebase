@@ -2,8 +2,8 @@ import { expect, request as playwrightRequest, test } from '@playwright/test';
 
 /**
  * Smoke tests against the auth-agent worker directly (not through the web
- * worker). Only meaningful on the local stack — the agent has no public route
- * in production — so this file skips itself when BASE_URL targets a remote
+ * worker). Only meaningful on the local stack - the agent has no public route
+ * in production - so this file skips itself when BASE_URL targets a remote
  * stack (e.g. BrowserStack runs against a deployed URL).
  */
 const AGENT_URL = process.env.AGENT_URL ?? 'http://localhost:8798';

@@ -28,14 +28,14 @@ npm test        # full Playwright suite
 ```
 
 All three run in CI and all three must pass. The e2e suite boots a
-production-mirroring stack — the built SvelteKit worker and the auth agent, both
+production-mirroring stack - the built SvelteKit worker and the auth agent, both
 in real workerd, with real service bindings and Durable Object SQLite. It takes
 a few minutes and it is the check that actually catches things.
 
 One gotcha: `npm run build` writes the bundled Worker to `.svelte-kit/cloudflare/`,
 which `svelte-check` then scans, so running `check` after `build` reports
 thousands of errors in generated code. Delete that directory first. CI is
-unaffected — it checks a fresh checkout before building.
+unaffected - it checks a fresh checkout before building.
 
 Typecheck the agent separately, since it is its own TypeScript project:
 
@@ -54,13 +54,13 @@ Two separate npm projects with separate Wrangler configs and separate generated
 | `agents/auth` | `auth-agent` | `AuthAgent` + `ProjectRegistry` DOs |
 
 **Never import runtime code or generated Worker types across that boundary.**
-Shared DTOs are deliberately copied — `src/lib/agents.ts` mirrors
+Shared DTOs are deliberately copied - `src/lib/agents.ts` mirrors
 `agents/auth/src/agent.ts` and `agents/auth/src/registry.ts`. If you change one
 side, change the other in the same PR.
 
 Read [CLAUDE.md](CLAUDE.md) and [agents/auth/CLAUDE.md](agents/auth/CLAUDE.md)
 before anything structural. They record the architecture decisions and the
-gotchas that are expensive to rediscover — Durable Object SQLite refusing
+gotchas that are expensive to rediscover - Durable Object SQLite refusing
 `pragma_table_info()` and explicit transactions, why `routeAgentRequest` must
 not be given `cors: true`, and why Miniflare service bindings need
 `binding.fetch(url, init)` rather than a `Request`.
@@ -76,7 +76,7 @@ not be given `cors: true`, and why Miniflare service bindings need
   root, `npx wrangler types` in `agents/auth`. Never hand-edit
   `worker-configuration.d.ts`.
 - **UI tests need `data-testid`.** Auth dashboard tests must go through
-  `gotoAuthPage()`, which waits for hydration — clicking an SSR-rendered tab
+  `gotoAuthPage()`, which waits for hydration - clicking an SSR-rendered tab
   before Svelte attaches its handler silently loses the event.
 - **Security-sensitive paths deserve a test that attacks them.** See
   `e2e/console-guard.api.spec.ts`, which asserts endpoints reject anonymous

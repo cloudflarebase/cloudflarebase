@@ -105,7 +105,7 @@
 	let authSuccess = $state<string | null>(null);
 	const authErrorHint = $derived(
 		authError && /already exist/i.test(authError)
-			? ' — switch to “Sign in”, or roll a new identity with the dice.'
+			? ' - switch to “Sign in”, or roll a new identity with the dice.'
 			: ''
 	);
 
@@ -205,7 +205,7 @@
 				activityTimeZone = timeZone;
 			}
 		} catch {
-			// agent unreachable — keep last snapshot
+			// agent unreachable - keep last snapshot
 		}
 	}
 
@@ -237,7 +237,7 @@
 			try {
 				json = text ? JSON.parse(text) : null;
 			} catch {
-				// non-JSON body — fall through to the status-based error
+				// non-JSON body - fall through to the status-based error
 			}
 			if (!res.ok) {
 				throw new Error(json?.message ?? `request failed (HTTP ${res.status})`);
@@ -259,7 +259,7 @@
 		const created = await authPost(
 			'sign-up/email',
 			$signUpForm,
-			`Account created — you're signed in as ${$signUpForm.email}.`
+			`Account created - you're signed in as ${$signUpForm.email}.`
 		);
 		// Carry the identity over so switching to “Sign in” just works.
 		if (created) $signInForm.email = $signUpForm.email;
@@ -603,7 +603,7 @@
 		<div>
 			<h1 class="text-2xl font-semibold">Authentication</h1>
 			<p class="mt-1 text-sm text-muted-foreground">
-				Served by this project's AuthAgent — a Durable Object running Better Auth on its own SQLite
+				Served by this project's AuthAgent - a Durable Object running Better Auth on its own SQLite
 				database.
 			</p>
 		</div>
@@ -836,7 +836,7 @@
 							<Card.Content>
 								{#if overview.users.length === 0}
 									<p class="py-6 text-center text-sm text-muted-foreground">
-										No users yet — create the first one in the playground.
+										No users yet - create the first one in the playground.
 									</p>
 								{:else}
 									<Table.Root class="min-w-[42rem]">
@@ -1109,7 +1109,7 @@
 							<Card.Header>
 								<Card.Title>Try authentication</Card.Title>
 								<Card.Description>
-									The form below is what your app's sign-in UI would call — every action hits this
+									The form below is what your app's sign-in UI would call - every action hits this
 									project's live Better Auth endpoints, and the session panel shows the result.
 								</Card.Description>
 							</Card.Header>
@@ -1201,7 +1201,7 @@
 														authPost(
 															'sign-in/anonymous',
 															{},
-															'Guest session started — no email needed.'
+															'Guest session started - no email needed.'
 														)}
 												>
 													Continue as guest

@@ -13,7 +13,7 @@ import { z } from 'zod';
  * It lives in D1 on the dashboard Worker rather than inside an agent, because
  * it is a control-plane concern. A project will eventually have a db agent and
  * a storage agent as well as auth, so any agent owning the list would make
- * every other agent depend on that one — and deleting a project has to reach
+ * every other agent depend on that one - and deleting a project has to reach
  * all of them, which is why the fan-out below belongs here and not in the auth
  * worker.
  */
@@ -94,7 +94,7 @@ export type DeleteProjectResult =
  * Both halves matter: dropping only the row would strand Durable Objects still
  * holding real user records with nothing left that could reach or delete them.
  * The fan-out lives here because the console is the only component that knows
- * which agents exist — today that is the auth agent, and each new agent adds a
+ * which agents exist - today that is the auth agent, and each new agent adds a
  * call rather than a dependency between agents.
  */
 export async function deleteProject(

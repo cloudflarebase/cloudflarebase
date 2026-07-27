@@ -1,5 +1,5 @@
 /**
- * Type-level tests for the consumer binding contract. No runtime component —
+ * Type-level tests for the consumer binding contract. No runtime component -
  * `npx tsc --noEmit` is the assertion.
  *
  * The negative cases carry `@ts-expect-error`, so this file fails the typecheck
@@ -23,7 +23,7 @@ import type { AssertAuthAgentEnv } from './bindings';
  *
  * It lives here rather than in `bindings.ts` so it stays out of the published
  * declarations, where it would be evaluated against the consumer's `Env` and
- * report an error inside `node_modules` — and be silently skipped anyway by the
+ * report an error inside `node_modules` - and be silently skipped anyway by the
  * `skipLibCheck: true` that most Workers projects set.
  */
 export type _SelfCheck = AssertAuthAgentEnv<Env>;

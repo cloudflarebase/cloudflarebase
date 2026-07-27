@@ -3,7 +3,7 @@ import { agentUrl, assertProjectId, requireAuthAgent } from '$lib/server/auth-ag
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
-/** Project Overview — a light snapshot for the product cards. */
+/** Project Overview - a light snapshot for the product cards. */
 export const load: PageServerLoad = async ({ params, url, platform }) => {
 	const projectId = assertProjectId(params.projectId);
 	const agent = requireAuthAgent(platform);

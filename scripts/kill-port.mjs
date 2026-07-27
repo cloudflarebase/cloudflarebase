@@ -1,7 +1,7 @@
 // Kills any process still listening on the given ports. Used before starting
 // the e2e test servers: on Windows, killing a wrangler wrapper can leave a
 // detached workerd serving stale code and holding file locks on the persist
-// dir — this clears such zombies so the fresh server can start.
+// dir - this clears such zombies so the fresh server can start.
 import { execSync } from 'node:child_process';
 
 const ports = process.argv.slice(2).filter((p) => /^\d+$/.test(p));
@@ -49,6 +49,6 @@ for (const port of ports) {
 			execSync(`lsof -ti tcp:${port} | xargs -r kill -9`, { stdio: 'pipe' });
 		}
 	} catch {
-		// nothing listening — fine
+		// nothing listening - fine
 	}
 }

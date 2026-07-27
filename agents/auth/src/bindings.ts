@@ -8,7 +8,7 @@
  * `Env` is *your* generated type, not this repository's.
  *
  * The cost of that portability is that nothing would otherwise check you
- * actually declared the bindings the agent reads — a missing one would surface
+ * actually declared the bindings the agent reads - a missing one would surface
  * as a runtime failure on first request. `AssertAuthAgentEnv` closes that gap.
  *
  * Required vs optional here describes what a correct deployment provides, not
@@ -21,8 +21,8 @@
 /**
  * `DurableObjectNamespace` is branded by its agent class, and the class you
  * bind is the Sentry-instrumented subclass rather than `AuthAgent` itself. The
- * brand is not worth reproducing across a package boundary — `fleet.ts` already
- * casts through it internally — so the contract checks that the binding exists
+ * brand is not worth reproducing across a package boundary - `fleet.ts` already
+ * casts through it internally - so the contract checks that the binding exists
  * and is a namespace, and leaves the instance type to the caller.
  *
  * `any` is the only argument that accepts every parameterisation: the namespace
@@ -42,7 +42,7 @@ export interface AuthAgentBindings {
 	/**
 	 * Workers Analytics Engine dataset for auth events. Writes need no API
 	 * credentials and the dataset auto-creates on first write, so there is no
-	 * reason for a deployment to lack it — every environment in the shipped
+	 * reason for a deployment to lack it - every environment in the shipped
 	 * wrangler configuration declares it.
 	 */
 	AUTH_EVENTS: AnalyticsEngineDataset;
@@ -58,7 +58,7 @@ export interface AuthAgentBindings {
 
 	/**
 	 * CSRF allowlist, comma separated. Empty is accepted but sign-in is then
-	 * refused from every origin — and it surfaces as a rejected credential
+	 * refused from every origin - and it surfaces as a rejected credential
 	 * rather than a configuration error, so set it after your first deploy.
 	 */
 	TRUSTED_ORIGINS?: string;
@@ -90,7 +90,7 @@ export interface AuthAgentBindings {
 	GOOGLE_CLIENT_ID?: string;
 	GOOGLE_CLIENT_SECRET?: string;
 
-	/** Empty disables reporting, which is the default — no DSN is committed. */
+	/** Empty disables reporting, which is the default - no DSN is committed. */
 	SENTRY_DSN?: string;
 	SENTRY_ENV?: string;
 

@@ -12,7 +12,7 @@
  *   --speed <x>        pacing multiplier, lower = faster (default 1)
  *   --windowed         lock the page LAYOUT to 1920x1080 in a window. The
  *                      window itself can be smaller (Windows scaling/taskbar
- *                      clamp it) — set the OBS canvas to 1920x1080 and
+ *                      clamp it) - set the OBS canvas to 1920x1080 and
  *                      stretch the window capture. On a 1080p display,
  *                      default fullscreen is a pixel-perfect 1920x1080.
  *   --no-chat          skip the Workers AI copilot scenes
@@ -22,7 +22,7 @@
  *
  * Requires the dev stack (`npm run dev`); the script starts it if it is not
  * already listening. Rate limits in env local are 10 sign-ups + 10 sign-ins
- * + 20 guest sessions per minute — seeding and traffic stay inside that.
+ * + 20 guest sessions per minute - seeding and traffic stay inside that.
  */
 
 import { spawn } from 'child_process';
@@ -164,7 +164,7 @@ async function ensureStack() {
 		return;
 	}
 	if (!IS_LOCAL) throw new Error(`${BASE} is not reachable`);
-	log('dev stack not running — starting `npm run dev` (leave it running for the recording)');
+	log('dev stack not running - starting `npm run dev` (leave it running for the recording)');
 	devProcess = spawn('npm', ['run', 'dev'], {
 		cwd: path.resolve(import.meta.dirname, '..'),
 		shell: true,
@@ -355,12 +355,12 @@ async function backfillAnalytics() {
 			const analytics = await res.json();
 			if ((analytics.mau ?? 0) >= 15) {
 				log(
-					`analytics already backfilled (MAU ${analytics.mau}) — skipping; use --force-backfill to redo`
+					`analytics already backfilled (MAU ${analytics.mau}) - skipping; use --force-backfill to redo`
 				);
 				return;
 			}
 		} catch {
-			// Stack not up yet — proceed with the backfill before booting it.
+			// Stack not up yet - proceed with the backfill before booting it.
 		}
 	}
 	const { sql, rowCount } = buildBackfillSql();
@@ -382,7 +382,7 @@ async function backfillAnalytics() {
 			],
 			path.resolve(import.meta.dirname, '..', 'agents', 'auth')
 		);
-		log('backfill done — charts, DAU/MAU, countries and providers now have history');
+		log('backfill done - charts, DAU/MAU, countries and providers now have history');
 	} catch (error) {
 		log(
 			`WARNING: backfill failed (often a lock while the dev stack runs). Charts will only show live data.`
@@ -445,7 +445,7 @@ async function seedRoster() {
 		log(`project already seeded (${existing} users)`);
 		return;
 	}
-	log(`seeding ${ROSTER.length} demo users (paced for rate limits — first run takes ~2 min)...`);
+	log(`seeding ${ROSTER.length} demo users (paced for rate limits - first run takes ~2 min)...`);
 	for (const [i, user] of ROSTER.entries()) {
 		while (budgetLeft('sign-up/email') <= 0) await sleep(4000);
 		const res = await authRequest('sign-up/email', user);
@@ -507,8 +507,8 @@ async function preflightChat() {
 	}
 	log(
 		chatWorks
-			? 'Workers AI reachable — copilot scene enabled'
-			: 'Workers AI not reachable — skipping the copilot scene'
+			? 'Workers AI reachable - copilot scene enabled'
+			: 'Workers AI not reachable - skipping the copilot scene'
 	);
 }
 
@@ -637,7 +637,7 @@ async function screenshot(page, name) {
 
 async function countdown(page, seconds) {
 	if (CHECK) return;
-	log(`browser is up — START YOUR RECORDING. Tour begins in ${seconds}s...`);
+	log(`browser is up - START YOUR RECORDING. Tour begins in ${seconds}s...`);
 	await page.evaluate((s) => {
 		const pill = document.createElement('div');
 		pill.id = 'cfb-demo-countdown';
@@ -736,10 +736,10 @@ async function runTour() {
 		}));
 		log(
 			windowed
-				? `display reports ${screen.w}x${screen.h}. Layout is locked to 1920x1080 inside the window — set the OBS canvas to 1920x1080 and stretch the window capture to fill it.`
+				? `display reports ${screen.w}x${screen.h}. Layout is locked to 1920x1080 inside the window - set the OBS canvas to 1920x1080 and stretch the window capture to fill it.`
 				: screen.w === 1920 && screen.h === 1080
-					? 'display is 1920x1080 — fullscreen capture is pixel-perfect 1:1.'
-					: `display reports ${screen.w}x${screen.h} — fullscreen renders at that size; set the OBS output resolution to 1920x1080 to downscale.`
+					? 'display is 1920x1080 - fullscreen capture is pixel-perfect 1:1.'
+					: `display reports ${screen.w}x${screen.h} - fullscreen renders at that size; set the OBS output resolution to 1920x1080 to downscale.`
 		);
 	}
 
@@ -803,7 +803,7 @@ async function runTour() {
 	await screenshot(page, '03-auth-dashboard');
 
 	// Ask the copilot right away so Workers AI answers while the tour
-	// continues — the reply scrolls into view live in the corner instead of
+	// continues - the reply scrolls into view live in the corner instead of
 	// stalling the finale.
 	let askedCopilot = false;
 	let repliesBefore = 0;
@@ -818,7 +818,7 @@ async function runTour() {
 			await pace(300);
 			await clickEl(page, page.getByRole('button', { name: 'Send to project agent' }));
 			askedCopilot = true;
-			log('copilot question sent — the answer will arrive during the tour');
+			log('copilot question sent - the answer will arrive during the tour');
 			await pace(500);
 		}
 	}
@@ -860,8 +860,8 @@ async function runTour() {
 			.catch(() => false);
 	};
 	if (!(await trySignUp())) {
-		// Shared sign-up window still saturated — wait it out and retry once.
-		log('playground sign-up throttled — retrying in 15s');
+		// Shared sign-up window still saturated - wait it out and retry once.
+		log('playground sign-up throttled - retrying in 15s');
 		await sleep(15_000);
 		await trySignUp();
 	}
@@ -904,7 +904,7 @@ async function runTour() {
 	}
 	await screenshot(page, '08-users-role');
 
-	// --- Scene 7: first answer, then fire a suggestion — its reply computes
+	// --- Scene 7: first answer, then fire a suggestion - its reply computes
 	// during the integration scene, so there is no dead air ---------------------
 	const copilotPanel = page.getByTestId('copilot-messages');
 	let repliesAfterFirst = 0;
@@ -923,10 +923,10 @@ async function runTour() {
 				repliesAfterFirst = await copilotReplies.count();
 				await clickEl(page, suggestion);
 				suggestionClicked = true;
-				log('suggestion question sent — its answer lands during the next scene');
+				log('suggestion question sent - its answer lands during the next scene');
 			}
 		} else {
-			log('AI reply did not arrive in time — continuing');
+			log('AI reply did not arrive in time - continuing');
 		}
 	}
 
@@ -960,7 +960,7 @@ async function runTour() {
 		await browser.close();
 		return null;
 	}
-	log('tour complete — the feed keeps pulsing. Stop your recording, then Ctrl+C here.');
+	log('tour complete - the feed keeps pulsing. Stop your recording, then Ctrl+C here.');
 	return browser;
 }
 
@@ -980,7 +980,7 @@ async function main() {
 
 	if (CHECK) {
 		clearInterval(trafficTimer);
-		log(`check passed${SHOTS ? ` — screenshots in ${SHOTS}` : ''}`);
+		log(`check passed${SHOTS ? ` - screenshots in ${SHOTS}` : ''}`);
 		process.exit(0);
 	}
 
