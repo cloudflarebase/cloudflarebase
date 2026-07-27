@@ -52,7 +52,7 @@
 			}
 
 			await invalidateAll();
-			await goto(resolve('/dashboard/[projectId]', { projectId: parsed.data }));
+			await goto(resolve('/(app)/dashboard/[projectId]', { projectId: parsed.data }));
 		} finally {
 			creating = false;
 		}
@@ -76,7 +76,7 @@
 			<div class="grid gap-2" data-testid="project-list">
 				{#each data.projects as project (project.id)}
 					<a
-						href={resolve('/dashboard/[projectId]', { projectId: project.id })}
+						href={resolve('/(app)/dashboard/[projectId]', { projectId: project.id })}
 						class="group flex items-center gap-3 rounded-lg border bg-card p-4 transition-colors hover:border-primary hover:bg-accent/40"
 					>
 						<Database class="h-5 w-5 shrink-0 text-muted-foreground" />

@@ -260,7 +260,9 @@
 										<Table.Cell>
 											<a
 												class="font-mono text-xs underline-offset-4 hover:underline"
-												href={resolve('/dashboard/[projectId]', { projectId: project.projectId })}
+												href={resolve('/(app)/dashboard/[projectId]', {
+													projectId: project.projectId
+												})}
 											>
 												{project.projectId}
 											</a>

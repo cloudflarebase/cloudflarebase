@@ -99,4 +99,6 @@ Set `RUN_AI_E2E=1` to include real Workers AI inference tests.
 ## Conventions
 
 - Svelte 5 runes, shadcn-svelte components under `$lib/components/ui`, LayerChart for charts, `mode-watcher` for themes, tabs, and single quotes.
+- Routes are grouped: `(marketing)` holds the landing page, `(app)` holds `login`, `admin`, and `dashboard`. `api/` and the root layout/error stay ungrouped — groups add nothing to `+server.ts` routes and would churn their route ids. Groups appear in `resolve()` route ids (`/(app)/dashboard/[projectId]`) but never in URLs.
+- Dynamic segments are named for what they hold — `[projectId]`, `[userId]`, `[sessionId]`, never `[id]` or `[slug]` — so nested routes stay unambiguous.
 - New primitives follow the auth shape: separate npm project under `agents/<name>`, `Agent<Env, State>` Durable Object, `routeAgentRequest` Worker entrypoint, root service bindings for every environment, and same-origin dashboard proxies.

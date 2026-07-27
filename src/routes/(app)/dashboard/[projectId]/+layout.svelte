@@ -59,9 +59,9 @@
 	// empty state, while the initial history request is in flight.
 	let copilotHistoryLoading = $state(true);
 
-	const overviewHref = $derived(resolve('/dashboard/[projectId]', { projectId }));
-	const authHref = $derived(resolve('/dashboard/[projectId]/auth', { projectId }));
-	const apiHref = $derived(resolve('/dashboard/[projectId]/api', { projectId }));
+	const overviewHref = $derived(resolve('/(app)/dashboard/[projectId]', { projectId }));
+	const authHref = $derived(resolve('/(app)/dashboard/[projectId]/auth', { projectId }));
+	const apiHref = $derived(resolve('/(app)/dashboard/[projectId]/api', { projectId }));
 	const isApi = $derived(page.url.pathname.startsWith(apiHref));
 
 	const isOverview = $derived(page.url.pathname === overviewHref);
@@ -150,7 +150,7 @@
 		}
 		projectSwitchError = '';
 		if (parsed.data !== projectId) {
-			void goto(resolve('/dashboard/[projectId]', { projectId: parsed.data }));
+			void goto(resolve('/(app)/dashboard/[projectId]', { projectId: parsed.data }));
 		}
 	}
 

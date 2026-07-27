@@ -18,7 +18,9 @@
 
 	let { data } = $props();
 
-	const authHref = $derived(resolve('/dashboard/[projectId]/auth', { projectId: data.projectId }));
+	const authHref = $derived(
+		resolve('/(app)/dashboard/[projectId]/auth', { projectId: data.projectId })
+	);
 
 	const comingSoon = [
 		{
