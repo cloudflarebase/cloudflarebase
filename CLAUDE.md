@@ -16,7 +16,7 @@ Separate npm projects with separate Wrangler configs and generated `Env` types. 
 
 The root Worker binds `AUTH_AGENT` (agent service) and `DB` (control-plane D1). Agent instances live at `/agents/auth-agent/<projectId>/...`.
 
-**The top level of both Wrangler configs is the self-hosted default, not this project's deployment.** It publishes to workers.dev, claims no custom domain, and leaves `DEMO_MODE` unset so a fresh install is private. cloudflarebase.com lives in `env.production`, deployed with `npm run deploy:production`. Two names are pinned so they survive the top-level rename: the agent's `env.production` stays `auth-agent` (what the service binding resolves) and the web `env.preview` stays `cloudflarebase-com-preview`.
+**The top level of both Wrangler configs is the self-hosted default, not this project's deployment.** It publishes to workers.dev, claims no custom domain, and leaves `DEMO_MODE` unset so a fresh install is private. cloudflarebase.com lives in `env.production`, deployed with `npm run deploy:production`. The agent's `env.production` name is pinned to `auth-agent` (what the service binding resolves). The web `env.preview` is the **same Worker** as production (`cloudflarebase-com`): previews are versions of it, uploaded by Workers Builds from non-production branches, and the environment exists for its bindings - `AUTH_AGENT` targets `auth-agent-preview` - which versions carry individually.
 
 ## Commands
 
@@ -82,6 +82,7 @@ The root Worker binds `AUTH_AGENT` (agent service) and `DB` (control-plane D1). 
 - Sentry DSNs are never committed; empty disables reporting. A committed DSN would collect every fork's errors.
 - `TRUSTED_ORIGINS` is only for origins other than the deployment's own (the agent trusts its own origin automatically). A cross-origin request from an unlisted origin gets an explicit 403 `INVALID_ORIGIN`, never a credential error.
 - On Windows, killing only a listening workerd leaves its Wrangler parent alive with children that lock persistence dirs. `scripts/kill-port.mjs` kills the full tree (match scoped to Wrangler); `scripts/clean-dir.mjs` only accepts `.wrangler/test-state` targets and retries `EBUSY`/`EPERM`.
+- Workers Builds is connected to the single web Worker `cloudflarebase-com`: the production branch deploys `--env production`, non-production branches upload preview **versions** with `--env preview`. Every command CI runs must resolve the name `cloudflarebase-com` - a "Failed to match Worker name" warning means the resolved config name and the connected Worker disagree, and never merge the automated rename PR Workers Builds offers. Corollary: `wrangler deploy --env preview` from a machine would live-deploy preview bindings (the preview agent!) onto production - preview goes out only as `wrangler versions upload --env preview`, which is why no npm script wraps it.
 
 ## Conventions
 

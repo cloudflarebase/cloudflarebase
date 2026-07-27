@@ -186,8 +186,14 @@
 			}
 		},
 
+		// Preview is a version-level environment of the SAME Worker, not a
+		// second Worker: Workers Builds is connected to cloudflarebase-com and
+		// uploads non-production branches as preview versions, so the name here
+		// must match or CI overrides it and threatens a rename PR. What preview
+		// actually changes is the bindings - AUTH_AGENT targets the preview
+		// agent - and versions carry their own bindings.
 		"preview": {
-			"name": "cloudflarebase-com-preview",
+			"name": "cloudflarebase-com",
 			"workers_dev": false,
 			"routes": [],
 			"vars": {
