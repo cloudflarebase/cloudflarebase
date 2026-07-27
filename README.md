@@ -117,6 +117,27 @@ console surface requires an operator session.
 The analytics token needs Account Analytics Read. Without it the dashboard
 reports write-only mode rather than failing.
 
+## Or: add the auth agent to a Worker you already have
+
+The console is optional. The agent itself is an npm package
+([`@cloudflarebase/auth`](agents/auth)), and the CLI wires it into any Worker
+project — every agent is a Durable Object class in _your_ Worker, so adding
+more never means deploying more:
+
+```bash
+npm install -g @cloudflarebase/cli
+
+cloudflarebase init my-backend   # or `cloudflarebase add auth` in an existing project
+cd my-backend
+npx wrangler login
+cloudflarebase deploy            # sets TRUSTED_ORIGINS to the deployed URL for you
+```
+
+`add` merges the agent's wrangler fragment into your config without touching
+anything you set, re-exports the Durable Object class from your entrypoint, and
+leaves a one-line type assertion that turns a missing binding into a named
+compile-time error instead of a runtime failure.
+
 ## Use it in your app
 
 Your application talks to `/api/projects/<projectId>/auth`, which is Better

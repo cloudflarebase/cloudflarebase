@@ -37,3 +37,12 @@ jobs:
       - name: Typecheck the auth agent
         run: npx tsc --noEmit
         working-directory: agents/auth
+
+      # The CLI is a third npm project; the root install does not cover it.
+      - name: Install CLI dependencies
+        run: npm ci
+        working-directory: cli
+
+      - name: Typecheck the CLI
+        run: npm run typecheck
+        working-directory: cli

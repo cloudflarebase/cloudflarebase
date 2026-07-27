@@ -6,10 +6,11 @@ Thanks for looking. This is a small project and PRs are genuinely welcome.
 
 ```bash
 npm install
-cp agents/auth/.env.example agents/auth/.dev.vars
-openssl rand -base64 32   # paste into .dev.vars as BETTER_AUTH_SECRET
 npm run dev
 ```
+
+No secrets to configure: each project generates its own signing key on first
+start and keeps it in its own Durable Object storage.
 
 That starts the auth agent on `:8788` and the dashboard on `:5173`. Open
 `http://localhost:5173/dashboard`.

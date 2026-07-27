@@ -1,0 +1,79 @@
+name: Release
+
+# Publishing is tag-driven: pushing auth-v1.2.3 or cli-v1.2.3 releases that
+# one package at that exact version. The workflow refuses a tag whose version
+# does not match the package.json it points at, so a stale tag cannot publish
+# the wrong build.
+#
+# The npm token lives in the `release` GitHub environment, not in repository
+# secrets. Add required reviewers on that environment and every publish waits
+# for an approval click — the token never runs on an unreviewed ref. Publishes
+# carry npm provenance, which attests the exact commit and workflow that built
+# the artifact; after this repository's supply-chain incident, an unforgeable
+# build trail is not optional. Provenance requires the repository to be
+# public — push release tags only after open-sourcing.
+#
+# Upgrade path: npm "trusted publishing" (OIDC) removes the token entirely.
+# Configure it on npmjs.com per package, then drop NODE_AUTH_TOKEN below.
+
+on:
+  push:
+    tags:
+      - 'auth-v*.*.*'
+      - 'cli-v*.*.*'
+
+permissions:
+  contents: read
+  # npm provenance signs the publish with this workflow's OIDC identity.
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    name: Publish to npm
+    environment: release
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ vars.NODE_VERSION || '22' }}
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Resolve package from tag
+        id: pkg
+        run: |
+          TAG='${{ github.ref_name }}'
+          case "$TAG" in
+            auth-v*) echo "dir=agents/auth" >> "$GITHUB_OUTPUT"; echo "version=${TAG#auth-v}" >> "$GITHUB_OUTPUT" ;;
+            cli-v*)  echo "dir=cli"         >> "$GITHUB_OUTPUT"; echo "version=${TAG#cli-v}"  >> "$GITHUB_OUTPUT" ;;
+            *) echo "unrecognized tag $TAG" >&2; exit 1 ;;
+          esac
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ${{ steps.pkg.outputs.dir }}
+
+      - name: Verify the tag matches package.json
+        run: |
+          ACTUAL="$(node -p "require('./package.json').version")"
+          if [ "$ACTUAL" != '${{ steps.pkg.outputs.version }}' ]; then
+            echo "tag says ${{ steps.pkg.outputs.version }} but package.json says $ACTUAL" >&2
+            exit 1
+          fi
+        working-directory: ${{ steps.pkg.outputs.dir }}
+
+      # The full typecheck, not just the publish build: agents/auth's
+      # bindings.test-d.ts (the consumer-contract tests) is excluded from the
+      # build tsconfig on purpose, so only this step runs it.
+      - name: Typecheck
+        run: npm run typecheck
+        working-directory: ${{ steps.pkg.outputs.dir }}
+
+      # prepublishOnly builds dist/ — publish cannot ship a stale build.
+      - name: Publish
+        run: npm publish --provenance --access public
+        working-directory: ${{ steps.pkg.outputs.dir }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
