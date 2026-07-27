@@ -158,7 +158,9 @@ const consoleGuardHandle: Handle = async ({ event, resolve }) => {
 };
 
 const cloudflareSentryHandle: Handle = async (input) => {
-	const dsn = input.event.platform?.env?.SENTRY_DSN;
+	// One DSN for server and browser: a DSN is not a secret (it ships in the
+	// client bundle by design), so the server reads the PUBLIC_ var too.
+	const dsn = input.event.platform?.env?.PUBLIC_SENTRY_DSN;
 
 	if (!dsn) {
 		return input.resolve(input.event);

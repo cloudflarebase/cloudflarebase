@@ -41,11 +41,10 @@
 	// cloudflarebase.com playable and exactly what a private install must not
 	// do. Unset means the console requires an operator session.
 	//
-	// SENTRY_DSN (server) and PUBLIC_SENTRY_DSN (browser) are empty for the
-	// same reason a DSN is never committed: it would make this project the
-	// sink for every fork's errors.
+	// PUBLIC_SENTRY_DSN covers server and browser reporting alike (a DSN is
+	// not a secret; it ships in the client bundle by design). Empty because a
+	// committed DSN would make this project the sink for every fork's errors.
 	"vars": {
-		"SENTRY_DSN": "",
 		"PUBLIC_SENTRY_DSN": "",
 		"PUBLIC_SENTRY_ENV": "production"
 	},
@@ -163,7 +162,6 @@
 			],
 			"vars": {
 				"DEMO_MODE": "true",
-				"SENTRY_DSN": "",
 				"PUBLIC_SENTRY_DSN": "",
 				"PUBLIC_SENTRY_ENV": "production"
 			},
@@ -198,7 +196,6 @@
 			"routes": [],
 			"vars": {
 				"DEMO_MODE": "true",
-				"SENTRY_DSN": "",
 				"PUBLIC_SENTRY_DSN": "",
 				"PUBLIC_SENTRY_ENV": "preview"
 			},
