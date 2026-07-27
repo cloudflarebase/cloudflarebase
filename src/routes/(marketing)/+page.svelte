@@ -138,7 +138,7 @@
 		},
 		{
 			q: 'Can I run it on my own Cloudflare account?',
-			a: 'That is the plan — the repo is private while we harden the MVP, and it goes open source soon. It is two Workers deployed with Wrangler; the README will walk through the secrets, bindings, and deploy order for your own account.'
+			a: 'Yes — it is open source under Apache-2.0 at github.com/cloudflarebase/cloudflarebase.com. It is two Workers deployed with Wrangler, and the README walks through the deploy order for your own account. No secrets are required: each project generates its own signing key.'
 		},
 		{
 			q: 'Is this production-ready?',
@@ -278,17 +278,22 @@
 				<div class="mx-auto max-w-7xl px-4 sm:px-6">
 					<div class="hero-stagger text-center sm:mx-auto lg:mt-0 lg:mr-auto">
 						<div>
-							<div
-								class="mx-auto flex w-fit items-center gap-4 rounded-full border bg-muted p-1 pl-4 shadow-md shadow-zinc-950/5 dark:border-t-white/5 dark:shadow-zinc-950"
+							<a
+								href="https://github.com/cloudflarebase/cloudflarebase.com"
+								target="_blank"
+								rel="noreferrer"
+								class="mx-auto flex w-fit items-center gap-4 rounded-full border bg-muted p-1 pl-4 shadow-md shadow-zinc-950/5 transition-colors hover:bg-muted/70 dark:border-t-white/5 dark:shadow-zinc-950"
 							>
-								<span class="text-sm text-foreground">Auth Agent is live · open sourcing soon</span>
+								<span class="text-sm text-foreground"
+									>Auth Agent is live · open source on GitHub</span
+								>
 								<span
 									class="block h-4 w-0.5 border-l bg-background dark:border-background dark:bg-zinc-700"
 								></span>
 								<div class="size-6 overflow-hidden rounded-full bg-background">
 									<span class="flex size-6"><ArrowRight class="m-auto size-3" /></span>
 								</div>
-							</div>
+							</a>
 						</div>
 
 						<h1
@@ -313,9 +318,16 @@
 									>Open the live demo</Button
 								>
 							</div>
-							<Button size="lg" variant="ghost" class="rounded-xl px-5" disabled>
+							<Button
+								size="lg"
+								variant="ghost"
+								class="rounded-xl px-5"
+								href="https://github.com/cloudflarebase/cloudflarebase.com"
+								target="_blank"
+								rel="noreferrer"
+							>
 								{@render githubMark('h-4 w-4')}
-								GitHub — coming soon
+								Star on GitHub
 							</Button>
 						</div>
 						<p class="mt-4 font-mono text-xs text-muted-foreground/70">
@@ -753,9 +765,15 @@
 			</p>
 			<div class="mt-8 flex flex-wrap justify-center gap-3">
 				<Button href="/dashboard" size="lg">Open the live demo</Button>
-				<Button size="lg" variant="outline" disabled>
+				<Button
+					size="lg"
+					variant="outline"
+					href="https://github.com/cloudflarebase/cloudflarebase.com"
+					target="_blank"
+					rel="noreferrer"
+				>
 					{@render githubMark('h-4 w-4')}
-					GitHub — coming soon
+					View on GitHub
 				</Button>
 			</div>
 		</section>
@@ -771,7 +789,7 @@
 						Cloudflarebase
 					</div>
 					<p class="mt-2.5 max-w-[240px] text-sm text-muted-foreground/70">
-						The product layer for Cloudflare's developer platform. Open sourcing soon, shipped one
+						The product layer for Cloudflare's developer platform. Open source, shipped one
 						primitive at a time.
 					</p>
 				</div>
@@ -795,12 +813,15 @@
 						<h4 class="mb-3.5 font-mono text-xs tracking-wide text-muted-foreground/70 uppercase">
 							Resources
 						</h4>
-						<span
-							class="mb-2.5 flex cursor-default items-center gap-1.5 text-sm text-muted-foreground/60"
+						<a
+							href="https://github.com/cloudflarebase/cloudflarebase.com"
+							target="_blank"
+							rel="noreferrer"
+							class="mb-2.5 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
 						>
 							{@render githubMark('h-3.5 w-3.5')}
-							GitHub — coming soon
-						</span>
+							GitHub
+						</a>
 						<a href="#faq" class="mb-2.5 block text-sm text-muted-foreground hover:text-foreground"
 							>FAQ</a
 						>
