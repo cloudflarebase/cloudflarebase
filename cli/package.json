@@ -1,0 +1,47 @@
+{
+	"name": "@cloudflarebase/cli",
+	"version": "0.1.0",
+	"description": "Scaffold and deploy a Cloudflarebase backend on your own Cloudflare account.",
+	"license": "Apache-2.0",
+	"type": "module",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/cloudflarebase/cloudflarebase.com.git",
+		"directory": "cli"
+	},
+	"homepage": "https://github.com/cloudflarebase/cloudflarebase.com/tree/main/cli#readme",
+	"bugs": "https://github.com/cloudflarebase/cloudflarebase.com/issues",
+	"keywords": [
+		"cloudflare",
+		"workers",
+		"durable-objects",
+		"cli",
+		"cloudflarebase",
+		"backend"
+	],
+	"publishConfig": {
+		"access": "public"
+	},
+	"bin": {
+		"cloudflarebase": "./dist/index.js"
+	},
+	"files": [
+		"dist",
+		"NOTICE"
+	],
+	"engines": {
+		"node": ">=20.0.0"
+	},
+	"scripts": {
+		"build": "tsc -p tsconfig.json",
+		"prepublishOnly": "npm run build",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"jsonc-parser": "^3.3.1"
+	},
+	"devDependencies": {
+		"@types/node": "^26.1.1",
+		"typescript": "^5.5.2"
+	}
+}

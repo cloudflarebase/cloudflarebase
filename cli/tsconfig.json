@@ -1,0 +1,29 @@
+{
+	"compilerOptions": {
+		"target": "es2023",
+		"lib": ["es2023"],
+
+		/*
+		 * This CLI runs directly in Node rather than through a bundler, so
+		 * relative imports must carry `.js` extensions to resolve at runtime.
+		 * `nodenext` is what makes TypeScript enforce that at compile time
+		 * instead of leaving it to fail on the user's machine.
+		 */
+		"module": "nodenext",
+		"moduleResolution": "nodenext",
+
+		"outDir": "dist",
+		"rootDir": "src",
+		"declaration": false,
+		"sourceMap": false,
+
+		"strict": true,
+		"noUncheckedIndexedAccess": true,
+		"isolatedModules": true,
+		"forceConsistentCasingInFileNames": true,
+		"skipLibCheck": true,
+		"types": ["node"]
+	},
+	"include": ["src/**/*"],
+	"exclude": ["dist", "node_modules"]
+}

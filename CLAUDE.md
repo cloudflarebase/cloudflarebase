@@ -12,6 +12,7 @@ These are separate npm projects with separate Wrangler configurations and genera
 | ------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | `/`           | `cloudflarebase` (`cloudflarebase-com` in `env.production`)    | SvelteKit 2/Svelte 5 dashboard and marketing site, shadcn-svelte, Tailwind v4, Cloudflare adapter |
 | `agents/auth` | `auth-agent` (`-local`, `-test`, or `-preview` by environment) | `AuthAgent` Durable Object, one per project; Better Auth and Drizzle over embedded DO SQLite      |
+| `cli`         | — (no Worker; runs in Node on the consumer's machine)          | `@cloudflarebase/cli`, the `cloudflarebase` bin: `init` / `add <agent>` / `deploy`                |
 
 The root Worker binds `AUTH_AGENT` to the Auth Agent service and `DB` to the control-plane D1 database. Agent instances use `/agents/auth-agent/<projectId>/...`.
 
@@ -19,25 +20,27 @@ The root Worker binds `AUTH_AGENT` to the Auth Agent service and `DB` to the con
 
 ## Commands
 
-| Location      | Command                          | Purpose                                                                                                                                        |
-| ------------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| root          | `npm run dev`                    | Auth Agent on :8788, then Vite on :5173                                                                                                        |
-| root          | `npm run check` / `npm run lint` | Svelte diagnostics / Prettier and ESLint                                                                                                       |
-| root          | `npm run demo:video`             | Self-driving demo tour for screen recording (seeds data, backfills local analytics, generates live traffic; `--check` for headless validation) |
-| root          | `npm run build`                  | Production SvelteKit Cloudflare build                                                                                                          |
-| root          | `npm test` / `npm run test:e2e`  | Full Playwright suite against Workers on :8797/:8798                                                                                           |
-| root          | `npm run test:e2e:ui`            | Playwright UI                                                                                                                                  |
-| root          | `npm run cf-typegen`             | Regenerate `src/worker-configuration.d.ts` after binding changes                                                                               |
-| root          | `npm run deploy`                 | Deploy the self-hosted default (workers.dev, no demo mode)                                                                                     |
-| root          | `npm run deploy:production`      | Deploy cloudflarebase.com (`--env production`)                                                                                                 |
-| `agents/auth` | `npx tsc --noEmit`               | Typecheck the Auth Agent                                                                                                                       |
-| `agents/auth` | `npm run migrations`             | Generate migrations after schema edits, then inline them into `src/migrations.ts`                                                              |
-| `agents/auth` | `npx wrangler types`             | Regenerate Auth Agent Worker types                                                                                                             |
-| `agents/auth` | `npm run build`                  | Emit `dist/` for the published `@cloudflarebase/auth` package                                                                                  |
+| Location      | Command                               | Purpose                                                                                                                                        |
+| ------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| root          | `npm run dev`                         | Auth Agent on :8788, then Vite on :5173                                                                                                        |
+| root          | `npm run check` / `npm run lint`      | Svelte diagnostics / Prettier and ESLint                                                                                                       |
+| root          | `npm run demo:video`                  | Self-driving demo tour for screen recording (seeds data, backfills local analytics, generates live traffic; `--check` for headless validation) |
+| root          | `npm run build`                       | Production SvelteKit Cloudflare build                                                                                                          |
+| root          | `npm test` / `npm run test:e2e`       | Full Playwright suite against Workers on :8797/:8798                                                                                           |
+| root          | `npm run test:e2e:ui`                 | Playwright UI                                                                                                                                  |
+| root          | `npm run cf-typegen`                  | Regenerate `src/worker-configuration.d.ts` after binding changes                                                                               |
+| root          | `npm run deploy`                      | Deploy the self-hosted default (workers.dev, no demo mode)                                                                                     |
+| root          | `npm run deploy:production`           | Deploy cloudflarebase.com (`--env production`)                                                                                                 |
+| `agents/auth` | `npx tsc --noEmit`                    | Typecheck the Auth Agent                                                                                                                       |
+| `agents/auth` | `npm run migrations`                  | Generate migrations after schema edits, then inline them into `src/migrations.ts`                                                              |
+| `agents/auth` | `npx wrangler types`                  | Regenerate Auth Agent Worker types                                                                                                             |
+| `agents/auth` | `npm run build`                       | Emit `dist/` for the published `@cloudflarebase/auth` package                                                                                  |
+| `cli`         | `npm run build` / `npm run typecheck` | Emit / typecheck the published `@cloudflarebase/cli` package                                                                                   |
 
 ## Architecture decisions
 
 - **`agents/auth` is published as `@cloudflarebase/auth`.** The distribution model is Supabase's: the agent is a versioned artifact you depend on, not source you fork — the same way nobody forks GoTrue to use Supabase auth. What a consumer owns is their `wrangler.jsonc` and their entrypoint. `npm run build` emits `dist/`; `files` ships `dist`, `template`, and `NOTICE` only. See `agents/auth/CLAUDE.md` for the mechanism and its constraints.
+- **The CLI is the delivery mechanism, not a convenience.** `cloudflarebase add <agent>` npm-installs the agent, merges its `template/wrangler-fragment.jsonc` (jsonc-parser edits; comments survive, user values are never overwritten, collections merge by binding name, DO migrations append under the next free tag), prepends the entrypoint re-export with the `AssertAuthAgentEnv` check, and reruns `wrangler types` — every step idempotent. The CLI hard-codes nothing an agent knows about itself: fragments and templates ship inside each agent's package, so a new primitive is one registry entry in `cli/src/lib/agents.ts`. Agents are DO classes in the consumer's single Worker — `add` never means another deploy. `deploy` closes the first-run trap by writing the deployed workers.dev URL into an empty `TRUSTED_ORIGINS` and deploying once more. `CLOUDFLAREBASE_<AGENT>_SPEC` overrides the install source (prereleases; the repo's own e2e uses a packed tarball).
 - Drizzle ORM is the database layer. Auth agents use `drizzle-orm/durable-sqlite`; drizzle-kit output is inlined into `src/migrations.ts` as string literals and applied in `onStart`. Inlining rather than importing `.sql` text modules is what lets the agent ship as an npm dependency with no bundler configuration on the consumer side.
 - Better Auth runs inside each project's `AuthAgent`. It uses the Drizzle SQLite adapter with `transaction: false` and project-scoped cookie prefixes.
 - Simple RBAC: `user.role` (default `user`) is a Better Auth additional field with `input: false`, so sign-up cannot self-assign it; the dashboard's `PUT /admin/users/:id/role` proxy is the only writer. Roles live in a per-project registry of `{ name, permissions[] }` definitions (`PUT /admin/roles`, kept in agent state; built-in `user`/`admin` always present) edited on the dashboard's Roles tab. `get-session` returns the role, and the Better Auth `jwt` plugin issues project-signed JWTs on `GET /token` (public keys on `GET /jwks`, keypair in the agent's `jwks` table) carrying `email`, `role`, and `permissions` claims.
