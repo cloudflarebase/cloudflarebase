@@ -8,6 +8,10 @@ on:
       - main
       - preview
 
+# No secrets and no write access: this workflow runs untrusted PR code.
+permissions:
+  contents: read
+
 jobs:
   quality:
     runs-on: ubuntu-latest
