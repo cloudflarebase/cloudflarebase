@@ -2,7 +2,7 @@ import { Agent, type AgentContext } from 'agents';
 import { count, desc, eq, gt } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/durable-sqlite';
 import { migrate } from 'drizzle-orm/durable-sqlite/migrator';
-import migrations from '../drizzle/migrations';
+import migrations from './migrations';
 import { createProjectAuth, type AuthDatabase, type ProjectAuth } from './auth';
 import * as schema from './db/schema';
 import {

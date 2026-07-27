@@ -37,14 +37,6 @@
 	},
 	"upload_source_maps": true,
 	"compatibility_flags": ["nodejs_compat", "nodejs_als"],
-	// Drizzle migrations are imported as text modules (drizzle/migrations.js).
-	"rules": [
-		{
-			"type": "Text",
-			"globs": ["**/*.sql"],
-			"fallthrough": true,
-		},
-	],
 	"workers_dev": false,
 	"preview_urls": false,
 	"ai": {

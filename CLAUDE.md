@@ -31,12 +31,12 @@ The root Worker binds `AUTH_AGENT` to the Auth Agent service and `DB` to the con
 | root          | `npm run deploy`                 | Deploy the self-hosted default (workers.dev, no demo mode)                                                                                     |
 | root          | `npm run deploy:production`      | Deploy cloudflarebase.com (`--env production`)                                                                                                 |
 | `agents/auth` | `npx tsc --noEmit`               | Typecheck the Auth Agent                                                                                                                       |
-| `agents/auth` | `npx drizzle-kit generate`       | Generate migrations after schema edits                                                                                                         |
+| `agents/auth` | `npm run migrations`             | Generate migrations after schema edits, then inline them into `src/migrations.ts`                                                              |
 | `agents/auth` | `npx wrangler types`             | Regenerate Auth Agent Worker types                                                                                                             |
 
 ## Architecture decisions
 
-- Drizzle ORM is the database layer. Auth agents use `drizzle-orm/durable-sqlite`; generated migrations are bundled through `drizzle/migrations.js` and applied in `onStart`.
+- Drizzle ORM is the database layer. Auth agents use `drizzle-orm/durable-sqlite`; drizzle-kit output is inlined into `src/migrations.ts` as string literals and applied in `onStart`. Inlining rather than importing `.sql` text modules is what lets the agent ship as an npm dependency with no bundler configuration on the consumer side.
 - Better Auth runs inside each project's `AuthAgent`. It uses the Drizzle SQLite adapter with `transaction: false` and project-scoped cookie prefixes.
 - Simple RBAC: `user.role` (default `user`) is a Better Auth additional field with `input: false`, so sign-up cannot self-assign it; the dashboard's `PUT /admin/users/:id/role` proxy is the only writer. Roles live in a per-project registry of `{ name, permissions[] }` definitions (`PUT /admin/roles`, kept in agent state; built-in `user`/`admin` always present) edited on the dashboard's Roles tab. `get-session` returns the role, and the Better Auth `jwt` plugin issues project-signed JWTs on `GET /token` (public keys on `GET /jwks`, keypair in the agent's `jwks` table) carrying `email`, `role`, and `permissions` claims.
 - The browser normally uses same-origin `/api/projects/<id>/...` SvelteKit endpoints. Those proxy over `AUTH_AGENT`, preserving cookies, origin, and the edge-resolved country header.
@@ -81,7 +81,6 @@ Set `RUN_AI_E2E=1` to include real Workers AI inference tests.
 ## Gotchas
 
 - DO SQLite blocks `pragma_table_info()` and explicit `BEGIN`/`COMMIT` with `SQLITE_AUTH`. Do not use Better Auth's Kysely migration path; use Drizzle migrations and keep `transaction: false`.
-- SQL migrations are Wrangler Text modules. Keep the `rules` entry in `agents/auth/wrangler.jsonc` and declarations in `src/modules.d.ts`.
 - Miniflare service bindings are realm-sensitive. Call `binding.fetch(url, init)`, not `binding.fetch(new Request(...))`, and convert responses with `toNativeResponse` before returning them from SvelteKit.
 - Run Auth Agent Wrangler commands from `agents/auth`; running them at the repository root targets the web Worker. Use `--env preview` for `auth-agent-preview`.
 - `BETTER_AUTH_SECRET` is a plain variable only in local/test. Set it with `wrangler secret put` for preview and production. Analytics writes need no token; SQL reads require `CF_ACCOUNT_ID` and a `CF_ANALYTICS_API_TOKEN` with Account Analytics Read.
