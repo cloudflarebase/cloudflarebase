@@ -162,7 +162,10 @@
 			],
 			"vars": {
 				"DEMO_MODE": "true",
-				"PUBLIC_SENTRY_DSN": "",
+				// Committed on purpose: env.production is cloudflarebase.com's own
+				// block (forks deploy the top level, whose DSN stays empty), and a
+				// DSN is browser-visible by design anyway.
+				"PUBLIC_SENTRY_DSN": "https://50ed6e26b886124ac39e983efb72144d@o4510375271530496.ingest.de.sentry.io/4511764380778576",
 				"PUBLIC_SENTRY_ENV": "production"
 			},
 			"d1_databases": [
@@ -196,7 +199,7 @@
 			"routes": [],
 			"vars": {
 				"DEMO_MODE": "true",
-				"PUBLIC_SENTRY_DSN": "",
+				"PUBLIC_SENTRY_DSN": "https://093f7505d223a871223f9a15130ef116@o4510375271530496.ingest.de.sentry.io/4511764377043024",
 				"PUBLIC_SENTRY_ENV": "preview"
 			},
 			"ratelimits": [
