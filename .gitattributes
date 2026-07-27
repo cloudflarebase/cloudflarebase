@@ -1,0 +1,15 @@
+# Every text file is stored and checked out with LF, on every platform.
+# Prettier enforces LF, so without this a Windows clone with autocrlf drifts
+# into CRLF working files and blobs that fail `prettier --check` locally while
+# CI stays green. Attributes win over any contributor's core.autocrlf setting.
+* text=auto eol=lf
+
+# Binary assets — never subject to line-ending conversion.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.gif binary
+*.webp binary
+*.woff binary
+*.woff2 binary
