@@ -1,4 +1,5 @@
 import { betterAuth } from 'better-auth';
+import { APIError } from 'better-auth/api';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { anonymous, bearer, jwt } from 'better-auth/plugins';
 import type { DrizzleSqliteDODatabase } from 'drizzle-orm/durable-sqlite';
@@ -35,6 +36,14 @@ export interface ProjectAuthConfig {
 		to: string;
 		url: string;
 	}) => Promise<void>;
+	/**
+	 * Veto over user creation, consulted at the database layer. Returning a
+	 * reason string rejects the creation with 403. Route-level checks cannot
+	 * cover every path that creates a user — social sign-in creates one
+	 * implicitly on the OAuth callback without touching any sign-up route — so
+	 * an instance that must not grow (the console) enforces it here.
+	 */
+	denyUserCreation?: () => Promise<string | null>;
 	onUserCreated?: (user: AuthHookUser) => void | Promise<void>;
 	onSessionActivity?: (
 		session: { id: string; userId: string },
@@ -131,6 +140,13 @@ export function createProjectAuth(config: ProjectAuthConfig) {
 		databaseHooks: {
 			user: {
 				create: {
+					before: async (user) => {
+						const denied = await config.denyUserCreation?.();
+						if (denied) {
+							throw new APIError('FORBIDDEN', { message: denied });
+						}
+						return { data: user };
+					},
 					after: async (user) => {
 						await config.onUserCreated?.(user as AuthHookUser);
 					},

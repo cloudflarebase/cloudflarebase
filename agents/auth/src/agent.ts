@@ -266,6 +266,22 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 				this.env.EMAIL && this.env.EMAIL_FROM && !this.isEphemeral
 					? (message) => this.sendAuthEmail(message)
 					: undefined,
+			// The console has at most one user — the owner — and none at all under
+			// DEMO_MODE. denyConsoleAuthRoute covers the sign-up route, but social
+			// sign-in creates users implicitly on the OAuth callback, so the
+			// invariant is enforced where every path converges: user creation.
+			// Without this, configuring Google credentials would quietly reopen
+			// console registration to anyone with a Google account.
+			denyUserCreation:
+				this.name === CONSOLE_PROJECT_ID
+					? async () => {
+							if (this.env.DEMO_MODE === 'true') {
+								return 'this deployment does not have console operators';
+							}
+							const [row] = await this.db.select({ value: count() }).from(schema.user);
+							return (row?.value ?? 0) > 0 ? 'this console already has an owner' : null;
+						}
+					: undefined,
 			onUserCreated: async (user) => {
 				this.writeAuthEvent('user.created', {
 					provider: user.isAnonymous ? 'anonymous' : 'credential',

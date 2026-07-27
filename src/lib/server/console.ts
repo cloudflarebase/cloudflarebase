@@ -39,6 +39,32 @@ const consoleOverviewSchema = z.object({
 	users: z.array(z.unknown())
 });
 
+const consoleConfigSchema = z.object({
+	providers: z.array(z.string())
+});
+
+/**
+ * Social providers configured on the console's own auth instance, so the login
+ * page can offer the matching buttons. Reads the same public /config the
+ * integration tab uses; only google/github are actionable on the sign-in form.
+ */
+export async function consoleSocialProviders(
+	platform: App.Platform | undefined,
+	origin: string
+): Promise<string[]> {
+	const agent = requireAuthAgent(platform);
+	const response = await agent
+		.fetch(agentUrl(origin, CONSOLE_PROJECT_ID, '/config'))
+		.catch(() => null);
+
+	if (!response || !response.ok) return [];
+
+	const body = await (response as unknown as Response).json().catch(() => null);
+	const parsed = consoleConfigSchema.safeParse(body);
+	if (!parsed.success) return [];
+	return parsed.data.providers.filter((name) => name === 'google' || name === 'github');
+}
+
 export type ConsoleUser = z.infer<typeof consoleSessionSchema>['user'];
 
 /**
