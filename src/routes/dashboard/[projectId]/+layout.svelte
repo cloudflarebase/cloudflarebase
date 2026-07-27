@@ -575,6 +575,23 @@
 
 			{#if isMobile.current && mobileAgentOpen}
 				{@render copilotPanel(false)}
+			{:else if isApi}
+				<!--
+					The API reference owns its scrolling. Scalar pins its sidebar with
+					position: sticky against its nearest scroll container, so it needs
+					the pane's fixed height and a scrollport of its own — inside the
+					shared ScrollArea the page wrapper is content-sized, nothing
+					scrolls within it, and the sidebar rides away with the content.
+					This mirrors Scalar's official embedded layout: a height-
+					constrained container with overflow on the page, not the shell.
+				-->
+				<main class="min-h-0 min-w-0 flex-1 overflow-hidden bg-muted/20">
+					{#key page.url.pathname}
+						<div class="h-full" in:fly={{ y: 6, duration: 220, easing: cubicOut, opacity: 0 }}>
+							{@render children()}
+						</div>
+					{/key}
+				</main>
 			{:else}
 				<ScrollArea
 					type="always"
