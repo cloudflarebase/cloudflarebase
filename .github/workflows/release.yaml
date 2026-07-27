@@ -5,16 +5,24 @@ name: Release
 # does not match the package.json it points at, so a stale tag cannot publish
 # the wrong build.
 #
-# The npm token lives in the `release` GitHub environment, not in repository
-# secrets. Add required reviewers on that environment and every publish waits
-# for an approval click — the token never runs on an unreviewed ref. Publishes
-# carry npm provenance, which attests the exact commit and workflow that built
-# the artifact; after this repository's supply-chain incident, an unforgeable
-# build trail is not optional. Provenance requires the repository to be
-# public — push release tags only after open-sourcing.
+# Publishing uses npm trusted publishing (OIDC): npmjs.com is configured to
+# accept publishes from exactly this repository, this workflow file, and the
+# `release` environment — no npm token exists anywhere, so there is nothing to
+# steal or rotate. After this repository's supply-chain incident, that is the
+# point. Required reviewers on the `release` environment make every publish
+# wait for an approval click on the exact ref being released.
 #
-# Upgrade path: npm "trusted publishing" (OIDC) removes the token entirely.
-# Configure it on npmjs.com per package, then drop NODE_AUTH_TOKEN below.
+# One-time setup per package on npmjs.com (package settings → Trusted
+# Publisher): repository cloudflarebase/cloudflarebase.com, workflow
+# release.yaml, environment release. If npm will not accept a trusted
+# publisher for a package that has never been published, publish the first
+# version locally with `npm publish --access public`, configure the trusted
+# publisher, and use this workflow from then on.
+#
+# Publishes carry npm provenance, attesting the exact commit and workflow that
+# built the artifact — verifiable by consumers with `npm audit signatures`.
+# Provenance requires the repository to be public; push release tags only
+# after open-sourcing.
 
 on:
   push:
@@ -71,9 +79,12 @@ jobs:
         run: npm run typecheck
         working-directory: ${{ steps.pkg.outputs.dir }}
 
+      # Trusted publishing needs a newer npm CLI than Node 22 bundles.
+      - name: Update npm
+        run: npm install -g npm@latest
+
       # prepublishOnly builds dist/ — publish cannot ship a stale build.
+      # No token: npm exchanges this workflow's OIDC identity with npmjs.com.
       - name: Publish
         run: npm publish --provenance --access public
         working-directory: ${{ steps.pkg.outputs.dir }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
