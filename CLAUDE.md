@@ -30,6 +30,7 @@ The root Worker binds `AUTH_AGENT` to the Auth Agent service and `DB` to the con
 | root          | `npm run test:e2e:ui`                 | Playwright UI                                                                                                                                  |
 | root          | `npm run cf-typegen`                  | Regenerate `src/worker-configuration.d.ts` after binding changes                                                                               |
 | root          | `npm run deploy`                      | Deploy the self-hosted default (workers.dev, no demo mode)                                                                                     |
+| root          | `npm run deploy:all`                  | Deploy agent then dashboard in order (the service binding needs the agent to exist first)                                                      |
 | root          | `npm run deploy:production`           | Deploy cloudflarebase.com (`--env production`)                                                                                                 |
 | `agents/auth` | `npx tsc --noEmit`                    | Typecheck the Auth Agent                                                                                                                       |
 | `agents/auth` | `npm run migrations`                  | Generate migrations after schema edits, then inline them into `src/migrations.ts`                                                              |

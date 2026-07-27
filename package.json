@@ -14,6 +14,7 @@
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write .",
 		"deploy": "npm run build && wrangler deploy",
+		"deploy:all": "npm --prefix agents/auth run deploy && npm run deploy",
 		"cf-typegen": "wrangler types ./src/worker-configuration.d.ts",
 		"postinstall": "cross-env POSTINSTALL=true node scripts/dev.js",
 		"test": "playwright test",

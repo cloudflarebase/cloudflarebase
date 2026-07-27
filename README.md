@@ -75,11 +75,12 @@ has to exist first.
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflarebase/cloudflarebase.com)
 
-Or from a clone, which is the path to use if you want to change anything first:
+The buttons are separate because Cloudflare deploys one Worker per click — and
+the order matters, since the dashboard's service binding resolves the agent by
+name. From a clone it is one command that handles the order for you:
 
 ```bash
-cd agents/auth && npm run deploy
-cd ../..     && npm run deploy
+npm run deploy:all
 ```
 
 No secrets are required. Wrangler provisions the D1 database on first deploy,
