@@ -191,21 +191,12 @@ export function mergeWranglerConfig(text: string, fragment: WranglerFragment): M
 }
 
 /**
- * Reads `vars.TRUSTED_ORIGINS`. Empty or absent is the single most common
- * first-run failure: it is the CSRF allowlist, and sign-in from an origin that
- * is not on it is refused as a bad credential rather than a config error.
+ * Reads `vars.TRUSTED_ORIGINS` so `deploy` can report it. The deployment
+ * trusts its own origin automatically; this allowlist only matters for extra
+ * origins, so the CLI reports it rather than managing it.
  */
 export function readTrustedOrigins(text: string): string {
 	const config = parseJsonc<WranglerFragment>(text, 'wrangler.jsonc');
 	const value = config.vars?.['TRUSTED_ORIGINS'];
 	return typeof value === 'string' ? value : '';
-}
-
-export function setTrustedOrigins(text: string, origins: string): string {
-	return applyEdits(
-		text,
-		modify(text, ['vars', 'TRUSTED_ORIGINS'], origins, {
-			formattingOptions: detectFormatting(text)
-		})
-	);
 }

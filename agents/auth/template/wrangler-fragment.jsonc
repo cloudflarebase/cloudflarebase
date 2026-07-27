@@ -59,11 +59,10 @@
 
 	"vars": {
 		/**
-		 * The one value you MUST set after your first deploy. It is the CSRF
-		 * allowlist, and sign-in is refused from an origin that is not on it -
-		 * which surfaces as a rejected credential rather than a configuration
-		 * error, so it is worth getting right before you go looking for bugs.
-		 * Comma separated, no trailing slash.
+		 * CSRF allowlist for EXTRA origins. Your deployment trusts its own
+		 * origin automatically, so sign-in works with this empty. Add origins
+		 * (comma separated, no trailing slash) when another domain serves
+		 * your UI or calls the API with cookies.
 		 */
 		"TRUSTED_ORIGINS": "",
 

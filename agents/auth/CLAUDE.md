@@ -39,7 +39,8 @@ The SvelteKit Worker mirrors these as `/api/projects/<projectId>/...` proxies pl
 - Email/password and anonymous sessions; the bearer plugin returns `set-auth-token` for external clients.
 - `user.role` is an additional field with `input: false`; only the admin role route writes it. JWT signing keys live in the `jwks` table, generated on first `GET /token`.
 - Cookie-carrying POSTs need an `Origin` on the effective trusted-origin list.
-- `AuthAgent.corsHeaders()` is the only CORS authority: `TRUSTED_ORIGINS` plus validated per-project `allowedOrigins`, exact-origin echo, credentials, exposes `set-auth-token`. Never pass `cors: true` to `routeAgentRequest`; its wildcard overrides the project policy.
+- A deployment trusts its own origin automatically: the trustedOrigins function in `auth.ts` adds the request URL's origin, since a browser only sends an Origin equal to the page it is on and same-origin is never CSRF. `TRUSTED_ORIGINS` and per-project `allowedOrigins` are for everything else. `AuthAgent.corsHeaders()` is the only CORS authority (same-origin accepted, exact-origin echo, credentials, exposes `set-auth-token`). Never pass `cors: true` to `routeAgentRequest`; its wildcard overrides the project policy.
+- Rate limiting keys on `CF-Connecting-IP` (`advanced.ipAddress.ipAddressHeaders`). Without it Better Auth cannot see an IP and falls back to a single shared per-path bucket, where one noisy client exhausts sign-in for everyone.
 - Rate limiting is on everywhere except `env.test` (`DISABLE_RATE_LIMIT=true` exists so reused Playwright state cannot exhaust persisted buckets).
 
 ## Social providers, email, analytics, AI

@@ -62,10 +62,11 @@
 	 * env.production - the top level must be deployable by someone who does
 	 * not own this project's domain or mail sender.
 	 *
-	 * TRUSTED_ORIGINS is the one value you MUST set after your first deploy:
-	 * it is the CSRF allowlist, and sign-in is refused from an origin that is
-	 * not on it. Set it to the origin your console is served from, e.g.
-	 * https://cloudflarebase.<your-subdomain>.workers.dev
+	 * TRUSTED_ORIGINS is the CSRF allowlist for EXTRA origins. A deployment
+	 * trusts its own origin automatically, so sign-in works right after a
+	 * fresh deploy with this empty. Add origins here (comma separated, no
+	 * trailing slash) only when another domain serves the console or calls
+	 * the API with cookies.
 	 *
 	 * DEMO_MODE is absent on purpose. It makes demo-<hex> projects throwaway -
 	 * capped, mail-less, and self-erasing after DEMO_TTL_HOURS - which is only

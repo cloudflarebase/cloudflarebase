@@ -75,7 +75,7 @@ export async function addCommand(projectDir: string, args: string[]): Promise<vo
 
 	blank();
 	success(`${spec.packageName} is installed.`);
-	info(`  Deploy with ${dim('cloudflarebase deploy')} - it will set TRUSTED_ORIGINS for you.`);
+	info(`  Deploy with ${dim('cloudflarebase deploy')} - sign-in works right after.`);
 }
 
 /**

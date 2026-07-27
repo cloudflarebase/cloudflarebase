@@ -1,20 +1,17 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { blank, dim, info, step, success, UserError, warn } from '../lib/log.js';
+import { blank, dim, info, step, success, UserError } from '../lib/log.js';
 import { run, runOrFail } from '../lib/run.js';
-import { readTrustedOrigins, setTrustedOrigins } from '../lib/wrangler-config.js';
+import { readTrustedOrigins } from '../lib/wrangler-config.js';
 
 /**
- * `cloudflarebase deploy` - deploy the Worker and close the TRUSTED_ORIGINS
- * trap.
+ * `cloudflarebase deploy` - deploy the Worker.
  *
- * An empty TRUSTED_ORIGINS is the single most common first-run failure: it is
- * the CSRF allowlist, and sign-in from an unlisted origin is refused as a bad
- * credential rather than a configuration error - so people go looking for an
- * auth bug they do not have. The Worker's own URL is not knowable until the
- * first deploy assigns it, so the fix is mechanical: deploy, read the URL
- * back, write it into the allowlist, deploy again. That is exactly the kind
- * of step a human forgets and a tool should own.
+ * There is nothing to configure before sign-in works: the agent trusts the
+ * deployment's own origin automatically, so a fresh deploy is usable the
+ * moment the URL exists. TRUSTED_ORIGINS is only for extra origins (another
+ * domain serving the UI, other apps calling the API with cookies), which is
+ * why this command reports it instead of managing it.
  */
 export async function deployCommand(projectDir: string): Promise<void> {
 	const configPath = path.join(projectDir, 'wrangler.jsonc');
@@ -38,43 +35,24 @@ export async function deployCommand(projectDir: string): Promise<void> {
 	}
 
 	step('Deploying');
-	const first = await runOrFail('npx', ['wrangler', 'deploy'], {
+	const result = await runOrFail('npx', ['wrangler', 'deploy'], {
 		cwd: projectDir,
 		capture: true,
 		failure: 'wrangler deploy failed.'
 	});
-	process.stdout.write(first.stdout);
+	process.stdout.write(result.stdout);
 
-	const url = (first.stdout + first.stderr).match(/https:\/\/[a-z0-9.-]+\.workers\.dev/i)?.[0];
+	const url = (result.stdout + result.stderr).match(/https:\/\/[a-z0-9.-]+\.workers\.dev/i)?.[0];
 	const trusted = readTrustedOrigins(configText);
 
-	if (trusted !== '') {
-		blank();
-		success(`Deployed. Trusted origins: ${trusted}`);
-		return;
-	}
-
-	if (!url) {
-		blank();
-		warn('TRUSTED_ORIGINS is empty and no workers.dev URL was found in the deploy output.');
-		info('  Sign-in is refused from origins not on that allowlist - and the failure looks');
-		info('  like a bad credential, not a config error. Set it to your Worker or console');
-		info(`  origin in wrangler.jsonc, then deploy again.`);
-		return;
-	}
-
-	step(`Setting TRUSTED_ORIGINS to ${url}`);
-	await writeFile(configPath, setTrustedOrigins(configText, url), 'utf8');
-
-	step('Deploying again with the allowlist in place');
-	await runOrFail('npx', ['wrangler', 'deploy'], {
-		cwd: projectDir,
-		capture: true,
-		failure: 'The second wrangler deploy failed.'
-	});
-
 	blank();
-	success(`Deployed to ${url}`);
-	info(`  ${dim('·')} TRUSTED_ORIGINS was empty, so it now allows ${url}.`);
-	info(`  ${dim('·')} Serving a console from another origin? Add it there too.`);
+	success(url ? `Deployed to ${url}` : 'Deployed.');
+	info(`  ${dim('·')} Sign-in works from the deployed URL right away; it trusts its own origin.`);
+	if (trusted !== '') {
+		info(`  ${dim('·')} Extra trusted origins: ${trusted}`);
+	} else {
+		info(
+			`  ${dim('·')} Serving the UI from another domain? Add it to TRUSTED_ORIGINS in wrangler.jsonc.`
+		);
+	}
 }

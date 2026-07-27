@@ -61,7 +61,15 @@ export function createProjectAuth(config: ProjectAuthConfig) {
 		appName: `cloudflarebase:${config.projectId}`,
 		basePath: '/api/auth',
 		secret: config.secret,
-		trustedOrigins: config.trustedOrigins,
+		// A deployment trusts its own origin automatically: a browser only sends
+		// an Origin equal to the URL it is actually on, so same-origin requests
+		// are never CSRF. The configured list is for anything else - custom
+		// domains, external apps - and a fresh install needs no configuration
+		// before sign-in works.
+		trustedOrigins: (request) => [
+			...config.trustedOrigins,
+			request ? new URL(request.url).origin : null,
+		],
 		database: drizzleAdapter(config.db, {
 			provider: 'sqlite',
 			schema,
@@ -136,6 +144,13 @@ export function createProjectAuth(config: ProjectAuthConfig) {
 			// Scope cookies per project so multiple project dashboards on the
 			// same origin don't clobber each other's sessions.
 			cookiePrefix: `cfb-${config.projectId}`,
+			// Cloudflare resolves the client address at the edge and overwrites
+			// any inbound attempt to spoof it. Without this, rate limiting
+			// cannot see an IP and falls back to one shared per-path bucket,
+			// where a single noisy client exhausts sign-in for everyone.
+			ipAddress: {
+				ipAddressHeaders: ['cf-connecting-ip'],
+			},
 		},
 		databaseHooks: {
 			user: {

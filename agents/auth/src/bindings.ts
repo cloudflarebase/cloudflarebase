@@ -57,9 +57,9 @@ export interface AuthAgentBindings {
 	EMAIL_FROM?: string;
 
 	/**
-	 * CSRF allowlist, comma separated. Empty is accepted but sign-in is then
-	 * refused from every origin - and it surfaces as a rejected credential
-	 * rather than a configuration error, so set it after your first deploy.
+	 * CSRF allowlist for origins beyond the deployment's own, comma separated.
+	 * The agent trusts its own origin automatically, so this stays empty until
+	 * another domain serves your UI or calls the API with cookies.
 	 */
 	TRUSTED_ORIGINS?: string;
 

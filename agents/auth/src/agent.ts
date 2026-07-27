@@ -325,7 +325,10 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 
 	private corsHeaders(request: Request): Headers | null {
 		const origin = request.headers.get('origin');
-		if (!origin || !this.trustedOrigins.includes(origin)) return null;
+		// Same-origin is always acceptable - it matches the trust rule in
+		// auth.ts, where a deployment trusts its own origin automatically.
+		const sameOrigin = origin === new URL(request.url).origin;
+		if (!origin || (!sameOrigin && !this.trustedOrigins.includes(origin))) return null;
 		return new Headers({
 			'access-control-allow-origin': origin,
 			'access-control-allow-credentials': 'true',

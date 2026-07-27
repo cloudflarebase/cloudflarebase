@@ -44,16 +44,13 @@ Two Workers. The agent goes first because the dashboard binds to it by name
 
 Or from a clone: `npm run deploy:all`.
 
-After deploying, set the CSRF allowlist to your dashboard's URL, or sign-in
-will be refused (it fails looking like a wrong password, which is confusing):
-
-```bash
-cd agents/auth
-npx wrangler deploy --var TRUSTED_ORIGINS:https://<your-dashboard>.workers.dev
-```
-
 Then open the dashboard and create the first account. That account owns the
 console and sign-up closes behind it. Your install is private by default.
+
+A deployment trusts its own origin automatically, so sign-in works right
+after deploy with nothing to configure. If you serve the console from another
+domain or call the API from other apps, add those origins to
+`TRUSTED_ORIGINS` (the CSRF allowlist) or per project under Settings.
 
 Optional extras, all off until configured: Google/GitHub sign-in, email
 delivery, Sentry, and analytics SQL reads (`CF_ACCOUNT_ID` +
@@ -70,7 +67,7 @@ npm install -g @cloudflarebase/cli
 cloudflarebase init my-backend   # or `cloudflarebase add auth` in an existing project
 cd my-backend
 npx wrangler login
-cloudflarebase deploy            # sets TRUSTED_ORIGINS for you on first deploy
+cloudflarebase deploy            # sign-in works right away
 ```
 
 `add` merges the agent's wrangler config into yours without overwriting

@@ -26,10 +26,11 @@ never overwrites values you set, and running it twice changes nothing. Run it
 with no argument to list available agents. All agents are Durable Object
 classes in the same Worker, so adding one never means another deploy.
 
-`deploy` deploys the Worker. If the CSRF allowlist (`TRUSTED_ORIGINS`) is
-empty, it reads the deployed URL back, writes it into the allowlist, and
-deploys again, because sign-in from an unlisted origin fails looking like a
-wrong password.
+`deploy` deploys the Worker and reports the URL. Sign-in works immediately:
+the deployment trusts its own origin automatically. `TRUSTED_ORIGINS` (the
+CSRF allowlist) is only for extra origins, like another domain serving your
+UI; cross-origin requests from unlisted origins get an explicit 403
+`INVALID_ORIGIN`.
 
 To pin a version: `CLOUDFLAREBASE_AUTH_SPEC=@cloudflarebase/auth@0.2.0-beta.1
 cloudflarebase add auth`.

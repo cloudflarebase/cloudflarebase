@@ -53,9 +53,9 @@ Everything else degrades gracefully when absent: `AI` only powers `/chat`,
 `EMAIL`/`EMAIL_FROM` only affect verification mail, and `BETTER_AUTH_SECRET`
 is optional because each project generates its own signing key.
 
-One warning: set `TRUSTED_ORIGINS` after your first deploy. It is the CSRF
-allowlist, and sign-in from an unlisted origin is refused in a way that looks
-like a wrong password.
+A deployment trusts its own origin automatically, so sign-in works right after
+deploy. `TRUSTED_ORIGINS` (the CSRF allowlist) is only for extra origins:
+other domains serving your UI, or apps calling the API from elsewhere.
 
 ## Requirements
 
