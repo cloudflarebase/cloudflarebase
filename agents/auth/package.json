@@ -1,8 +1,47 @@
 {
-	"name": "auth-agent",
-	"version": "0.0.0",
-	"private": true,
+	"name": "@cloudflarebase/auth",
+	"version": "0.1.0",
+	"description": "Better Auth on a Cloudflare Durable Object, one instance per project — the auth primitive behind Cloudflarebase.",
+	"license": "Apache-2.0",
+	"type": "module",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/cloudflarebase/cloudflarebase.com.git",
+		"directory": "agents/auth"
+	},
+	"homepage": "https://github.com/cloudflarebase/cloudflarebase.com/tree/main/agents/auth#readme",
+	"bugs": "https://github.com/cloudflarebase/cloudflarebase.com/issues",
+	"keywords": [
+		"cloudflare",
+		"workers",
+		"durable-objects",
+		"better-auth",
+		"authentication",
+		"agents",
+		"cloudflarebase"
+	],
+	"publishConfig": {
+		"access": "public"
+	},
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		},
+		"./wrangler-fragment.jsonc": "./template/wrangler-fragment.jsonc",
+		"./package.json": "./package.json"
+	},
+	"files": [
+		"dist",
+		"template",
+		"NOTICE"
+	],
 	"scripts": {
+		"build": "tsc -p tsconfig.build.json",
+		"prepublishOnly": "npm run build",
+		"typecheck": "tsc --noEmit",
 		"deploy": "wrangler deploy",
 		"dev": "wrangler dev --env local --persist-to=../../.wrangler/state/ --ip 0.0.0.0 --port 8788",
 		"start": "wrangler dev",

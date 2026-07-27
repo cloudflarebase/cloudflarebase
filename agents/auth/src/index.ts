@@ -15,6 +15,7 @@ export type {
 	FleetProjectCounts,
 } from './agent';
 export type { FleetOverview, FleetProject, FleetTotals } from './fleet';
+export type { AssertAuthAgentEnv, AuthAgentBindings } from './bindings';
 
 const sentryOptions = (env: Env) => ({
 	dsn: env.SENTRY_DSN,

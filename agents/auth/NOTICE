@@ -1,0 +1,18 @@
+Cloudflarebase
+Copyright 2026 The Cloudflarebase Authors
+
+This product includes software developed by The Cloudflarebase Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the
+License at http://www.apache.org/licenses/LICENSE-2.0
+
+------------------------------------------------------------------------------
+
+Cloudflarebase is an independent open-source project. It is not affiliated with,
+endorsed by, or sponsored by Cloudflare, Inc.
+
+"Cloudflare", "Workers", "Durable Objects", "D1", "R2", "KV", and related marks
+are trademarks of Cloudflare, Inc. They are used here only to describe the
+platform this software is built on, as permitted by nominative fair use. This
+project claims no rights in them.

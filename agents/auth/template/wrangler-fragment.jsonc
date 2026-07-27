@@ -1,0 +1,91 @@
+/**
+ * Wrangler configuration for a Worker that hosts `@cloudflarebase/auth`.
+ *
+ * Merge this into your own `wrangler.jsonc`, then run `npx wrangler types` so
+ * the generated `Env` carries these bindings. The agent reads `Env` from your
+ * configuration, not from the package — see `AssertAuthAgentEnv` for a
+ * compile-time check that you declared everything it needs.
+ *
+ * The `migrations` block below is a FRESH v1. Do not copy the tag history from
+ * the Cloudflarebase repository: that carries a rename of an earlier class and
+ * replaying it against a new Worker would try to delete a class you never had.
+ */
+{
+	"main": "src/index.ts",
+
+	// Better Auth needs both. `nodejs_als` backs the async local storage the
+	// Agents SDK uses for request context.
+	"compatibility_date": "2026-07-10",
+	"compatibility_flags": ["nodejs_compat", "nodejs_als"],
+
+	// The agent is a SQLite-backed Durable Object: one instance per project,
+	// named by project id. `new_sqlite_classes` is required — the classic
+	// key-value backend cannot run the embedded database.
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_sqlite_classes": ["AuthAgent"],
+		},
+	],
+
+	"durable_objects": {
+		"bindings": [
+			{
+				"class_name": "AuthAgent",
+				"name": "AuthAgent",
+			},
+		],
+	},
+
+	// Required. Auth events are written here; the dataset auto-creates on first
+	// write and writes need no API credentials. Reads (the analytics dashboard)
+	// additionally need CF_ACCOUNT_ID and CF_ANALYTICS_API_TOKEN.
+	"analytics_engine_datasets": [
+		{
+			"binding": "AUTH_EVENTS",
+			"dataset": "cloudflarebase_auth_events",
+		},
+	],
+
+	// Optional. Powers `POST /chat`, which is the only route that calls it.
+	// Without it the rest of the agent is unaffected and /chat returns 502.
+	"ai": {
+		"binding": "AI",
+	},
+
+	// Optional. Verification and password-reset mail. Core sign-up and sign-in
+	// work without it.
+	"send_email": [{ "name": "EMAIL" }],
+
+	"vars": {
+		/**
+		 * The one value you MUST set after your first deploy. It is the CSRF
+		 * allowlist, and sign-in is refused from an origin that is not on it —
+		 * which surfaces as a rejected credential rather than a configuration
+		 * error, so it is worth getting right before you go looking for bugs.
+		 * Comma separated, no trailing slash.
+		 */
+		"TRUSTED_ORIGINS": "",
+
+		// Must match the dataset name above.
+		"WAE_DATASET": "cloudflarebase_auth_events",
+
+		"CHAT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+
+		// Empty disables error reporting, which is the default. Set your own
+		// with `wrangler secret put SENTRY_DSN` to turn it on.
+		"SENTRY_DSN": "",
+	},
+
+	/**
+	 * No secret has to be set for this Worker to work.
+	 *
+	 * BETTER_AUTH_SECRET is optional: when unset, each project generates its own
+	 * signing key on first start and keeps it in its own Durable Object storage.
+	 * Set it only if you want to own and rotate the value yourself — it then
+	 * applies to every project on the deployment.
+	 */
+	"secrets": {
+		"required": [],
+	},
+}

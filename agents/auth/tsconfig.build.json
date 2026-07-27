@@ -1,0 +1,29 @@
+/**
+ * Publish build for `@cloudflarebase/auth`.
+ *
+ * Emits `dist/` from `src/` only. Two things are deliberately left out of the
+ * published package:
+ *
+ * - `worker-configuration.d.ts` is a `types` entry rather than an input, so it
+ *   is never emitted. Shipping it would declare a global `interface Env` in the
+ *   consumer's project and clobber their own generated bindings — the exact
+ *   opposite of what makes this package portable.
+ * - `src/env.d.ts` is a declaration input, which tsc does not copy to `outDir`.
+ *   Its optional-secret augmentation describes this repository's deployment,
+ *   not anyone else's.
+ *
+ * The emitted declarations name `Env` instead of inlining it, so in a consumer
+ * project it resolves to their `wrangler types` output. `AssertAuthAgentEnv` is
+ * what checks that output actually carries the bindings the agent reads.
+ */
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"noEmit": false,
+		"declaration": true,
+		"outDir": "dist",
+		"rootDir": "src"
+	},
+	"include": ["src/**/*"],
+	"exclude": ["src/**/*.test-d.ts"]
+}

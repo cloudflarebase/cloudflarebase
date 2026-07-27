@@ -9,6 +9,12 @@ agents/auth/AGENTS.md
 **/package-lock.json
 agents/auth/.prettierrc
 
+# Publish build output for @cloudflarebase/auth, emitted by tsc.
+agents/auth/dist/
+
 # The Apache license text is canonical and must not be reformatted.
 LICENSE
 NOTICE
+# Copied verbatim into the published package; same rule applies.
+agents/auth/LICENSE
+agents/auth/NOTICE

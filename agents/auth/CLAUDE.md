@@ -79,6 +79,22 @@ Expiry uses `this.schedule(seconds, 'expireDemoProject', undefined, { idempotent
 
 The ceilings are chosen to bound cost without costing a visitor what they came for. `e2e/demo-project.api.spec.ts` pins that: a demo project still serves the whole REST flow the Integration tab advertises, unauthenticated.
 
+## Publishing as `@cloudflarebase/auth`
+
+`npm run build` (`tsconfig.build.json`) emits `dist/` from `src/` only. `files` ships `dist`, `template`, and `NOTICE`; npm adds `README.md` and `LICENSE`. `npm pack --dry-run` is the check — it should be ~19 files and contain no configuration of ours.
+
+**How it stays portable.** The Agents SDK constrains `Agent<Env, State>` against `Cloudflare.Env`, which is an _empty declaration-merge target_ in the runtime types — it is strict here only because our generated `worker-configuration.d.ts` merges our bindings into it. The emitted declarations therefore name `Env` rather than inlining it, so in a consumer's project it resolves to _their_ `wrangler types` output. Verified end to end: a consumer installs the tarball, runs `wrangler types`, and gets their own values in `Env` with none of ours.
+
+This is why a hand-written env interface with optional bindings cannot replace the ambient `Env`: it is rejected with "does not satisfy the constraint 'Env'". The contract in `src/bindings.ts` is an _assertion over_ `Env`, never a substitute for it.
+
+**Two things must never ship.** `worker-configuration.d.ts` declares a global `interface Env` and would clobber the consumer's own generated bindings — it is a `types` entry rather than an input, so it is never emitted. `src/env.d.ts` describes this deployment's optional secrets; tsc does not copy declaration inputs to `outDir`.
+
+**The binding contract.** `AssertAuthAgentEnv<Env>` gives a consumer a named compile-time error for a missing or wrongly typed binding instead of a runtime failure on first request. Only `AuthAgent` and `AUTH_EVENTS` are required — every other binding is guarded in the agent so a degraded one never breaks authentication, and required/optional here describes what a correct deployment provides, not what the runtime tolerates. `src/bindings.test-d.ts` locks this with `@ts-expect-error` on the negative cases, so weakening the contract fails the typecheck in both directions. It is excluded from the build.
+
+`DurableObjectNamespace<any>` in that contract is deliberate: the namespace is effectively invariant, so `never` and `unknown` each fail one direction of the check a consumer's concrete class must pass.
+
+**`template/`** holds what a consumer copies: `worker-entry.ts` (the DO class must be re-exported from their own entrypoint for Wrangler to find it) and `wrangler-fragment.jsonc`. The fragment's `migrations` is a **fresh `v1`** — this repository's tag history renames an earlier class, and replaying it against a new Worker tries to delete a class the consumer never had.
+
 ## Constraints and gotchas
 
 - DO SQLite blocks `pragma_table_info()` and explicit `BEGIN`/`COMMIT` (`SQLITE_AUTH`). This is why the adapter disables transactions and migrations use Drizzle instead of Better Auth's Kysely path.
@@ -89,6 +105,9 @@ The ceilings are chosen to bound cost without costing a visitor what they came f
 - `src/index.ts` may only export handlers and Durable Object classes. A value export — even a string constant — fails at boot with `Incorrect type for map entry`, which reads like a configuration problem rather than a stray export. Type-only exports are erased and safe.
 - `BETTER_AUTH_SECRET` is optional everywhere. When unset, each project generates a 32-byte key in `onStart` and keeps it in its own Durable Object storage under `signing-secret`, so a fresh install needs no secret set by hand and no two projects share a key. Setting the variable overrides that for every project on the deployment. The fixed value in `env.test.vars` is pinned so a reused local stack keeps sessions valid across restarts, and belongs nowhere else.
 - Do not edit `worker-configuration.d.ts`. Run `npx wrangler types` after binding or variable changes.
+- Never name a file `src/env.ts`. It collides with `src/env.d.ts` and silently kills the ambient `Env` augmentation — nothing errors, the optional secrets just stop existing. The binding contract lives in `src/bindings.ts` for this reason.
+- `tsconfig.json` excludes `dist` and `template`. Without it `tsc --noEmit` typechecks the build output alongside the sources it came from (`allowJs` is on), and tries to compile the template files, which import `@cloudflarebase/auth` by package name and cannot resolve from inside the package.
+- The root ESLint config ignores `agents/auth/dist/` explicitly. `includeIgnoreFile` reads only the _root_ `.gitignore`, so this project's own ignore of `dist` does not reach it, and linting the emitted bundle is slow enough to look like a hang.
 
 ## Development and tests
 
