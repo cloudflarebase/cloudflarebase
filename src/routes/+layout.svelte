@@ -59,6 +59,7 @@
 	onNavigate((navigation) => {
 		if (
 			!document.startViewTransition ||
+			document.visibilityState === 'hidden' ||
 			window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
 			(inDashboard(navigation.from?.route.id) && inDashboard(navigation.to?.route.id))
 		) {
@@ -66,10 +67,16 @@
 		}
 
 		return new Promise<void>((resolve) => {
-			document.startViewTransition(async () => {
+			const transition = document.startViewTransition(async () => {
 				resolve();
-				await navigation.complete;
+				// An aborted navigation rejects `complete`; the DOM has already
+				// been handed over either way, so losing the animation is fine.
+				await navigation.complete.catch(() => {});
 			});
+			// The browser skips the transition if the tab goes hidden mid-flight
+			// (or another transition starts) and rejects `ready` - that skip is
+			// expected, not an error worth an unhandled-rejection report.
+			transition.ready.catch(() => {});
 		});
 	});
 </script>
