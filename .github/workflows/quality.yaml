@@ -43,6 +43,10 @@ jobs:
         run: npx tsc --noEmit
         working-directory: agents/auth
 
+      - name: Unit-test the auth agent
+        run: npm run test:unit
+        working-directory: agents/auth
+
       - name: Typecheck the db agent
         run: npx tsc --noEmit
         working-directory: agents/db
