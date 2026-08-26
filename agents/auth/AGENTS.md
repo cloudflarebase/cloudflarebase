@@ -12,6 +12,7 @@ the manifest contract, and the two-layer access model all apply here.
 src/index.ts        WorkerEntrypoint: /health, erase fan-in, routeAgentRequest
 src/agent.ts        the AuthAgent DO — routing, admin surface, analytics, chat
 src/auth.ts         the Better Auth instance and its hooks
+src/email-callback.ts  emailed links redirect back to the app that asked
 src/admin.ts        server-side admin client (targets the CONSOLE, not the agent)
 src/route-access.ts layer-2 route gate; mirrors cloudflarebase.agent.json
 src/bindings.ts     AssertAuthAgentEnv — the compile-time binding contract
@@ -55,6 +56,12 @@ turns every project JWT into an admin token.
   with `no_access_to_analytics_engine` (code 10089) until it is enabled. Unset,
   every write is skipped and nothing else changes. Reading the events
   additionally needs `CF_ACCOUNT_ID` + `CF_ANALYTICS_API_TOKEN`.
+- **Emailed links follow the requesting app home.** They land on the API
+  origin — the dashboard, on a managed deployment — so the mail hooks rewrite
+  a relative `callbackURL` against the caller's allowlisted Origin
+  (`src/email-callback.ts`). Better Auth re-validates the absolute URL against
+  the same allowlist at click time, so both halves must agree before anyone is
+  redirected.
 - **Outbound mail is attacker-influenced.** Org names, inviter addresses, and
   reset URLs all land inside an HTML body sent from the deployment's verified
   sender. Interpolate through `escapeHtml` / `headerSafe`, never raw.
@@ -72,7 +79,7 @@ turns every project JWT into an admin token.
 ```bash
 npm run dev         # wrangler dev --env local, :8788
 npm run typecheck   # tsc --noEmit
-npm run test:unit   # route-access parity against the manifest
+npm run test:unit   # route-access parity + email-callback rewrite
 npm run migrations  # drizzle-kit generate + inline into src/migrations.ts
 npm run cf-typegen  # after any binding change
 ```

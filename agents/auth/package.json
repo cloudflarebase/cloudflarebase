@@ -1,6 +1,6 @@
 {
 	"name": "@cloudflarebase/auth",
-	"version": "0.7.3",
+	"version": "0.7.4",
 	"description": "Better Auth on a Cloudflare Durable Object, one instance per project - the auth primitive behind Cloudflarebase.",
 	"license": "Apache-2.0",
 	"type": "module",
@@ -47,7 +47,7 @@
 	"scripts": {
 		"build": "tsc -p tsconfig.build.json",
 		"typecheck": "tsc --noEmit",
-		"test:unit": "node --import tsx --test src/route-access.unit.test.ts",
+		"test:unit": "node --import tsx --test src/route-access.unit.test.ts src/email-callback.unit.test.ts",
 		"prepublishOnly": "npm run build",
 		"deploy": "wrangler deploy",
 		"dev": "wrangler dev --env local --persist-to=../../.wrangler/state/ --ip 0.0.0.0 --port 8788",
