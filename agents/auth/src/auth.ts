@@ -4,6 +4,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { anonymous, bearer, jwt, organization } from 'better-auth/plugins';
 import { and, asc, eq, ne, or, isNull } from 'drizzle-orm';
 import type { DrizzleSqliteDODatabase } from 'drizzle-orm/durable-sqlite';
+import { resolveEmailCallback } from './email-callback';
 import * as schema from './db/schema';
 
 /** Providers whose sign-in attests a verified email. Shared between the
@@ -216,15 +217,23 @@ export function createProjectAuth(config: ProjectAuthConfig) {
 			// their link when a deployment turns this on later.
 			requireEmailVerification: config.requireEmailVerification,
 			sendResetPassword: config.sendEmail
-				? async ({ user, url }) =>
-						config.sendEmail?.({ type: 'password-reset', to: user.email, url })
+				? async ({ user, url }, request) =>
+						config.sendEmail?.({
+							type: 'password-reset',
+							to: user.email,
+							url: resolveEmailCallback(url, request, config.trustedOrigins),
+						})
 				: undefined,
 		},
 		emailVerification: config.sendEmail
 			? {
 					sendOnSignUp: true,
-					sendVerificationEmail: async ({ user, url }) =>
-						config.sendEmail?.({ type: 'email-verification', to: user.email, url }),
+					sendVerificationEmail: async ({ user, url }, request) =>
+						config.sendEmail?.({
+							type: 'email-verification',
+							to: user.email,
+							url: resolveEmailCallback(url, request, config.trustedOrigins),
+						}),
 				}
 			: undefined,
 		rateLimit: {
@@ -326,8 +335,12 @@ export function createProjectAuth(config: ProjectAuthConfig) {
 				// immediately - Better Auth's own rule. Without a mail transport the
 				// verified path cannot complete, which is the honest failure.
 				sendChangeEmailVerification: config.sendEmail
-					? async ({ user, url }: { user: { email: string }; url: string }) =>
-							config.sendEmail?.({ type: 'email-change', to: user.email, url })
+					? async ({ user, url }: { user: { email: string }; url: string }, request?: Request) =>
+							config.sendEmail?.({
+								type: 'email-change',
+								to: user.email,
+								url: resolveEmailCallback(url, request, config.trustedOrigins),
+							})
 					: undefined,
 			},
 		},
