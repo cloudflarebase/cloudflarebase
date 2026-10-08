@@ -12,7 +12,7 @@ import type { TableSqlResponse, TableSqlResult } from './schemas';
  * SQL), so `getToken` is effectively mandatory outside operator tooling.
  *
  * ```ts
- * import { drizzleTable } from '@frostbase/db/drizzle';
+ * import { drizzleTable } from '@frostbase-dev/db/drizzle';
  * import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
  *
  * const todos = sqliteTable('todos', {

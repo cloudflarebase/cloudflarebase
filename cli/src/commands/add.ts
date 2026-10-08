@@ -104,7 +104,7 @@ async function findWranglerConfig(projectDir: string): Promise<string> {
 		throw new UserError(
 			'This project uses wrangler.toml, which this CLI does not edit.',
 			'Convert it to wrangler.jsonc (same keys, JSONC syntax), or merge node_modules/' +
-				'@frostbase/auth/template/wrangler-fragment.jsonc into it by hand.'
+				'@frostbase-dev/auth/template/wrangler-fragment.jsonc into it by hand.'
 		);
 	} catch (cause) {
 		if (cause instanceof UserError) throw cause;

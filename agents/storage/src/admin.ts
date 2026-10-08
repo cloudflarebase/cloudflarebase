@@ -1,5 +1,5 @@
 /**
- * The ADMIN client for `@frostbase/storage` - buckets and object bytes
+ * The ADMIN client for `@frostbase-dev/storage` - buckets and object bytes
  * from a server.
  *
  * The twin of the db and auth admin clients: it targets the CONSOLE (a `cfbs_`
@@ -46,7 +46,7 @@ export class StorageAdminError extends Error {
 export class StorageAgentTooOldError extends Error {
 	constructor(path: string) {
 		super(
-			`the console did not recognise ${path}. Deploy a console (and @frostbase/storage) that ` +
+			`the console did not recognise ${path}. Deploy a console (and @frostbase-dev/storage) that ` +
 				`ships the storage object proxy before calling this - an older deployment answers a 404 ` +
 				`that looks like a missing object.`,
 		);
@@ -70,7 +70,7 @@ export interface StorageObjectSummary {
 function assertServerOnly(): void {
 	if (typeof (globalThis as { document?: unknown }).document !== 'undefined') {
 		throw new Error(
-			'@frostbase/storage/admin is server-only: it carries a service key, which can read, ' +
+			'@frostbase-dev/storage/admin is server-only: it carries a service key, which can read, ' +
 				'overwrite, and delete every object in your project regardless of bucket access modes. ' +
 				'Never import it into browser code - upload from the browser with the signed-in user’s ' +
 				'project JWT against the public object path instead.',
@@ -92,7 +92,7 @@ function resolve(
 		if (value) return value;
 	}
 	throw new Error(
-		`@frostbase/storage/admin needs ${label}: pass it explicitly, or set ${names.join(' or ')}. ` +
+		`@frostbase-dev/storage/admin needs ${label}: pass it explicitly, or set ${names.join(' or ')}. ` +
 			`Inside a Worker, secrets live on \`env\` rather than a global process - pass \`{ env }\`.`,
 	);
 }

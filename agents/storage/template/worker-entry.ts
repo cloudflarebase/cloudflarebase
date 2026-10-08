@@ -6,9 +6,9 @@
  * bindings in wrangler.jsonc resolve. If your project already has a default
  * export, drop the `default` re-export below and keep your own:
  *
- *   export { StorageAgent, StorageBucket } from '@frostbase/storage';
+ *   export { StorageAgent, StorageBucket } from '@frostbase-dev/storage';
  */
-export { StorageAgent, StorageBucket, default } from '@frostbase/storage';
+export { StorageAgent, StorageBucket, default } from '@frostbase-dev/storage';
 
 /**
  * Compile-time binding contract: if wrangler.jsonc is missing a binding the
@@ -16,5 +16,5 @@ export { StorageAgent, StorageBucket, default } from '@frostbase/storage';
  * field named - before anything deploys. Run `wrangler types` after changing
  * bindings so `Env` is current.
  */
-import type { AssertStorageAgentEnv } from '@frostbase/storage';
+import type { AssertStorageAgentEnv } from '@frostbase-dev/storage';
 export type _StorageAgentBindings = AssertStorageAgentEnv<Env>;

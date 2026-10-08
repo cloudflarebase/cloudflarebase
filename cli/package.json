@@ -1,5 +1,5 @@
-﻿{
-	"name": "@frostbase/cli",
+{
+	"name": "@frostbase-dev/cli",
 	"version": "0.7.0",
 	"description": "Scaffold and deploy a Frostbase backend on your own Cloudflare account.",
 	"license": "Apache-2.0",
@@ -23,7 +23,7 @@
 		"access": "public"
 	},
 	"bin": {
-		"frostbase": "./dist/index.js"
+		"frostbase": "dist/index.js"
 	},
 	"files": [
 		"dist",

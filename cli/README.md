@@ -1,10 +1,10 @@
-# @frostbase/cli
+# @frostbase-dev/cli
 
 Scaffold and deploy a [Frostbase](https://github.com/frostbase-dev/frostbase)
 backend on your own Cloudflare account.
 
 ```bash
-npm install -g @frostbase/cli
+npm install -g @frostbase-dev/cli
 
 frostbase init my-backend
 cd my-backend
@@ -37,7 +37,7 @@ UI; cross-origin requests from unlisted origins get an explicit 403
 
 Available agents today: `auth` and `db`.
 
-To pin a version: `FROSTBASE_DB_SPEC=@frostbase/db@0.1.3
+To pin a version: `FROSTBASE_DB_SPEC=@frostbase-dev/db@0.1.3
 frostbase add db` (and `FROSTBASE_AUTH_SPEC` for auth).
 
 ## Notes

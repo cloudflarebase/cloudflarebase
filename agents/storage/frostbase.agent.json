@@ -3,7 +3,7 @@
 	"name": "storage",
 	"title": "Storage",
 	"description": "Object storage on R2 - buckets of files with per-bucket access modes, served through the worker with a sorted, pageable index.",
-	"packageName": "@frostbase/storage",
+	"packageName": "@frostbase-dev/storage",
 	"worker": "storage-agent",
 	"durableObjects": [
 		{

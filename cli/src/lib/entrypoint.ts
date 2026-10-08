@@ -49,7 +49,7 @@ export async function patchEntrypoint(
 	 */
 	let exportLine = lines.full;
 	if (/export\s+default|export\s*\{[^}]*\bdefault\b/.test(source)) {
-		if (!source.includes('@frostbase/')) {
+		if (!source.includes('@frostbase-dev/')) {
 			throw new UserError(
 				`${entrypointPath} already has a default export.`,
 				`Export the agent classes yourself and route to them from your fetch handler:\n` +

@@ -3,7 +3,7 @@ import { createStorageClient, StorageError } from '../agents/storage/src/client'
 import { authPath, ensureProject, storageBucketPath, uniqueEmail } from './helpers';
 
 /**
- * The END-USER storage client (`@frostbase/storage/client`).
+ * The END-USER storage client (`@frostbase-dev/storage/client`).
  *
  * Drives the REAL exported client rather than a hand-rolled fetch at the same
  * URLs - the point is to prove the published surface works, including its URL

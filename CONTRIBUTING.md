@@ -52,12 +52,12 @@ cd agents/db && npx tsc --noEmit && npm run test:unit
 Separate npm projects with separate Wrangler configs and separate generated
 `Env` types:
 
-| Path          | Worker       | What it is                                     |
-| ------------- | ------------ | ---------------------------------------------- |
-| `/`           | web          | SvelteKit dashboard and marketing site         |
-| `agents/auth` | `auth-agent` | `AuthAgent` DO - Better Auth per project       |
-| `agents/db`   | `db-agent`   | `DbAgent` + `DbCollection` DOs - documents     |
-| `cli`         | none         | `@frostbase/cli`, runs on a consumer's machine |
+| Path          | Worker       | What it is                                         |
+| ------------- | ------------ | -------------------------------------------------- |
+| `/`           | web          | SvelteKit dashboard and marketing site             |
+| `agents/auth` | `auth-agent` | `AuthAgent` DO - Better Auth per project           |
+| `agents/db`   | `db-agent`   | `DbAgent` + `DbCollection` DOs - documents         |
+| `cli`         | none         | `@frostbase-dev/cli`, runs on a consumer's machine |
 
 **Never import runtime code or generated Worker types across those
 boundaries.** Shared DTOs are deliberately copied - `src/lib/agents.ts`

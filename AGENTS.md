@@ -18,7 +18,7 @@ types.
 | `agents/auth`    | `auth-agent`    | `AuthAgent`                                          |
 | `agents/db`      | `db-agent`      | `DbAgent` `DbCollection` `DbTable` `DbGateway` `DbView` |
 | `agents/storage` | `storage-agent` | `StorageAgent` `StorageBucket`                       |
-| `cli`            | none            | `@frostbase/cli`, runs on a consumer's machine  |
+| `cli`            | none            | `@frostbase-dev/cli`, runs on a consumer's machine  |
 
 **Never import runtime code or generated Worker types across those
 boundaries.** Shared DTOs are deliberately copied — `src/lib/agents.ts` mirrors

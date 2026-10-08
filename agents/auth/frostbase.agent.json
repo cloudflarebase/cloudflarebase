@@ -3,7 +3,7 @@
 	"name": "auth",
 	"title": "Authentication",
 	"description": "Users, sessions, and RBAC on Durable Object SQLite.",
-	"packageName": "@frostbase/auth",
+	"packageName": "@frostbase-dev/auth",
 	"worker": "auth-agent",
 	"durableObjects": [{ "class": "AuthAgent", "scope": "perProject" }],
 	"entrypoint": { "assertEnvType": "AssertAuthAgentEnv" },

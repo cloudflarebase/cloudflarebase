@@ -47,7 +47,7 @@ allowlist, and an unlisted origin gets a 403.
 For a server credential, from the CLI:
 
 ```bash
-npm install -g @frostbase/cli
+npm install -g @frostbase-dev/cli
 frostbase login
 frostbase init                              # links this directory to a project
 frostbase key create server --env-file      # writes a service key to .env.local
@@ -178,7 +178,7 @@ if (!config.get('signupsOpen')) {
 Buckets of files with per-bucket access modes:
 
 ```ts
-import { createStorageClient } from '@frostbase/storage/client';
+import { createStorageClient } from '@frostbase-dev/storage/client';
 
 const storage = createStorageClient({
 	baseUrl: 'https://frostbase.dev/agents/storage-agent/<project-id>',
@@ -200,9 +200,9 @@ With no user to relay — a cron, queue consumer, or webhook — mint a
 page). Each agent ships an `./admin` client over it:
 
 ```ts
-import { createDbAdmin } from '@frostbase/db/admin';
-import { createAuthAdmin } from '@frostbase/auth/admin';
-import { createStorageAdmin } from '@frostbase/storage/admin';
+import { createDbAdmin } from '@frostbase-dev/db/admin';
+import { createAuthAdmin } from '@frostbase-dev/auth/admin';
+import { createStorageAdmin } from '@frostbase-dev/storage/admin';
 
 const db = createDbAdmin(); // url, project, and key from the environment
 const post = await db.collection('posts').get(id);

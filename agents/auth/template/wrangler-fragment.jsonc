@@ -1,5 +1,5 @@
 /**
- * Wrangler configuration for a Worker that hosts `@frostbase/auth`.
+ * Wrangler configuration for a Worker that hosts `@frostbase-dev/auth`.
  *
  * Merge this into your own `wrangler.jsonc`, then run `npx wrangler types` so
  * the generated `Env` carries these bindings. The agent reads `Env` from your

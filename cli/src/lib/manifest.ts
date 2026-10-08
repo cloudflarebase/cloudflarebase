@@ -120,7 +120,7 @@ export async function readManifest(
 	if (version !== 1) {
 		throw new UserError(
 			`${packageName} declares agent manifest version ${String(version)}, which this CLI does not understand.`,
-			'Upgrade @frostbase/cli and try again.'
+			'Upgrade @frostbase-dev/cli and try again.'
 		);
 	}
 

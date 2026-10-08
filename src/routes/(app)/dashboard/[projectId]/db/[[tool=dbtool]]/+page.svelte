@@ -897,7 +897,7 @@ curl -X POST ${dbBase}/collections/posts/documents \\
 			id: 'sdk',
 			label: 'Client SDK',
 			lang: 'typescript',
-			code: `import { createDbClient } from '@frostbase/db/client';
+			code: `import { createDbClient } from '@frostbase-dev/db/client';
 
 // IN THE BROWSER. This fetch sends no Authorization header - it works
 // because the browser attaches the signed-in user's session cookie, so the
@@ -931,7 +931,7 @@ const unsubscribe = posts.subscribe(
 			id: 'ssr',
 			label: 'Server (SSR)',
 			lang: 'typescript',
-			code: `import { createDbClient } from '@frostbase/db/client';
+			code: `import { createDbClient } from '@frostbase-dev/db/client';
 
 // ON A SERVER there is no ambient session, so you RELAY the identity the
 // user already sent you: /auth/token accepts the session cookie or a bearer
@@ -960,7 +960,7 @@ export async function load({ request }) {
 			id: 'service-key',
 			label: 'Admin service key',
 			lang: 'typescript',
-			code: `import { createDbAdmin } from '@frostbase/db/admin';
+			code: `import { createDbAdmin } from '@frostbase-dev/db/admin';
 
 // SERVER ONLY. An admin service key is admin-grade over this project's whole
 // data plane: it bypasses access modes, validators, and permission keys, exactly
@@ -995,7 +995,7 @@ await db.table('orders').sql('SELECT * FROM orders WHERE id = ?', [id]);
 			id: 'tables',
 			label: 'SQL tables',
 			lang: 'typescript',
-			code: `import { createDbClient } from '@frostbase/db/client';
+			code: `import { createDbClient } from '@frostbase-dev/db/client';
 
 const db = createDbClient({
 	baseUrl: '${dbBase}',
@@ -1019,7 +1019,7 @@ todos.subscribe(
 			id: 'drizzle',
 			label: 'Drizzle',
 			lang: 'typescript',
-			code: `import { drizzleTable } from '@frostbase/db/drizzle';
+			code: `import { drizzleTable } from '@frostbase-dev/db/drizzle';
 import { desc } from 'drizzle-orm';
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 

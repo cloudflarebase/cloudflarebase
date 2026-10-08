@@ -68,7 +68,7 @@ function resolve(
 		if (value) return value;
 	}
 	throw new Error(
-		`@frostbase/db/admin needs ${label}: pass it explicitly, or set ${names.join(' or ')}. ` +
+		`@frostbase-dev/db/admin needs ${label}: pass it explicitly, or set ${names.join(' or ')}. ` +
 			`Inside a Worker, secrets live on \`env\` rather than a global process - pass \`{ env }\`.`,
 	);
 }
@@ -96,7 +96,7 @@ export class DbAdminError extends Error {
 export class DbAgentTooOldError extends Error {
 	constructor(path: string) {
 		super(
-			`the db agent did not recognise ${path}. Deploy @frostbase/db 0.6.0 or newer ` +
+			`the db agent did not recognise ${path}. Deploy @frostbase-dev/db 0.6.0 or newer ` +
 				`before calling this - an older agent answers a 404 that looks like a missing record.`,
 		);
 		this.name = 'DbAgentTooOldError';
@@ -119,8 +119,8 @@ function assertServerOnly(): void {
 	// test anyway, since a Worker has neither.
 	if (typeof (globalThis as { document?: unknown }).document !== 'undefined') {
 		throw new Error(
-			'@frostbase/db/admin is server-only: it carries a service key, which is admin-grade ' +
-				'over your whole project. Never import it into browser code. Use @frostbase/db/client ' +
+			'@frostbase-dev/db/admin is server-only: it carries a service key, which is admin-grade ' +
+				'over your whole project. Never import it into browser code. Use @frostbase-dev/db/client ' +
 				'with the signed-in user’s project JWT instead.',
 		);
 	}

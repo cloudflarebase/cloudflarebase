@@ -875,7 +875,8 @@
 					<p class="mt-4 text-muted-foreground">
 						Point <code class="font-mono">fetch</code> at your project's endpoint and you're
 						integrated - this is the exact API the demo dashboard uses. When you want types, the
-						Better Auth client and <code class="font-mono">@frostbase/db/client</code> wrap the same routes.
+						Better Auth client and <code class="font-mono">@frostbase-dev/db/client</code> wrap the same
+						routes.
 					</p>
 					<ul class="mt-6 space-y-3 text-sm">
 						<li class="flex gap-2.5">

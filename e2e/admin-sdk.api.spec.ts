@@ -46,7 +46,7 @@ test.describe('admin clients', () => {
 		}
 	});
 
-	test('db: collections and tables through @frostbase/db/admin', async () => {
+	test('db: collections and tables through @frostbase-dev/db/admin', async () => {
 		const db = createDbAdmin({ url, projectId: SDK_PROJECT, key });
 
 		const posts = db.collection<{ title: string; votes: number }>(`posts-${run}`);
@@ -90,7 +90,7 @@ test.describe('admin clients', () => {
 		await expect(posts.get('one')).rejects.toThrow(/no such/i);
 	});
 
-	test('auth: user lifecycle through @frostbase/auth/admin', async () => {
+	test('auth: user lifecycle through @frostbase-dev/auth/admin', async () => {
 		const auth = createAuthAdmin({ url, projectId: SDK_PROJECT, key });
 		const email = `sdk-${run}@example.com`;
 
@@ -129,7 +129,7 @@ test.describe('admin clients', () => {
 		await expect(auth.getUser(created.id)).rejects.toThrow(/not found/i);
 	});
 
-	test('storage: bucket and object bytes through @frostbase/storage/admin', async () => {
+	test('storage: bucket and object bytes through @frostbase-dev/storage/admin', async () => {
 		const storage = createStorageAdmin({ url, projectId: SDK_PROJECT, key });
 		const bucket = storage.bucket('sdk-files');
 		await bucket.configure({});

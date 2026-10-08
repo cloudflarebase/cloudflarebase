@@ -1,4 +1,4 @@
-# @frostbase/auth
+# @frostbase-dev/auth
 
 Better Auth on a Durable Object. One `AuthAgent` per project, addressed by
 project id, each with its own embedded SQLite and its own signing keypair.
