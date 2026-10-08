@@ -217,7 +217,7 @@ export function demoList(options: {
 }
 
 /** Every mutating surface on a demo answers the same way: the upsell, not a
- * technical error. The hosting agent's precedent. */
+ * technical error. */
 export function demoRefusal(): Response {
 	return Response.json(
 		{

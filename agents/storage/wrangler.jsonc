@@ -136,7 +136,7 @@
 		},
 		"production": {
 			// Pinned name: the web Worker's STORAGE_AGENT service binding
-			// resolves `storage-agent`, the auth/db/hosting precedent.
+			// resolves `storage-agent`, the auth/db precedent.
 			"name": "storage-agent",
 			"workers_dev": false,
 			"preview_urls": false,

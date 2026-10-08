@@ -147,8 +147,8 @@ export function withCors(response: Response, cors: Headers | null): Response {
  * Cancel an unread request body before a response goes out. A body-bearing
  * request answered without its body consumed wedges workerd ("Can't read
  * from request stream after response has been sent"). Bodies on the object
- * paths can be 100 MB, so CANCEL, never consume - the hosting agent's
- * variant, not the db agent's JSON-sized read.
+ * paths can be 100 MB, so CANCEL, never consume - not the db agent's
+ * JSON-sized read.
  */
 export async function drainUnusedBody(request: Request): Promise<void> {
 	try {

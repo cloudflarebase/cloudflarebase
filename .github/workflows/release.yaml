@@ -13,7 +13,7 @@ name: Release
 # for an approval click.
 #
 # Tags remain the manual escape hatch: pushing auth-v1.2.3, db-v1.2.3,
-# storage-v1.2.3, hosting-v1.2.3, or cli-v1.2.3 publishes that one package,
+# storage-v1.2.3, or cli-v1.2.3 publishes that one package,
 # refusing a tag whose version does not match the package.json it points at.
 #
 # Publishing uses npm trusted publishing (OIDC): npmjs.com is configured to
@@ -38,7 +38,6 @@ on:
       - 'auth-v*.*.*'
       - 'db-v*.*.*'
       - 'storage-v*.*.*'
-      - 'hosting-v*.*.*'
       - 'cli-v*.*.*'
 
 permissions:
@@ -69,7 +68,6 @@ jobs:
             { name: '@cloudflarebase/auth', dir: 'agents/auth', prefix: 'auth-v' },
             { name: '@cloudflarebase/db', dir: 'agents/db', prefix: 'db-v' },
             { name: '@cloudflarebase/storage', dir: 'agents/storage', prefix: 'storage-v' },
-            { name: '@cloudflarebase/hosting', dir: 'agents/hosting', prefix: 'hosting-v' },
             { name: '@cloudflarebase/cli', dir: 'cli', prefix: 'cli-v' },
           ];
           const refType = process.env.GITHUB_REF_TYPE;

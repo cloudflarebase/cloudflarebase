@@ -158,7 +158,7 @@
 				// verification, the same configuration preview rehearses. It took
 				// effect the moment this agent deployed, which is safe because the
 				// ownership-aware web worker was already live (its OpenAPI serves
-				// /branches and /hosting/*) - a stranger who registers gets their
+				// /branches) - a stranger who registers gets their
 				// own personal org and sees nothing else. Mail (the EMAIL binding
 				// + EMAIL_FROM below) is what makes "open" effective; without it
 				// the agent reports "claimed" and 503s sign-up rather than

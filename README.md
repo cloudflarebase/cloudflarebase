@@ -28,8 +28,6 @@ isolation by architecture, not by a `WHERE` clause.
   flipped without shipping a release.
 - **Storage** — buckets of files on R2: public/auth/owner access modes,
   signed URLs, multipart uploads, a file browser in the console.
-- **Hosting** — static sites and Workers at `<app>.cfbase.dev`, deployed from
-  the CLI or on every git push.
 
 Use it hosted at [cloudflarebase.com](https://cloudflarebase.com), or run the
 whole stack on your own Cloudflare account. Same code either way.
@@ -46,18 +44,16 @@ const baseUrl = 'https://cloudflarebase.com/api/projects/<project-id>';
 Add your app's origin under the project's **Settings** — that list is the CSRF
 allowlist, and an unlisted origin gets a 403.
 
-To host the front end too:
+For a server credential, from the CLI:
 
 ```bash
 npm install -g @cloudflarebase/cli
 cloudflarebase login
-cloudflarebase init      # links this directory to a project + app
-cloudflarebase deploy    # -> https://<app>.cfbase.dev
+cloudflarebase init                              # links this directory to a project
+cloudflarebase key create server --env-file      # writes a service key to .env.local
 ```
 
-Or connect the GitHub repo from the Hosting page and every push deploys.
-Branches serve at `<app>-<branch>.cfbase.dev`. Limits: 5 projects per org,
-5 branches per project, 10 apps per project.
+Limits: 5 projects per org, 5 branches per project.
 
 ## Self-host
 
@@ -83,7 +79,6 @@ Everything else is optional and degrades cleanly when absent:
 
 - **Storage** needs R2 — create a bucket and add the `BUCKET` binding
   described in `agents/storage/wrangler.jsonc`.
-- **Hosting** needs Workers for Platforms (paid); deploys 503 without it.
 - **Auth-event charts** need Analytics Engine, a free dashboard toggle; then
   add the two lines shown in `agents/auth/wrangler.jsonc`.
 - Google/GitHub sign-in, email, and Sentry are opt-in secrets.
@@ -92,7 +87,6 @@ Prefer buttons? One per Worker, same order as `deploy:all`:
 [auth](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflarebase/cloudflarebase/tree/main/agents/auth) ·
 [db](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflarebase/cloudflarebase/tree/main/agents/db) ·
 [storage](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflarebase/cloudflarebase/tree/main/agents/storage) ·
-[hosting](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflarebase/cloudflarebase/tree/main/agents/hosting) ·
 [dashboard](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflarebase/cloudflarebase)
 
 ## Add the agents to a Worker you already have

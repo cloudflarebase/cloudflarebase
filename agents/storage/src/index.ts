@@ -313,8 +313,8 @@ class StorageService extends WorkerEntrypoint<Env> {
 		let host = url.hostname;
 		if (this.env.STORAGE_SERVE_HOST_HEADER === 'true') {
 			// Test-only: local workerd is dialled by port, not hostname, so the
-			// e2e stack stands the serving host in via a header (the hosting
-			// stub's x-cfbase-host idiom). Ignored everywhere else.
+			// e2e stack stands the serving host in via a header. Ignored
+			// everywhere else.
 			const override = request.headers.get('x-cfbase-host');
 			if (override) host = override.split(':')[0];
 		}
