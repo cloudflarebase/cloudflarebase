@@ -794,7 +794,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 		// choosing inside a mail our own verified sender delivers. The plain
 		// text part needs no escaping; the subject is stripped of the line
 		// breaks a header injection would need.
-		const html = `<div style="font-family:system-ui,sans-serif;max-width:560px;margin:auto"><h1 style="font-size:22px">${escapeHtml(action)}</h1><p>${escapeHtml(intro)}</p><p><a href="${escapeHtml(message.url)}" style="display:inline-block;background:#f6821f;color:white;padding:12px 18px;border-radius:8px;text-decoration:none">${escapeHtml(action)}</a></p><p style="color:#666;font-size:13px">If you did not request this, you can ignore this email.</p></div>`;
+		const html = `<div style="font-family:system-ui,sans-serif;max-width:560px;margin:auto"><h1 style="font-size:22px">${escapeHtml(action)}</h1><p>${escapeHtml(intro)}</p><p><a href="${escapeHtml(message.url)}" style="display:inline-block;background:#2f8fe0;color:white;padding:12px 18px;border-radius:8px;text-decoration:none">${escapeHtml(action)}</a></p><p style="color:#666;font-size:13px">If you did not request this, you can ignore this email.</p></div>`;
 
 		try {
 			await this.deliverEmail(message.to, headerSafe(`${action} · Frostbase`), text, html);

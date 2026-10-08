@@ -13,7 +13,7 @@
 	 * carries the positioning rather than decoration.
 	 *
 	 * The panel follows the theme; only the terminal card inside it is
-	 * theme-stable espresso, via a scoped `dark` class that makes the shadcn
+	 * theme-stable glacier-night, via a scoped `dark` class that makes the shadcn
 	 * tokens inside the card resolve dark in both themes (a terminal is
 	 * naturally dark). Never touches the root theme state.
 	 *
@@ -67,9 +67,9 @@
 			</p>
 
 			<!-- A terminal is naturally dark: the scoped `dark` class keeps this
-			     card espresso in both themes while the panel follows the theme. -->
+			     card glacier-night in both themes while the panel follows the theme. -->
 			<div
-				class="dark space-y-1.5 rounded-lg border bg-card p-4 font-mono text-xs leading-relaxed text-foreground shadow-[0_10px_26px_-14px_oklch(0.1_0.01_60/60%)]"
+				class="dark space-y-1.5 rounded-lg border bg-card p-4 font-mono text-xs leading-relaxed text-foreground shadow-[0_10px_26px_-14px_oklch(0.1_0.015_255/60%)]"
 			>
 				<p><span class="text-primary">$</span> npx frostbase init</p>
 				<p><span class="text-primary">$</span> frostbase key create server --env-file</p>
