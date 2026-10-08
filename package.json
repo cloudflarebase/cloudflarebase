@@ -8,6 +8,7 @@
 		"demo:video": "node scripts/demo-video.mjs",
 		"demo:live": "node scripts/demo-video.mjs --live",
 		"build": "vite build",
+		"brand:generate": "node scripts/brand-generate.mjs",
 		"preview": "npm run build && wrangler dev",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",

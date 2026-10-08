@@ -582,7 +582,7 @@
 
 					<Button
 						type="submit"
-						class="w-full bg-linear-to-b from-[oklch(0.745_0.168_55)] to-[oklch(0.695_0.172_51)] shadow-[0_1px_2px_oklch(0.5_0.15_53/35%),0_4px_18px_-6px_oklch(0.7163_0.1706_53.45/50%),inset_0_1px_0_oklch(1_0_0/22%)] transition-[filter] hover:brightness-105"
+						class="w-full bg-linear-to-b from-[oklch(0.67_0.148_246)] to-[oklch(0.6_0.152_251)] shadow-[0_1px_2px_oklch(0.45_0.14_252/35%),0_4px_18px_-6px_oklch(0.6341_0.1498_248.54/50%),inset_0_1px_0_oklch(1_0_0/22%)] transition-[filter] hover:brightness-105"
 						disabled={submitting}
 						data-testid="console-submit"
 					>

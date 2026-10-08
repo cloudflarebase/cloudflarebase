@@ -90,8 +90,8 @@
 	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
 	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 	<link rel="manifest" href="/site.webmanifest" />
-	<meta name="theme-color" media="(prefers-color-scheme: light)" content="#faf7f1" />
-	<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0705" />
+	<meta name="theme-color" media="(prefers-color-scheme: light)" content="#f5f7fa" />
+	<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#070b12" />
 	<meta property="og:site_name" content="Frostbase" />
 	<meta property="og:type" content="website" />
 	<meta property="og:url" content={shareUrl} />
