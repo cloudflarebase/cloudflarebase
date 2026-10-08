@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="2172" height="724" viewBox="0 0 2172 724">
   <rect width="2172" height="724" rx="40" fill="#0b0c0f"/>
   <g transform="translate(1620 106) scale(8)">
-    <path d="M32 7 11 19v26l21 12 21-12V19L32 7Z" fill="#f6821f"/>
+    <path d="M32 7 11 19v26l21 12 21-12V19L32 7Z" fill="#2f8fe0"/>
     <path d="m32 15 14 8v17l-14 8-14-8V23l14-8Z" fill="#0b0c0f"/>
-    <path d="m18 23 14 8 14-8M32 31v17" fill="none" stroke="#f6821f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="m18 23 14 8 14-8M32 31v17" fill="none" stroke="#2f8fe0" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
-  <text x="170" y="305" fill="#f7f7f5" font-family="Inter, Arial, sans-serif" font-size="130" font-weight="700" letter-spacing="-5">Cloudflare<tspan fill="#f6821f">base</tspan></text>
+  <text x="170" y="305" fill="#f7f7f5" font-family="Inter, Arial, sans-serif" font-size="130" font-weight="700" letter-spacing="-5">Frost<tspan fill="#2f8fe0">base</tspan></text>
   <text x="176" y="395" fill="#a9a9a3" font-family="Inter, Arial, sans-serif" font-size="44" font-weight="400">The open-source backend built for Cloudflare</text>
   <g font-family="Inter, Arial, sans-serif" font-size="33" font-weight="400">
     <rect x="170" y="470" width="122" height="64" rx="32" fill="#16171b" stroke="#2b2d33" stroke-width="2"/>
