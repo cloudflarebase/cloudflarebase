@@ -151,7 +151,7 @@
 </script>
 
 <svelte:head>
-	<title>Settings · {data.projectId} · Cloudflarebase</title>
+	<title>Settings · {data.projectId} · Frostbase</title>
 </svelte:head>
 
 <div class="mx-auto w-full max-w-3xl space-y-6 px-4 py-8 sm:px-8" data-testid="settings-page">

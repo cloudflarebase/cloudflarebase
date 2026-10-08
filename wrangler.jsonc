@@ -8,12 +8,12 @@
 	 * clone works, publishes to workers.dev, and leaves the console private
 	 * because DEMO_MODE is unset.
 	 *
-	 * cloudflarebase.com's own settings - its name, custom domain, and the
+	 * frostbase.dev's own settings - its name, custom domain, and the
 	 * public demo - live under env.production, so this project's deployment is
 	 * one environment among several rather than the thing everyone inherits.
 	 */
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "cloudflarebase",
+	"name": "frostbase",
 	"main": ".svelte-kit/cloudflare/_worker.js",
 	"compatibility_date": "2026-07-10",
 	"compatibility_flags": ["nodejs_compat", "nodejs_als"],
@@ -38,7 +38,7 @@
 
 	// DEMO_MODE is deliberately absent here. Setting it opens ephemeral
 	// demo-<hex> projects to anonymous visitors, which is what makes
-	// cloudflarebase.com playable and exactly what a private install must not
+	// frostbase.dev playable and exactly what a private install must not
 	// do. Unset means the console requires an operator session.
 	//
 	// PUBLIC_SENTRY_DSN covers server and browser reporting alike (a DSN is
@@ -227,7 +227,7 @@
 			]
 		},
 
-		// cloudflarebase.com itself. Deployed with `npm run deploy:production`;
+		// frostbase.dev itself. Deployed with `npm run deploy:production`;
 		// nobody else needs this environment. Wrangler does not inherit
 		// top-level vars into an environment, so they are repeated in full.
 		"production": {
@@ -235,16 +235,25 @@
 			"workers_dev": false,
 			// Version preview URLs live on the preview Worker, not here.
 			"preview_urls": false,
+			// cloudflarebase.com stays attached after the move to frostbase.dev:
+			// its pages 301 to the same path here and its API keeps answering
+			// (domainMoveHandle in src/hooks.server.ts).
 			"routes": [
+				{
+					"pattern": "frostbase.dev",
+					"custom_domain": true
+				},
 				{
 					"pattern": "cloudflarebase.com",
 					"custom_domain": true
 				}
 			],
 			"vars": {
+				"CANONICAL_ORIGIN": "https://frostbase.dev",
 				"CHAT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
 				"DEMO_MODE": "true",
-				// Committed on purpose: env.production is cloudflarebase.com's own
+				"MOVED_FROM_HOSTS": "cloudflarebase.com",
+				// Committed on purpose: env.production is frostbase.dev's own
 				// block (forks deploy the top level, whose DSN stays empty), and a
 				// DSN is browser-visible by design anyway.
 				"PUBLIC_SENTRY_DSN": "https://50ed6e26b886124ac39e983efb72144d@o4510375271530496.ingest.de.sentry.io/4511764380778576",

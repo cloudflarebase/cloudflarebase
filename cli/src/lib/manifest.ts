@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { UserError } from './log.js';
 
 /**
- * The agent manifest: cloudflarebase.agent.json shipped inside every agent
+ * The agent manifest: frostbase.agent.json shipped inside every agent
  * package, declaring what the platform must do to host it. This schema is a
  * deliberate copy of the one in the dashboard's `src/lib/agent-registry.ts` -
  * the CLI is its own npm project, same copy rule as the DTO mirrors.
@@ -94,7 +94,7 @@ export async function readManifest(
 		projectDir,
 		'node_modules',
 		...packageName.split('/'),
-		'cloudflarebase.agent.json'
+		'frostbase.agent.json'
 	);
 
 	let text: string;
@@ -102,7 +102,7 @@ export async function readManifest(
 		text = await readFile(manifestPath, 'utf8');
 	} catch {
 		throw new UserError(
-			`${packageName} is installed but ships no cloudflarebase.agent.json.`,
+			`${packageName} is installed but ships no frostbase.agent.json.`,
 			'The package may be too old for this CLI - upgrade it and try again.'
 		);
 	}
@@ -120,14 +120,14 @@ export async function readManifest(
 	if (version !== 1) {
 		throw new UserError(
 			`${packageName} declares agent manifest version ${String(version)}, which this CLI does not understand.`,
-			'Upgrade @cloudflarebase/cli and try again.'
+			'Upgrade @frostbase/cli and try again.'
 		);
 	}
 
 	const result = agentManifestSchema.safeParse(parsed);
 	if (!result.success) {
 		throw new UserError(
-			`${packageName}'s cloudflarebase.agent.json is invalid.`,
+			`${packageName}'s frostbase.agent.json is invalid.`,
 			result.error.issues
 				.map((issue) => `  ${issue.path.join('.') || '(root)'}: ${issue.message}`)
 				.join('\n')
@@ -139,7 +139,7 @@ export async function readManifest(
 export interface ExportLines {
 	/** Classes + the default fetch handler - for an entrypoint without one. */
 	full: string;
-	/** Classes only - when a cloudflarebase agent already owns `default`. */
+	/** Classes only - when a frostbase agent already owns `default`. */
 	classOnly: string;
 }
 

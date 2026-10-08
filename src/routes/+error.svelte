@@ -15,7 +15,7 @@
 </script>
 
 <svelte:head>
-	<title>{status} · Cloudflarebase</title>
+	<title>{status} · Frostbase</title>
 	<meta name="robots" content="noindex" />
 </svelte:head>
 
@@ -29,7 +29,7 @@
 
 	<a href={resolve('/')} class="mb-10 flex items-center gap-2 font-bold">
 		<img src="/brand/mark.svg" alt="" class="h-6 w-6" />
-		Cloudflarebase
+		Frostbase
 	</a>
 
 	<p

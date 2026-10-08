@@ -1,11 +1,11 @@
-# @cloudflarebase/db
+# @frostbase/db
 
 Firestore-style JSON documents with live queries, running on Cloudflare
 Durable Objects - one isolated instance per collection. The database
-primitive behind [Cloudflarebase](https://github.com/cloudflarebase/cloudflarebase).
+primitive behind [Frostbase](https://github.com/frostbase-dev/frostbase).
 
 ```bash
-npx @cloudflarebase/cli add db
+npx @frostbase/cli add db
 ```
 
 The CLI installs this package, merges `template/wrangler-fragment.jsonc` into
@@ -23,7 +23,7 @@ steps; both templates ship in the package.
   `added` / `modified` / `removed` deltas as writes happen. Subscriptions
   survive hibernation; you pay nothing while idle.
 - **Access modes per collection** - `public`, `auth`, or `owner`, verified
-  against `@cloudflarebase/auth` project JWTs. `owner` scopes every read and
+  against `@frostbase/auth` project JWTs. `owner` scopes every read and
   write to the token's subject. Optional permission keys additionally require
   that claim on the JWT (granted via auth roles; the admin role's `*` always
   passes).
@@ -37,12 +37,12 @@ steps; both templates ship in the package.
   SDK), operator NDJSON import that round-trips exports exactly, and
   point-in-time restore of a single collection to any moment in the past 30
   days (deployed stacks; local development has no durable change log).
-- **A typed client** - `@cloudflarebase/db/client` wraps REST, aggregates,
+- **A typed client** - `@frostbase/db/client` wraps REST, aggregates,
   export, and the subscribe protocol with the same zod schemas the server
   validates with.
 
 ```ts
-import { createDbClient } from '@cloudflarebase/db/client';
+import { createDbClient } from '@frostbase/db/client';
 
 const db = createDbClient({
 	baseUrl: 'https://your-worker.workers.dev/agents/db-agent/my-app',
@@ -65,7 +65,7 @@ const unsubscribe = posts.subscribe(
 Required: the `DbAgent` and `DbCollection` Durable Object bindings and the
 `DB_EVENTS` Analytics Engine dataset (auto-creates on first write). Optional:
 an `AUTH_AGENT` service binding for multi-worker deployments - in the normal
-single-worker install, having `@cloudflarebase/auth` in the same Worker is
+single-worker install, having `@frostbase/auth` in the same Worker is
 enough for token verification. No secret is required for a working deploy.
 
 ## What your Worker serves
@@ -126,5 +126,5 @@ them).
 
 ## License
 
-Apache-2.0. Cloudflarebase is an independent project, not affiliated with or
+Apache-2.0. Frostbase is an independent project, not affiliated with or
 endorsed by Cloudflare, Inc. See NOTICE.

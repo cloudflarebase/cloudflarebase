@@ -14,7 +14,7 @@ import type { AgentChatMessage } from '$lib/agents';
  * per-client rows with a retention window and a per-day count, which is a
  * collection with a `where` clause.
  *
- * The CONSOLE project rather than the customer's, deliberately. Cloudflarebase
+ * The CONSOLE project rather than the customer's, deliberately. Frostbase
  * already runs its own operators on a real AuthAgent under this id; this is the
  * same move for the database, and it keeps copilot history out of the
  * customer's own Collections list, where it would be visible, editable, and

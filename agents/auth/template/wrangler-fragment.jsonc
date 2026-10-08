@@ -1,5 +1,5 @@
 /**
- * Wrangler configuration for a Worker that hosts `@cloudflarebase/auth`.
+ * Wrangler configuration for a Worker that hosts `@frostbase/auth`.
  *
  * Merge this into your own `wrangler.jsonc`, then run `npx wrangler types` so
  * the generated `Env` carries these bindings. The agent reads `Env` from your
@@ -7,7 +7,7 @@
  * compile-time check that you declared everything it needs.
  *
  * The `migrations` block below is a FRESH v1. Do not copy the tag history from
- * the Cloudflarebase repository: that carries a rename of an earlier class and
+ * the Frostbase repository: that carries a rename of an earlier class and
  * replaying it against a new Worker would try to delete a class you never had.
  */
 {

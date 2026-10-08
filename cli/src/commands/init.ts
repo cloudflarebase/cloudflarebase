@@ -6,18 +6,18 @@ import { blank, bold, dim, info, step, success, UserError } from '../lib/log.js'
 import { runOrFail } from '../lib/run.js';
 
 /**
- * `cloudflarebase init <name>` - scaffold a Worker and install the auth agent
+ * `frostbase init <name>` - scaffold a Worker and install the auth agent
  * into it.
  *
  * The scaffold is deliberately thin: a name, an empty entrypoint, and dev
- * tooling. Everything that makes it a Cloudflarebase backend - bindings,
+ * tooling. Everything that makes it a Frostbase backend - bindings,
  * migrations, compatibility flags, vars - arrives through `add auth` from the
  * agent package's own fragment, so there is exactly one definition of a
  * working configuration and `init` can never drift from it.
  *
- * BARE `cloudflarebase init` (no name) is the managed setup instead: wrangler
- * vocabulary for "initialize cloudflarebase in the current directory" - it
- * connects this directory to a console project and writes cloudflarebase.json
+ * BARE `frostbase init` (no name) is the managed setup instead: wrangler
+ * vocabulary for "initialize frostbase in the current directory" - it
+ * connects this directory to a console project and writes frostbase.json
  * (managed-init.ts).
  */
 export async function initCommand(cwd: string, args: string[]): Promise<void> {
@@ -38,7 +38,7 @@ export async function initCommand(cwd: string, args: string[]): Promise<void> {
 	if ((await readdir(projectDir)).length > 0) {
 		throw new UserError(
 			`${name}/ already exists and is not empty.`,
-			'Use `cloudflarebase add auth` inside an existing Worker project instead.'
+			'Use `frostbase add auth` inside an existing Worker project instead.'
 		);
 	}
 
@@ -62,7 +62,7 @@ export async function initCommand(cwd: string, args: string[]): Promise<void> {
 	success(`${bold(name)} is ready.`);
 	info(`  ${dim('cd')} ${name}`);
 	info(`  ${dim('npx')} wrangler login   ${dim('(first time only)')}`);
-	info(`  ${dim('cloudflarebase')} deploy`);
+	info(`  ${dim('frostbase')} deploy`);
 }
 
 function scaffold(name: string): Record<string, string> {
@@ -74,7 +74,7 @@ function scaffold(name: string): Record<string, string> {
 				version: '0.0.0',
 				type: 'module',
 				scripts: {
-					deploy: 'cloudflarebase deploy',
+					deploy: 'frostbase deploy',
 					dev: 'wrangler dev',
 					'cf-typegen': 'wrangler types'
 				},
@@ -99,9 +99,9 @@ function scaffold(name: string): Record<string, string> {
 
 		// The entrypoint starts empty; \`add\` prepends each agent's re-export.
 		'src/index.ts': `/**
- * ${name} - a Cloudflarebase backend.
+ * ${name} - a Frostbase backend.
  *
- * Agents are wired in by \`cloudflarebase add <agent>\`, which re-exports each
+ * Agents are wired in by \`frostbase add <agent>\`, which re-exports each
  * agent's Durable Object class and fetch handler above this comment.
  */
 `,

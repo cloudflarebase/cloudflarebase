@@ -1,16 +1,16 @@
-# @cloudflarebase/cli
+# @frostbase/cli
 
-Scaffold and deploy a [Cloudflarebase](https://github.com/cloudflarebase/cloudflarebase)
+Scaffold and deploy a [Frostbase](https://github.com/frostbase-dev/frostbase)
 backend on your own Cloudflare account.
 
 ```bash
-npm install -g @cloudflarebase/cli
+npm install -g @frostbase/cli
 
-cloudflarebase init my-backend
+frostbase init my-backend
 cd my-backend
-cloudflarebase add db          # optional: documents with live queries
+frostbase add db          # optional: documents with live queries
 npx wrangler login
-cloudflarebase deploy
+frostbase deploy
 ```
 
 That gets you a working backend on your own account, with no secrets to
@@ -37,8 +37,8 @@ UI; cross-origin requests from unlisted origins get an explicit 403
 
 Available agents today: `auth` and `db`.
 
-To pin a version: `CLOUDFLAREBASE_DB_SPEC=@cloudflarebase/db@0.1.3
-cloudflarebase add db` (and `CLOUDFLAREBASE_AUTH_SPEC` for auth).
+To pin a version: `FROSTBASE_DB_SPEC=@frostbase/db@0.1.3
+frostbase add db` (and `FROSTBASE_AUTH_SPEC` for auth).
 
 ## Notes
 

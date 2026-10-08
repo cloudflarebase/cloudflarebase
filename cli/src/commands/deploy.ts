@@ -5,7 +5,7 @@ import { run, runOrFail } from '../lib/run.js';
 import { readTrustedOrigins } from '../lib/wrangler-config.js';
 
 /**
- * `cloudflarebase deploy` - deploy this Worker with wrangler. There is nothing
+ * `frostbase deploy` - deploy this Worker with wrangler. There is nothing
  * to configure before sign-in works: the agent trusts the deployment's own
  * origin automatically, so a fresh deploy is usable the moment the URL exists.
  */
@@ -18,7 +18,7 @@ export async function deployCommand(projectDir: string, rest: string[] = []): Pr
 	} catch {
 		throw new UserError(
 			'No wrangler.jsonc found - nothing to deploy.',
-			'Run `cloudflarebase init <name>` to scaffold a project.'
+			'Run `frostbase init <name>` to scaffold a project.'
 		);
 	}
 

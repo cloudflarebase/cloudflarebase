@@ -3,12 +3,14 @@ import path from 'node:path';
 import { UserError } from './log.js';
 
 /**
- * Managed projects: `cloudflarebase.json` links a directory to a project on a
+ * Managed projects: `frostbase.json` links a directory to a project on a
  * console, so commands that act on that project (`key`) know which one and
- * where without flags on every call. Written by bare `cloudflarebase init`.
+ * where without flags on every call. Written by bare `frostbase init`.
  */
 
-export const MANAGED_FILE = 'cloudflarebase.json';
+export const MANAGED_FILE = 'frostbase.json';
+/** The pre-rename spelling, still read when the new one is absent. */
+const LEGACY_MANAGED_FILE = 'cloudflarebase.json';
 
 // Mirrors projectIdSchema in the console and the agents (48 chars: a branch
 // id is `<root>--<branch>`, so the ceiling has to hold both).
@@ -21,12 +23,12 @@ export interface ManagedConfig {
 }
 
 export async function readManagedConfig(projectDir: string): Promise<ManagedConfig | null> {
-	let raw: string;
-	try {
-		raw = await readFile(path.join(projectDir, MANAGED_FILE), 'utf8');
-	} catch {
-		return null;
+	let raw: string | null = null;
+	for (const name of [MANAGED_FILE, LEGACY_MANAGED_FILE]) {
+		raw = await readFile(path.join(projectDir, name), 'utf8').catch(() => null);
+		if (raw !== null) break;
 	}
+	if (raw === null) return null;
 	// Files written while managed hosting existed also carry `app`, `vars`,
 	// and `assets`; those are ignored rather than refused.
 	const parsed = JSON.parse(raw) as Partial<ManagedConfig>;
@@ -37,10 +39,17 @@ export async function readManagedConfig(projectDir: string): Promise<ManagedConf
 	) {
 		throw new UserError(
 			`${MANAGED_FILE} is malformed.`,
-			'Run `cloudflarebase init` again to reconnect this directory.'
+			'Run `frostbase init` again to reconnect this directory.'
 		);
 	}
-	return { project: parsed.project, origin: new URL(parsed.origin).origin };
+	const origin = new URL(parsed.origin).origin;
+	// The hosted console moved domains; follow it rather than strand the link.
+	return {
+		project: parsed.project,
+		origin: /^https:\/\/(www\.)?cloudflarebase\.com$/.test(origin)
+			? 'https://frostbase.dev'
+			: origin
+	};
 }
 
 export async function writeManagedConfig(

@@ -331,7 +331,7 @@ export const dbOpenApi: AgentOpenApiModule = {
 				tags: [DB_TAG],
 				summary: 'Run single-table SQL (ORM-grade, D1-shaped)',
 				description:
-					'One SELECT/INSERT/UPDATE/DELETE (or an atomic `batch`) over this table alone - what `@cloudflarebase/db/drizzle` drives. DML gains automatic RETURNING and feeds the change log and live queries. ALWAYS requires a project JWT (public modes never open raw SQL); owner-scoped tables refuse it. Results carry objects plus `raw` value arrays with `columns` order for drivers. SELECTs serve from region replicas when replication is on.',
+					'One SELECT/INSERT/UPDATE/DELETE (or an atomic `batch`) over this table alone - what `@frostbase/db/drizzle` drives. DML gains automatic RETURNING and feeds the change log and live queries. ALWAYS requires a project JWT (public modes never open raw SQL); owner-scoped tables refuse it. Results carry objects plus `raw` value arrays with `columns` order for drivers. SELECTs serve from region replicas when replication is on.',
 				parameters: [tableParam],
 				security: PUBLIC_SECURITY,
 				requestBody: {

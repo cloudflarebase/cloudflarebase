@@ -1,12 +1,12 @@
 /**
- * One-time Phase A backfill: stamp cloudflarebase.com's pre-organization
+ * One-time Phase A backfill: stamp frostbase.dev's pre-organization
  * registry rows with the founder's personal org id, so flipping the console
  * to open sign-ups never exposes them (org_id NULL rows are visible to ANY
  * operator - correct for self-hosted installs, wrong for a public one).
  *
  * Getting the org id: deploy the Phase A agents + web worker, sign in at
- * cloudflarebase.com (the first identity lookup mints the personal org),
- * then read `organizations[0].id` from https://cloudflarebase.com/api/console/me.
+ * frostbase.dev (the first identity lookup mints the personal org),
+ * then read `organizations[0].id` from https://frostbase.dev/api/console/me.
  *
  * Usage, from the repository root:
  *   node scripts/backfill-org.mjs --org <orgId> [--env production] [--dry-run]

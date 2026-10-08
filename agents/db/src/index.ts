@@ -497,7 +497,7 @@ class DbService extends WorkerEntrypoint<Env> {
 		// A synthetic key: this never goes to the network, it only has to be
 		// stable and per-project.
 		const key = new Request(
-			`https://remote-config.cfbase.internal/${encodeURIComponent(projectId)}`,
+			`https://remote-config.frostbase.internal/${encodeURIComponent(projectId)}`,
 		);
 
 		if (ttl > 0) {

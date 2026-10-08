@@ -12,25 +12,19 @@ import { schemaCommand } from './commands/schema.js';
 import { blank, bold, dim, error, info, UserError } from './lib/log.js';
 
 const usage = (): void => {
-	info(`${bold('cloudflarebase')} - your backend, on your Cloudflare account`);
+	info(`${bold('frostbase')} - your backend, on your Cloudflare account`);
 	blank();
 	info('Usage:');
-	info(`  cloudflarebase init <name>    ${dim('scaffold a Worker with the auth agent installed')}`);
-	info(
-		`  cloudflarebase init           ${dim('connect this directory to a managed console project')}`
-	);
-	info(`  cloudflarebase add <agent>    ${dim('install an agent into an existing Worker')}`);
-	info(`  cloudflarebase deploy         ${dim('deploy this Worker with wrangler')}`);
-	info(`  cloudflarebase key <cmd>      ${dim('create | list | revoke a project service key')}`);
-	info(
-		`  cloudflarebase login <url>    ${dim('authenticate against a console (browser approval)')}`
-	);
-	info(`  cloudflarebase logout         ${dim('revoke and forget the stored session')}`);
-	info(
-		`  cloudflarebase schema <cmd>   ${dim('generate | apply | drop, with --project and --branch')}`
-	);
+	info(`  frostbase init <name>    ${dim('scaffold a Worker with the auth agent installed')}`);
+	info(`  frostbase init           ${dim('connect this directory to a managed console project')}`);
+	info(`  frostbase add <agent>    ${dim('install an agent into an existing Worker')}`);
+	info(`  frostbase deploy         ${dim('deploy this Worker with wrangler')}`);
+	info(`  frostbase key <cmd>      ${dim('create | list | revoke a project service key')}`);
+	info(`  frostbase login <url>    ${dim('authenticate against a console (browser approval)')}`);
+	info(`  frostbase logout         ${dim('revoke and forget the stored session')}`);
+	info(`  frostbase schema <cmd>   ${dim('generate | apply | drop, with --project and --branch')}`);
 	blank();
-	info(`Run ${dim('cloudflarebase add')} with no agent to list what is installable.`);
+	info(`Run ${dim('frostbase add')} with no agent to list what is installable.`);
 };
 
 async function version(): Promise<string> {

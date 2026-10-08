@@ -897,7 +897,7 @@ curl -X POST ${dbBase}/collections/posts/documents \\
 			id: 'sdk',
 			label: 'Client SDK',
 			lang: 'typescript',
-			code: `import { createDbClient } from '@cloudflarebase/db/client';
+			code: `import { createDbClient } from '@frostbase/db/client';
 
 // IN THE BROWSER. This fetch sends no Authorization header - it works
 // because the browser attaches the signed-in user's session cookie, so the
@@ -931,7 +931,7 @@ const unsubscribe = posts.subscribe(
 			id: 'ssr',
 			label: 'Server (SSR)',
 			lang: 'typescript',
-			code: `import { createDbClient } from '@cloudflarebase/db/client';
+			code: `import { createDbClient } from '@frostbase/db/client';
 
 // ON A SERVER there is no ambient session, so you RELAY the identity the
 // user already sent you: /auth/token accepts the session cookie or a bearer
@@ -960,7 +960,7 @@ export async function load({ request }) {
 			id: 'service-key',
 			label: 'Admin service key',
 			lang: 'typescript',
-			code: `import { createDbAdmin } from '@cloudflarebase/db/admin';
+			code: `import { createDbAdmin } from '@frostbase/db/admin';
 
 // SERVER ONLY. An admin service key is admin-grade over this project's whole
 // data plane: it bypasses access modes, validators, and permission keys, exactly
@@ -974,7 +974,7 @@ export async function load({ request }) {
 const db = createDbAdmin({
 	url: '${origin}',
 	projectId: '${data.projectId}',
-	key: process.env.CLOUDFLAREBASE_SERVICE_KEY
+	key: process.env.FROSTBASE_SERVICE_KEY
 });
 
 // No user, no session, no token to relay.
@@ -984,8 +984,8 @@ await db.collection('posts').patch(id, { votes: post.data.votes + 1 });
 const { docs } = await db.collection('posts').query({ limit: 25 });
 await db.table('orders').sql('SELECT * FROM orders WHERE id = ?', [id]);
 
-// url, projectId, and key all fall back to CLOUDFLAREBASE_URL /
-// CLOUDFLAREBASE_PROJECT / CLOUDFLAREBASE_SERVICE_KEY, so on a server that
+// url, projectId, and key all fall back to FROSTBASE_URL /
+// FROSTBASE_PROJECT / FROSTBASE_SERVICE_KEY, so on a server that
 // already has them this is just createDbAdmin().
 //
 // Inside a Worker there is no global process - secrets arrive on env:
@@ -995,7 +995,7 @@ await db.table('orders').sql('SELECT * FROM orders WHERE id = ?', [id]);
 			id: 'tables',
 			label: 'SQL tables',
 			lang: 'typescript',
-			code: `import { createDbClient } from '@cloudflarebase/db/client';
+			code: `import { createDbClient } from '@frostbase/db/client';
 
 const db = createDbClient({
 	baseUrl: '${dbBase}',
@@ -1019,11 +1019,11 @@ todos.subscribe(
 			id: 'drizzle',
 			label: 'Drizzle',
 			lang: 'typescript',
-			code: `import { drizzleTable } from '@cloudflarebase/db/drizzle';
+			code: `import { drizzleTable } from '@frostbase/db/drizzle';
 import { desc } from 'drizzle-orm';
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 
-// \`cloudflarebase schema generate\` emits this from your declared columns.
+// \`frostbase schema generate\` emits this from your declared columns.
 const todos = sqliteTable('todos', {
 	id: text('id').primaryKey(),
 	title: text('title').notNull(),
@@ -1058,7 +1058,7 @@ ws.onmessage = (event) => console.log(JSON.parse(event.data));
 </script>
 
 <svelte:head>
-	<title>{data.projectId} · Database · Cloudflarebase</title>
+	<title>{data.projectId} · Database · Frostbase</title>
 	<!-- No project id: the console is noindex, so the only consumer of this is a
 	     link unfurler, and that card must not name a project. -->
 	<meta

@@ -403,7 +403,7 @@ test.describe('database page (frontend)', () => {
 		const integration = page.getByTestId('db-integration');
 		await expect(integration).toContainText(`/api/projects/${DB_UI_PROJECT}/db`);
 		await integration.getByRole('tab', { name: 'Client SDK' }).click();
-		await expect(integration).toContainText('@cloudflarebase/db/client');
+		await expect(integration).toContainText('@frostbase/db/client');
 		await integration.getByRole('tab', { name: 'Raw WebSocket' }).click();
 		await expect(integration).toContainText(`/agents/db-agent/${DB_UI_PROJECT}/collections`);
 	});

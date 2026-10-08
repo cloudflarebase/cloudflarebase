@@ -30,7 +30,7 @@ export async function consoleFetch(
 	if (response.status === 401) {
 		throw new UserError(
 			'The stored session is no longer valid.',
-			'Run `cloudflarebase login` again (or check the sessions list in the console).'
+			'Run `frostbase login` again (or check the sessions list in the console).'
 		);
 	}
 	return response;

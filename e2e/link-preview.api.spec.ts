@@ -1,14 +1,14 @@
 import { expect, test } from '@playwright/test';
 
 /**
- * What a stranger's chat client renders when someone pastes a Cloudflarebase
+ * What a stranger's chat client renders when someone pastes a Frostbase
  * URL.
  *
  * `/dashboard` on a demo deployment hands an anonymous visitor a throwaway
  * project - and a link-preview fetcher is an anonymous visitor. With no
  * `og:title` on the console, every unfurler fell back to the document title, so
- * sharing `cloudflarebase.com/dashboard` previewed as
- * "demo-19a63aad9478 · Project Overview · Cloudflarebase": a card naming a
+ * sharing `frostbase.dev/dashboard` previewed as
+ * "demo-19a63aad9478 · Project Overview · Frostbase": a card naming a
  * stranger's throwaway project, which the demo TTL erases days later.
  *
  * `noindex` does not help. It governs search engines, and an unfurler is not
@@ -99,6 +99,6 @@ test.describe('link previews', () => {
 		const html = await response.text();
 		const titles = html.match(/<meta[^>]+property="og:title"/gi) ?? [];
 		expect(titles, 'exactly one og:title - duplicates are worse than none').toHaveLength(1);
-		expect(html).toMatch(/<link rel="canonical" href="https:\/\/cloudflarebase\.com\/"/);
+		expect(html).toMatch(/<link rel="canonical" href="https:\/\/frostbase\.dev\/"/);
 	});
 });

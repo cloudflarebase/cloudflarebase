@@ -5,10 +5,10 @@ import { blank, bold, dim, info, success, UserError } from '../lib/log.js';
 import { writeManagedConfig } from '../lib/managed.js';
 
 /**
- * Bare `cloudflarebase init` - connect the CURRENT directory to a project on a
+ * Bare `frostbase init` - connect the CURRENT directory to a project on a
  * managed console. `init <name>` stays the self-hosted scaffold; the
- * wrangler-style bare form is "initialize cloudflarebase here": pick (or
- * create) a project and write `cloudflarebase.json`, which is what `key`
+ * wrangler-style bare form is "initialize frostbase here": pick (or
+ * create) a project and write `frostbase.json`, which is what `key`
  * reads to know which project it acts on.
  */
 
@@ -89,7 +89,7 @@ export async function managedInitCommand(projectDir: string, rest: string[]): Pr
 		blank();
 		success(`Initialized: ${bold(projectId)} on ${config.origin}`);
 		info(`  ${dim('·')} ${file} written - commit it.`);
-		info(`  ${dim('·')} Next: \`cloudflarebase key create <name> --env-file\` mints a server key.`);
+		info(`  ${dim('·')} Next: \`frostbase key create <name> --env-file\` mints a server key.`);
 	} finally {
 		rl.close();
 	}

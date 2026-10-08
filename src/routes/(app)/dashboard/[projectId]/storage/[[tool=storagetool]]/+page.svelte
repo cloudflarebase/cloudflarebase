@@ -645,7 +645,7 @@
 </script>
 
 <svelte:head>
-	<title>{projectId} · Storage · Cloudflarebase</title>
+	<title>{projectId} · Storage · Frostbase</title>
 </svelte:head>
 
 {#snippet modeIcon(mode: StorageAccessMode)}

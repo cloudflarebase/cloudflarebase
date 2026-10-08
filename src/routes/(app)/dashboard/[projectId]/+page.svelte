@@ -34,13 +34,13 @@
 </script>
 
 <svelte:head>
-	<title>{data.projectId} · Project Overview · Cloudflarebase</title>
+	<title>{data.projectId} · Project Overview · Frostbase</title>
 	<!-- The TITLE names the project, because that is the browser tab and an
 	     operator with six of them open needs it. The description deliberately
 	     does not: the console is noindex, so its only real consumer is a chat
 	     client unfurling a pasted link, and that card must never name somebody's
 	     project. See src/routes/+layout.svelte. -->
-	<meta name="description" content="Manage your Cloudflarebase backend." />
+	<meta name="description" content="Manage your Frostbase backend." />
 </svelte:head>
 
 <div class="mx-auto max-w-6xl space-y-6 px-3 py-5 sm:space-y-8 sm:px-6 sm:py-8">
@@ -92,7 +92,7 @@
 	<div>
 		<h2 class="text-sm font-semibold">Available now</h2>
 		<p class="text-xs text-muted-foreground">
-			Complete Cloudflarebase primitives - each an isolated agent for this project.
+			Complete Frostbase primitives - each an isolated agent for this project.
 		</p>
 	</div>
 

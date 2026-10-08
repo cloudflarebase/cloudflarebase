@@ -786,7 +786,7 @@ function startDbTraffic() {
 		if (rand() < 0.2 && added < 8) {
 			added += 1;
 			const id = `post-live-${Date.now().toString(36)}`;
-			const title = `${FRESH_NAMES[added % FRESH_NAMES.length]} shipped something on Cloudflarebase`;
+			const title = `${FRESH_NAMES[added % FRESH_NAMES.length]} shipped something on Frostbase`;
 			const res = await putDocument('posts', id, { title, votes: 1 + Math.floor(rand() * 5) });
 			trafficLog('new post', id, res);
 			return;

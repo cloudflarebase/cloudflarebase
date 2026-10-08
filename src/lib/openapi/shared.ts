@@ -45,7 +45,7 @@ export const UNAUTHORIZED = {
 
 /**
  * Operator surfaces a SERVICE KEY also opens: an operator session or a
- * `cfbs_` bearer, either one.
+ * service-key bearer, either one.
  *
  * Apply this only where `isServiceKeySurface` actually admits a key - the db
  * and storage prefixes, the auth agent's `/admin/*`, `/overview`, and

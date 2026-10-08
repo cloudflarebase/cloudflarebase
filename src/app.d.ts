@@ -18,7 +18,7 @@ declare global {
 			/** Whether this deployment runs as a public demo (DEMO_MODE=true). */
 			demoMode: boolean;
 			/**
-			 * Grant when the request authenticated with a `cfbs_` service key
+			 * Grant when the request authenticated with a service key
 			 *. Set only on its own project's DATA
 			 * plane, and only when the request carried no `Origin` - a service
 			 * key is a server credential and must never work from a browser.

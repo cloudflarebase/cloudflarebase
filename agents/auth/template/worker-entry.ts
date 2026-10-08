@@ -1,5 +1,5 @@
 /**
- * Worker entrypoint for a Worker that hosts `@cloudflarebase/auth`.
+ * Worker entrypoint for a Worker that hosts `@frostbase/auth`.
  *
  * Copy this to the file your `wrangler.jsonc` names as `main`.
  *
@@ -8,7 +8,7 @@
  * the binding resolves. The default export is the fetch handler that routes
  * `/agents/auth-agent/<projectId>/...` to the right instance.
  */
-export { AuthAgent, default } from '@cloudflarebase/auth';
+export { AuthAgent, default } from '@frostbase/auth';
 
 /**
  * Compile-time check that your generated `Env` carries the bindings the agent
@@ -17,5 +17,5 @@ export { AuthAgent, default } from '@cloudflarebase/auth';
  *
  * Run `npx wrangler types` after editing `wrangler.jsonc` to regenerate `Env`.
  */
-import type { AssertAuthAgentEnv } from '@cloudflarebase/auth';
+import type { AssertAuthAgentEnv } from '@frostbase/auth';
 export type _AuthAgentBindings = AssertAuthAgentEnv<Env>;

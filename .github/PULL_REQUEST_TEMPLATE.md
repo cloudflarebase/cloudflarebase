@@ -22,7 +22,7 @@ If applicable:
       agent; never hand-edit `src/migrations.ts`)
 - [ ] Binding change has regenerated types (`npm run cf-typegen`,
       `npx wrangler types`)
-- [ ] New agent route declared in that agent's `cloudflarebase.agent.json` -
+- [ ] New agent route declared in that agent's `frostbase.agent.json` -
       the console guard is generated from it, and undeclared routes are
       operator-only
 - [ ] Caught errors that become an error response also

@@ -570,7 +570,7 @@
 </script>
 
 <svelte:head>
-	<title>{data.projectId} · Remote Config · Cloudflarebase</title>
+	<title>{data.projectId} · Remote Config · Frostbase</title>
 	<!-- No project id: the console is noindex, so the only consumer of this is a
 	     link unfurler, and that card must not name a project. -->
 	<meta

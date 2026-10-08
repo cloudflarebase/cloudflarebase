@@ -1,4 +1,4 @@
-# @cloudflarebase/auth
+# @frostbase/auth
 
 Better Auth on a Durable Object. One `AuthAgent` per project, addressed by
 project id, each with its own embedded SQLite and its own signing keypair.
@@ -14,7 +14,7 @@ src/agent.ts        the AuthAgent DO — routing, admin surface, analytics, chat
 src/auth.ts         the Better Auth instance and its hooks
 src/email-callback.ts  emailed links redirect back to the app that asked
 src/admin.ts        server-side admin client (targets the CONSOLE, not the agent)
-src/route-access.ts layer-2 route gate; mirrors cloudflarebase.agent.json
+src/route-access.ts layer-2 route gate; mirrors frostbase.agent.json
 src/bindings.ts     AssertAuthAgentEnv — the compile-time binding contract
 src/db/schema.ts    drizzle schema → `npm run migrations` → src/migrations.ts
 ```

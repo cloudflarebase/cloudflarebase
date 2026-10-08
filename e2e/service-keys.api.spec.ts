@@ -72,7 +72,7 @@ test.describe('service keys', () => {
 			});
 			expect(minted.status(), await minted.text()).toBe(201);
 			const body = await minted.json();
-			expect(body.key).toMatch(/^cfbs_[0-9a-f]{64}$/);
+			expect(body.key).toMatch(/^fsb_[0-9a-f]{64}$/);
 			key = body.key;
 			keyId = body.id;
 
@@ -608,11 +608,15 @@ test.describe('service keys', () => {
 			});
 			expect(before.ok(), await before.text()).toBeTruthy();
 
-			const garbage = await server.post(`/api/projects/${KEY_PROJECT}/db/admin/query`, {
-				headers: { authorization: `Bearer cfbs_${'0'.repeat(64)}` },
-				data: { collection: 'anything', query: { limit: 1 } }
-			});
-			expect(garbage.status()).toBe(401);
+			// Both prefixes - current `fsb_` and pre-rename `cfbs_` - reach the
+			// verifier, so a well-formed key that matches no digest must 401 on each.
+			for (const prefix of ['fsb_', 'cfbs_']) {
+				const garbage = await server.post(`/api/projects/${KEY_PROJECT}/db/admin/query`, {
+					headers: { authorization: `Bearer ${prefix}${'0'.repeat(64)}` },
+					data: { collection: 'anything', query: { limit: 1 } }
+				});
+				expect(garbage.status(), prefix).toBe(401);
+			}
 
 			const operator = await playwrightRequest.newContext({
 				baseURL: base(baseURL),

@@ -3,7 +3,7 @@ import { createDbClient } from '../agents/db/src/client';
 import { ensureProject } from './helpers';
 
 /**
- * The END-USER Remote Config client (`@cloudflarebase/db/client`), driven as an
+ * The END-USER Remote Config client (`@frostbase/db/client`), driven as an
  * app would drive it.
  *
  * Same rule as the storage-client and admin-sdk specs: exercise the REAL

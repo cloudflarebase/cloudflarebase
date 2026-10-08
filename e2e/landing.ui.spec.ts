@@ -42,7 +42,7 @@ test.describe('landing page (frontend)', () => {
 		).toBeVisible();
 
 		const table = page.getByTestId('comparison-table');
-		for (const name of ['Cloudflarebase', 'Firebase', 'Supabase']) {
+		for (const name of ['Frostbase', 'Firebase', 'Supabase']) {
 			await expect(table.getByRole('columnheader', { name })).toBeVisible();
 		}
 		// The branching row is the pitch in one line.

@@ -6,7 +6,7 @@
 	import { TerminalSquare } from '@lucide/svelte';
 
 	// The CLI's localhost listener and its one-time code, from
-	// `cloudflarebase login`. The guard already
+	// `frostbase login`. The guard already
 	// required an operator session to render this page.
 	const port = $derived.by(() => {
 		const raw = Number(page.url.searchParams.get('port'));
@@ -53,7 +53,7 @@
 </script>
 
 <svelte:head>
-	<title>CLI access · Cloudflarebase</title>
+	<title>CLI access · Frostbase</title>
 </svelte:head>
 
 <ConsoleShell signedIn>
@@ -66,9 +66,9 @@
 			</div>
 			<Card.Title>Approve CLI access</Card.Title>
 			<Card.Description>
-				The <span class="font-mono">cloudflarebase</span> CLI on this machine is asking to act as you.
-				Approving hands it your operator session - it shows up in the console's sessions list and can
-				be revoked there at any time.
+				The <span class="font-mono">frostbase</span> CLI on this machine is asking to act as you. Approving
+				hands it your operator session - it shows up in the console's sessions list and can be revoked
+				there at any time.
 			</Card.Description>
 		</Card.Header>
 		<Card.Content class="space-y-4">
@@ -85,8 +85,8 @@
 				</Button>
 			{:else}
 				<p class="text-sm text-muted-foreground" data-testid="cli-auth-invalid">
-					This page is opened by <span class="font-mono">cloudflarebase login</span> and needs the port
-					and code it provides. Run the command again and use the link it prints.
+					This page is opened by <span class="font-mono">frostbase login</span> and needs the port and
+					code it provides. Run the command again and use the link it prints.
 				</p>
 			{/if}
 		</Card.Content>

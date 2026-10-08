@@ -1,6 +1,6 @@
 # Security policy
 
-Cloudflarebase stores credentials and issues sessions, so security reports get
+Frostbase stores credentials and issues sessions, so security reports get
 priority over everything else in the queue.
 
 ## Reporting a vulnerability
@@ -62,5 +62,5 @@ out, because the cookie stores a digest of the secret rather than a session.
 
 ## Supported versions
 
-Cloudflarebase is pre-1.0. Fixes land on `main`, and self-hosted installs should
+Frostbase is pre-1.0. Fixes land on `main`, and self-hosted installs should
 track it.

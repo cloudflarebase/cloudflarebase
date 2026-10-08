@@ -54,7 +54,7 @@
 			class="relative flex w-fit items-center gap-2.5 transition-opacity hover:opacity-80"
 		>
 			<img src="/brand/mark.svg" alt="" class="h-7 w-7" />
-			<span class="text-lg font-semibold tracking-tight">Cloudflarebase</span>
+			<span class="text-lg font-semibold tracking-tight">Frostbase</span>
 		</a>
 
 		<div class="relative mx-auto w-full max-w-md space-y-6">
@@ -71,8 +71,8 @@
 			<div
 				class="dark space-y-1.5 rounded-lg border bg-card p-4 font-mono text-xs leading-relaxed text-foreground shadow-[0_10px_26px_-14px_oklch(0.1_0.01_60/60%)]"
 			>
-				<p><span class="text-primary">$</span> npx cloudflarebase init</p>
-				<p><span class="text-primary">$</span> cloudflarebase key create server --env-file</p>
+				<p><span class="text-primary">$</span> npx frostbase init</p>
+				<p><span class="text-primary">$</span> frostbase key create server --env-file</p>
 				<p>
 					<span class="text-[oklch(0.72_0.15_150)]">✓</span> Key written
 					<span class="text-muted-foreground">- .env.local</span>
@@ -91,7 +91,7 @@
 
 		<div class="relative flex items-center gap-4 text-sm text-muted-foreground">
 			<a
-				href="https://github.com/cloudflarebase/cloudflarebase"
+				href="https://github.com/frostbase-dev/frostbase"
 				class="flex items-center gap-1.5 transition-colors hover:text-foreground"
 				rel="noreferrer noopener"
 				target="_blank"
@@ -117,7 +117,7 @@
 		<!-- The mark repeats here only where the brand panel is hidden. -->
 		<a href={resolve('/')} class="mb-8 flex items-center gap-2.5 lg:hidden">
 			<img src="/brand/mark.svg" alt="" class="h-6 w-6" />
-			<span class="font-semibold tracking-tight">Cloudflarebase</span>
+			<span class="font-semibold tracking-tight">Frostbase</span>
 		</a>
 
 		<div class="w-full {wide ? 'max-w-xl' : 'max-w-sm'}">

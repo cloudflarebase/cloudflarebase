@@ -4,7 +4,7 @@ import path from 'node:path';
 import { UserError } from './log.js';
 
 /**
- * Where `cloudflarebase login` parks the console origin and the operator
+ * Where `frostbase login` parks the console origin and the operator
  * session token. The token is an ordinary console session - visible in the
  * console's sessions list and revocable there - so the file holds nothing a
  * sign-out cannot invalidate.
@@ -15,8 +15,15 @@ export interface CliConfig {
 	token: string;
 }
 
-const configDir = (): string => path.join(os.homedir(), '.cloudflarebase');
+const configDir = (): string => path.join(os.homedir(), '.frostbase');
 export const configPath = (): string => path.join(configDir(), 'config.json');
+/** Where logins lived before the Frostbase rename - read, never written. */
+const legacyConfigPath = (): string => path.join(os.homedir(), '.cloudflarebase', 'config.json');
+
+/** The hosted console moved domains; a session token is host-independent. */
+function migrateOrigin(origin: string): string {
+	return /^https:\/\/(www\.)?cloudflarebase\.com$/.test(origin) ? 'https://frostbase.dev' : origin;
+}
 
 export async function saveConfig(config: CliConfig): Promise<string> {
 	await mkdir(configDir(), { recursive: true });
@@ -33,20 +40,20 @@ export async function saveConfig(config: CliConfig): Promise<string> {
 }
 
 export async function loadConfig(): Promise<CliConfig> {
-	try {
-		const raw = JSON.parse(await readFile(configPath(), 'utf8')) as Partial<CliConfig>;
-		if (typeof raw.origin === 'string' && typeof raw.token === 'string') {
-			return { origin: raw.origin, token: raw.token };
+	for (const file of [configPath(), legacyConfigPath()]) {
+		try {
+			const raw = JSON.parse(await readFile(file, 'utf8')) as Partial<CliConfig>;
+			if (typeof raw.origin === 'string' && typeof raw.token === 'string') {
+				return { origin: migrateOrigin(raw.origin), token: raw.token };
+			}
+		} catch {
+			/* try the next file, then fall through to the error below */
 		}
-	} catch {
-		/* fall through to the error below */
 	}
-	throw new UserError(
-		'Not signed in to a console.',
-		'Run `cloudflarebase login <console-url>` first.'
-	);
+	throw new UserError('Not signed in to a console.', 'Run `frostbase login <console-url>` first.');
 }
 
 export async function deleteConfig(): Promise<void> {
 	await rm(configPath(), { force: true });
+	await rm(legacyConfigPath(), { force: true });
 }

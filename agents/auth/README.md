@@ -1,8 +1,8 @@
-# @cloudflarebase/auth
+# @frostbase/auth
 
 Better Auth on a Cloudflare Durable Object. One isolated instance per project,
 each with its own embedded SQLite database, in your account. This is the auth
-primitive behind [Cloudflarebase](https://github.com/cloudflarebase/cloudflarebase).
+primitive behind [Frostbase](https://github.com/frostbase-dev/frostbase).
 
 What each project's agent gives you: email/password, guest, and social sign-in;
 cookie sessions and bearer tokens; project-signed JWTs (`GET /token`, keys on
@@ -14,7 +14,7 @@ dashboards; and opt-in auth events into Workers Analytics Engine.
 The easy way is the CLI, which does all of the wiring below:
 
 ```bash
-npx @cloudflarebase/cli add auth
+npx @frostbase/cli add auth
 ```
 
 By hand: install the package, re-export the agent from your Worker entrypoint
@@ -24,17 +24,17 @@ your `wrangler.jsonc`, and regenerate types.
 
 ```ts
 // src/index.ts
-export { AuthAgent, default } from '@cloudflarebase/auth';
+export { AuthAgent, default } from '@frostbase/auth';
 ```
 
 ```bash
-npm install @cloudflarebase/auth
+npm install @frostbase/auth
 npx wrangler types
 npx wrangler deploy
 ```
 
 Use the fragment's `migrations` block as-is. It is a fresh `v1` on purpose;
-don't copy the migration history out of the Cloudflarebase repo.
+don't copy the migration history out of the Frostbase repo.
 
 ## Bindings
 
@@ -43,7 +43,7 @@ catch a missing binding at compile time instead of on the first request, add
 one line anywhere in your Worker:
 
 ```ts
-import type { AssertAuthAgentEnv } from '@cloudflarebase/auth';
+import type { AssertAuthAgentEnv } from '@frostbase/auth';
 export type _AuthAgentBindings = AssertAuthAgentEnv<Env>;
 ```
 

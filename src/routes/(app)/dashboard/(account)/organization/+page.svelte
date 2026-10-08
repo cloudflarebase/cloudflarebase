@@ -166,7 +166,7 @@
 </script>
 
 <svelte:head>
-	<title>{data.org.name} · Organization · Cloudflarebase</title>
+	<title>{data.org.name} · Organization · Frostbase</title>
 	<meta name="robots" content="noindex" />
 </svelte:head>
 

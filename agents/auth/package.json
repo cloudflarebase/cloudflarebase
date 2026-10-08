@@ -1,16 +1,16 @@
 {
-	"name": "@cloudflarebase/auth",
+	"name": "@frostbase/auth",
 	"version": "0.7.4",
-	"description": "Better Auth on a Cloudflare Durable Object, one instance per project - the auth primitive behind Cloudflarebase.",
+	"description": "Better Auth on a Cloudflare Durable Object, one instance per project - the auth primitive behind Frostbase.",
 	"license": "Apache-2.0",
 	"type": "module",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/cloudflarebase/cloudflarebase.git",
+		"url": "git+https://github.com/frostbase-dev/frostbase.git",
 		"directory": "agents/auth"
 	},
-	"homepage": "https://github.com/cloudflarebase/cloudflarebase/tree/main/agents/auth#readme",
-	"bugs": "https://github.com/cloudflarebase/cloudflarebase/issues",
+	"homepage": "https://github.com/frostbase-dev/frostbase/tree/main/agents/auth#readme",
+	"bugs": "https://github.com/frostbase-dev/frostbase/issues",
 	"keywords": [
 		"cloudflare",
 		"workers",
@@ -18,7 +18,7 @@
 		"better-auth",
 		"authentication",
 		"agents",
-		"cloudflarebase"
+		"frostbase"
 	],
 	"publishConfig": {
 		"access": "public"
@@ -35,14 +35,14 @@
 			"default": "./dist/admin.js"
 		},
 		"./wrangler-fragment.jsonc": "./template/wrangler-fragment.jsonc",
-		"./cloudflarebase.agent.json": "./cloudflarebase.agent.json",
+		"./frostbase.agent.json": "./frostbase.agent.json",
 		"./package.json": "./package.json"
 	},
 	"files": [
 		"dist",
 		"template",
 		"NOTICE",
-		"cloudflarebase.agent.json"
+		"frostbase.agent.json"
 	],
 	"scripts": {
 		"build": "tsc -p tsconfig.build.json",

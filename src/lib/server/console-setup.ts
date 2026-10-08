@@ -9,7 +9,7 @@ import type { RequestEvent } from '@sveltejs/kit';
  * The claim used to be gated on a fact about the WORLD - `count(user) === 0` -
  * rather than a fact about the CLAIMER. Arriving first was the whole
  * credential, so any stranger who guessed a self-hosted URL (workers.dev names
- * are enumerable, and this repo's default Worker name is `cloudflarebase`)
+ * are enumerable, and this repo's default Worker name is `frostbase`)
  * could take ownership of someone else's install, and `ensureConsoleAdmin`
  * then promoted them to admin over every operator surface on it.
  *

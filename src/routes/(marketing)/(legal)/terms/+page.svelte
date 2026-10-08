@@ -3,10 +3,10 @@
 </script>
 
 <svelte:head>
-	<title>Terms of Service · Cloudflarebase</title>
+	<title>Terms of Service · Frostbase</title>
 	<meta
 		name="description"
-		content="The terms that govern the hosted demo and console at cloudflarebase.com."
+		content="The terms that govern the hosted demo and console at frostbase.dev."
 	/>
 </svelte:head>
 
@@ -16,14 +16,14 @@
 <h2>1. Agreement</h2>
 
 <p>
-	By using cloudflarebase.com (the "Service") you agree to these terms. If you don't agree, don't
-	use the Service.
+	By using frostbase.dev (the "Service") you agree to these terms. If you don't agree, don't use the
+	Service.
 </p>
 
 <h2>2. Who we are</h2>
 
 <p>
-	Cloudflarebase is an independent open-source project.
+	Frostbase is an independent open-source project.
 	<strong>We are not affiliated with, endorsed by, or sponsored by Cloudflare, Inc.</strong>
 	"Cloudflare" is a trademark of Cloudflare, Inc.; we use the name only to describe the platform the software
 	runs on.
@@ -32,10 +32,10 @@
 <h2>3. The Service and the software</h2>
 
 <p>
-	The Service is the hosted demo and console at cloudflarebase.com. The Cloudflarebase software
-	itself is separately licensed under the
+	The Service is the hosted demo and console at frostbase.dev. The Frostbase software itself is
+	separately licensed under the
 	<a
-		href="https://github.com/cloudflarebase/cloudflarebase/blob/main/LICENSE"
+		href="https://github.com/frostbase-dev/frostbase/blob/main/LICENSE"
 		target="_blank"
 		rel="noreferrer">Apache License 2.0</a
 	>; these terms govern only your use of the hosted Service, not your use of the code.
@@ -64,7 +64,7 @@
 	or attempt to break the isolation between projects, evade rate limits or resource caps, or use the
 	Service for spam, malware, or mining. Security research is welcome only under our
 	<a
-		href="https://github.com/cloudflarebase/cloudflarebase/blob/main/SECURITY.md"
+		href="https://github.com/frostbase-dev/frostbase/blob/main/SECURITY.md"
 		target="_blank"
 		rel="noreferrer">security policy</a
 	>.
@@ -116,7 +116,7 @@
 
 <p>
 	Questions about these terms: open a
-	<a href="https://github.com/cloudflarebase/cloudflarebase/issues" target="_blank" rel="noreferrer"
+	<a href="https://github.com/frostbase-dev/frostbase/issues" target="_blank" rel="noreferrer"
 		>GitHub issue</a
 	>. See also our <a href={resolve('/privacy')}>Privacy Policy</a>.
 </p>

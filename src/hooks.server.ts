@@ -405,7 +405,7 @@ const consoleGuardHandle: Handle = async ({ event, resolve }) => {
 		return noSuchProject(access.kind);
 	}
 
-	// Service keys (SK1): a `cfbs_` bearer is the
+	// Service keys (SK1): an `fsb_` (or legacy `cfbs_`) bearer is the
 	// credential a SERVER holds for the cases with no user to relay - crons,
 	// queue consumers, webhook handlers, seed scripts. It reaches the DATA
 	// plane of its own project and nothing else (isServiceKeySurface), so it
@@ -424,7 +424,7 @@ const consoleGuardHandle: Handle = async ({ event, resolve }) => {
 	// falls through to session resolution.
 	const serviceBearer = event.request.headers
 		.get('authorization')
-		?.match(/^Bearer\s+(cfbs_[0-9a-f]{64})$/i)?.[1];
+		?.match(/^Bearer\s+((?:fsb|cfbs)_[0-9a-f]{64})$/i)?.[1];
 	if (serviceBearer) {
 		// A PRESENT-but-empty Origin counts as absent, and only that: browsers
 		// cannot produce one (they send a real origin or the literal `null`,
@@ -577,7 +577,7 @@ const cloudflareSentryHandle: Handle = async (input) => {
 		dsn,
 		environment: dev
 			? 'development'
-			: input.event.url.hostname === 'cloudflarebase.com'
+			: input.event.url.hostname === 'frostbase.dev'
 				? 'production'
 				: 'preview',
 		tracesSampleRate: 0.1
@@ -611,8 +611,9 @@ const cloudflareSentryHandle: Handle = async (input) => {
  * requests keep the full check.
  *
  * The skip is BEARER-shaped only, not any Authorization header: every
- * credential this app accepts is a bearer (session token or `cfbs_`), while `Basic` is one a browser CAN attach by itself (a
- * `user:pass@host` top-level navigation), riding beside the victim's cookies
+ * credential this app accepts is a bearer (session token or service key),
+ * while `Basic` is one a browser CAN attach by itself (a `user:pass@host`
+ * top-level navigation), riding beside the victim's cookies
  * on a request the guard would then authenticate from those cookies. A
  * non-bearer Authorization therefore keeps the full check.
  *
@@ -642,7 +643,34 @@ const csrfHandle: Handle = async ({ event, resolve }) => {
 	return resolve(event);
 };
 
+/**
+ * The hosted console moved from cloudflarebase.com to frostbase.dev. The old
+ * hostname stays attached to this Worker (MOVED_FROM_HOSTS) so links, bookmarks
+ * and search results land on the same path at CANONICAL_ORIGIN.
+ *
+ * Pages redirect; the API does NOT. `/api/*` and `/agents/*` keep answering on
+ * the old host, because an integration that hard-codes the old base URL would
+ * otherwise break: a cross-origin fetch only follows a redirect that itself
+ * passes CORS, and a redirected POST is a request no client should have to
+ * re-send. Unset vars (self-hosted, local, e2e) make this a no-op.
+ */
+const domainMoveHandle: Handle = async ({ event, resolve }) => {
+	const env = event.platform?.env as
+		{ MOVED_FROM_HOSTS?: string; CANONICAL_ORIGIN?: string } | undefined;
+	const canonical = env?.CANONICAL_ORIGIN;
+	const moved = env?.MOVED_FROM_HOSTS?.split(',').map((host) => host.trim().toLowerCase());
+	if (!canonical || !moved?.includes(event.url.hostname.toLowerCase())) return resolve(event);
+	if (/^\/(api|agents)(\/|$)/.test(event.url.pathname)) return resolve(event);
+	const target = new URL(`${event.url.pathname}${event.url.search}`, canonical);
+	// 308 keeps the method for the odd form POST; navigations get a plain 301.
+	const status = event.request.method === 'GET' || event.request.method === 'HEAD' ? 301 : 308;
+	return new Response(null, { status, headers: { location: target.href } });
+};
+
 export const handle = sequence(
+	// Ahead of everything, the CSRF check included: a moved host answers with
+	// a redirect and nothing else, so nothing behind it needs to run.
+	domainMoveHandle,
 	// Before everything: SvelteKit's own version of this ran ahead of every
 	// hook, and the ordering guarantee is part of the protection. A refused
 	// forgery never reaches Sentry's wrappers, exactly as it never did under

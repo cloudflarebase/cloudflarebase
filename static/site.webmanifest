@@ -1,6 +1,6 @@
 {
-	"name": "Cloudflarebase",
-	"short_name": "Cloudflarebase",
+	"name": "Frostbase",
+	"short_name": "Frostbase",
 	"description": "The open-source backend built for Cloudflare.",
 	"start_url": "/",
 	"display": "standalone",

@@ -642,7 +642,7 @@ export class DbAgent extends Agent<Env, DbAgentState> {
 				return Response.json(
 					{
 						error:
-							`"${name}" belongs to Cloudflarebase - the "${PLATFORM_SHARD_PREFIX}" prefix is ` +
+							`"${name}" belongs to Frostbase - the "${PLATFORM_SHARD_PREFIX}" prefix is ` +
 							`reserved for shards the platform owns. Manage it from the feature that created it.`,
 					},
 					{ status: 403 },
@@ -826,7 +826,7 @@ export class DbAgent extends Agent<Env, DbAgentState> {
 	// -------------------------------------------------------------------------
 	// Remote Config (RC1)
 	//
-	// The first Cloudflarebase feature whose storage is the platform's own
+	// The first Frostbase feature whose storage is the platform's own
 	// primitive rather than a private table. Parameters live in a real DbTable,
 	// so publish is a PITR checkpoint, rollback is a restore, and export is a
 	// config backup - none of which had to be written here.

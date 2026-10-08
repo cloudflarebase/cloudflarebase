@@ -149,7 +149,7 @@
 </script>
 
 <svelte:head>
-	<title>Projects · Cloudflarebase</title>
+	<title>Projects · Frostbase</title>
 </svelte:head>
 
 <div class="space-y-8">

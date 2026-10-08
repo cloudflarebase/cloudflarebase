@@ -2,7 +2,7 @@
  * Who may call which route - enforced by the agent itself, not only by
  * whatever sits in front of it.
  *
- * On cloudflarebase.com the console guard IS the gate, and that is sound
+ * On frostbase.dev the console guard IS the gate, and that is sound
  * there: this worker has no public hostname (`workers_dev` and
  * `preview_urls` false, no route), so the only way in is the dashboard's
  * service binding, and every request through it has already been classified
@@ -28,7 +28,7 @@
  * - The refusal is the ordinary 404, byte for byte, so a closed surface is
  *   not enumerable either.
  *
- * `ROUTES` mirrors `cloudflarebase.agent.json` and `access.unit.test.ts`
+ * `ROUTES` mirrors `frostbase.agent.json` and `access.unit.test.ts`
  * fails if the two disagree, so the manifest stays the single declaration.
  * It is a copy rather than an import because the JSON sits outside the
  * build's `rootDir`, and the manifest has to stay at the package root where
@@ -42,7 +42,7 @@ export interface RouteRule {
 	access: RouteAccess;
 }
 
-/** Mirrors the `routes` block of `cloudflarebase.agent.json`. */
+/** Mirrors the `routes` block of `frostbase.agent.json`. */
 export const ROUTES: readonly RouteRule[] = [
 	{ path: '/api/auth/*', access: 'public' },
 	{ path: '/config', access: 'public' },

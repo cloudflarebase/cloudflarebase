@@ -3,7 +3,7 @@
 	"name": "db",
 	"title": "Database",
 	"description": "Documents with live queries and SQL tables with typed columns - one Durable Object per collection or table.",
-	"packageName": "@cloudflarebase/db",
+	"packageName": "@frostbase/db",
 	"worker": "db-agent",
 	"durableObjects": [
 		{ "class": "DbAgent", "scope": "perProject" },

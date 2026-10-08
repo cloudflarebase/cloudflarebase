@@ -281,7 +281,7 @@ export function storageAdminObjectPath(projectId: string, bucket: string, key: s
 /**
  * The operator object surface over the CONSOLE proxy - the only door a service
  * key can use, since `isServiceKeySurface` matches only under
- * `/api/projects/<id>/` and `/agents/*` refuses a `cfbs_` bearer outright.
+ * `/api/projects/<id>/` and `/agents/*` refuses a service-key bearer outright.
  * Unlike every other proxy here it STREAMS the body through to the agent
  *.
  */

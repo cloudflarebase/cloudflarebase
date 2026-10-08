@@ -66,7 +66,7 @@ function text(value: string): Uint8Array {
 
 /** The PDF's page content - interpolated so /Length stays correct. */
 const PDF_CONTENT = [
-	'BT /F1 18 Tf 40 160 Td (Cloudflarebase storage) Tj',
+	'BT /F1 18 Tf 40 160 Td (Frostbase storage) Tj',
 	'/F1 11 Tf 0 -26 Td (A read-only sample document served from the demo bucket.) Tj',
 	'0 -16 Td (Create a real project to upload your own files.) Tj ET',
 ].join('\n');

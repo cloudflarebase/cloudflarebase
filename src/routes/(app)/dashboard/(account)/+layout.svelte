@@ -140,7 +140,7 @@
 			class="flex h-14 shrink-0 items-center gap-2 border-b border-border px-5 font-bold"
 		>
 			<img src="/brand/mark.svg" alt="" class="h-5 w-5" />
-			Cloudflarebase
+			Frostbase
 		</a>
 
 		{#if activeOrgEntry}
@@ -218,7 +218,7 @@
 			</Button>
 			<a href={resolve('/')} class="flex items-center gap-2 font-bold lg:hidden">
 				<img src="/brand/mark.svg" alt="" class="h-5 w-5" />
-				Cloudflarebase
+				Frostbase
 			</a>
 
 			<!-- Two controls, not four: the avatar menu owns account settings and

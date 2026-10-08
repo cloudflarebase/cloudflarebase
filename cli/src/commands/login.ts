@@ -5,7 +5,7 @@ import { saveConfig } from '../lib/config.js';
 import { blank, bold, dim, info, step, success, UserError } from '../lib/log.js';
 
 /**
- * `cloudflarebase login <console-url>` - authenticate the CLI against a
+ * `frostbase login <console-url>` - authenticate the CLI against a
  * console.
  *
  * Default is the wrangler-style browser hand-off: the CLI listens on a
@@ -135,10 +135,7 @@ export async function loginCommand(rest: string[]): Promise<void> {
 		else throw new UserError(`Unknown flag "${arg}".`);
 	}
 	if (!originArg) {
-		throw new UserError(
-			'Which console?',
-			'Example: cloudflarebase login https://console.example.com'
-		);
+		throw new UserError('Which console?', 'Example: frostbase login https://console.example.com');
 	}
 	const origin = normalizeOrigin(originArg);
 	if ((email && !password) || (!email && password)) {

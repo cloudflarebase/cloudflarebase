@@ -102,7 +102,7 @@ function headerSafe(value: string): string {
 }
 
 /**
- * Reserved project id for the dashboard's own operator auth - Cloudflarebase
+ * Reserved project id for the dashboard's own operator auth - Frostbase
  * authenticating its console with the same stack it sells. Mirrored in the
  * app's src/lib/server/console.ts; keep both in sync.
  */
@@ -317,7 +317,7 @@ interface BehavioralAnalytics {
 const DEFAULT_CHAT_MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
 
 /**
- * One AuthAgent per Cloudflarebase project. The agent is a SQLite-backed
+ * One AuthAgent per Frostbase project. The agent is a SQLite-backed
  * Durable Object that runs a full Better Auth stack for the project - users,
  * sessions, accounts and verifications all live in the agent's own database
  * (via Drizzle ORM) - pushes live auth activity to connected dashboards
@@ -784,7 +784,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 						: 'Verify your email';
 		const intro =
 			message.type === 'invitation'
-				? `${message.invitation?.inviter ?? 'A team member'} invited you to "${message.invitation?.organization ?? 'their organization'}" on Cloudflarebase. Sign in - or create an account with this email address - to accept.`
+				? `${message.invitation?.inviter ?? 'A team member'} invited you to "${message.invitation?.organization ?? 'their organization'}" on Frostbase. Sign in - or create an account with this email address - to accept.`
 				: 'Continue securely with the button below.';
 		const text = `${action}: ${message.url}\n\n${intro}\n\nIf you did not request this, you can ignore this email.`;
 		// EVERY interpolation is escaped, not just the URL. An organization name
@@ -797,7 +797,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 		const html = `<div style="font-family:system-ui,sans-serif;max-width:560px;margin:auto"><h1 style="font-size:22px">${escapeHtml(action)}</h1><p>${escapeHtml(intro)}</p><p><a href="${escapeHtml(message.url)}" style="display:inline-block;background:#f6821f;color:white;padding:12px 18px;border-radius:8px;text-decoration:none">${escapeHtml(action)}</a></p><p style="color:#666;font-size:13px">If you did not request this, you can ignore this email.</p></div>`;
 
 		try {
-			await this.deliverEmail(message.to, headerSafe(`${action} · Cloudflarebase`), text, html);
+			await this.deliverEmail(message.to, headerSafe(`${action} · Frostbase`), text, html);
 		} catch (error) {
 			// Verification mail is best-effort by design: the user row already
 			// exists when the send runs, so failing the sign-up here would tell
@@ -823,7 +823,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 		if (this.env.EMAIL && this.env.EMAIL_FROM) {
 			await this.env.EMAIL.send({
 				to,
-				from: { email: this.env.EMAIL_FROM, name: 'Cloudflarebase Auth' },
+				from: { email: this.env.EMAIL_FROM, name: 'Frostbase Auth' },
 				subject,
 				text,
 				html,
@@ -938,7 +938,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 			// Claimed mode. A pending org invitation authorizes a sign-up even
 			// while the console is otherwise closed - teams without opening
 			// registration. Checked before the demo refusal on purpose: a
-			// claimed-but-DEMO_MODE deployment (cloudflarebase.com today) can
+			// claimed-but-DEMO_MODE deployment (frostbase.dev today) can
 			// invite teammates.
 			const email = await this.signUpEmail(request);
 			if (email && (await this.hasPendingInvitation(email))) return null;
@@ -2252,7 +2252,7 @@ export class AuthAgent extends Agent<Env, AuthAgentState> {
 					{
 						role: 'system',
 						content:
-							`You are the Cloudflarebase auth analytics agent for project "${this.name}". ` +
+							`You are the Frostbase auth analytics agent for project "${this.name}". ` +
 							'Answer only from the aggregated JSON supplied by the user. Never invent metrics. ' +
 							'Be concise, explain useful ratios or trends when the data supports them, and say when there is not enough data. ' +
 							'Do not claim you can modify users, sessions, or configuration.',

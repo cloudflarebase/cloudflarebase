@@ -5,7 +5,7 @@ import { blank, bold, dim, info, success, UserError, warn } from '../lib/log.js'
 import { projectFetch, readManagedConfig, targetProjectId } from '../lib/managed.js';
 
 /**
- * `cloudflarebase key create|list|revoke` - project service keys.
+ * `frostbase key create|list|revoke` - project service keys.
  *
  * The credential a SERVER holds when there is no signed-in user to relay. The
  * console can mint one too; this exists so the whole loop - link a directory,
@@ -13,14 +13,14 @@ import { projectFetch, readManagedConfig, targetProjectId } from '../lib/managed
  *
  * OPERATOR SESSIONS ONLY, by the guard: a service key cannot mint or revoke
  * service keys, or it could grow and outlive itself. So this command needs
- * `cloudflarebase login`, exactly like `secret put`.
+ * `frostbase login`, exactly like `secret put`.
  *
  * Keys are scoped to ONE project - never a root and its branches - because
  * for data the branch IS the isolation boundary.
  * `--branch` therefore targets a specific registry row rather than a family.
  */
 
-const ENV_VAR = 'CLOUDFLAREBASE_SERVICE_KEY';
+const ENV_VAR = 'FROSTBASE_SERVICE_KEY';
 
 interface KeySummary {
 	id: string;
@@ -31,13 +31,13 @@ interface KeySummary {
 
 function usage(): never {
 	throw new UserError(
-		'Usage: cloudflarebase key create <name> [--env-file [path]] [--branch <name>]\n' +
-			'       cloudflarebase key list [--branch <name>]\n' +
-			'       cloudflarebase key revoke <id> [--branch <name>]'
+		'Usage: frostbase key create <name> [--env-file [path]] [--branch <name>]\n' +
+			'       frostbase key list [--branch <name>]\n' +
+			'       frostbase key revoke <id> [--branch <name>]'
 	);
 }
 
-/** Upsert `CLOUDFLAREBASE_SERVICE_KEY=` into a dotenv file, replacing any
+/** Upsert `FROSTBASE_SERVICE_KEY=` into a dotenv file, replacing any
  * existing line rather than appending a second one that the last read wins. */
 async function writeEnvFile(file: string, secret: string): Promise<'created' | 'updated'> {
 	const existing = await readFile(file, 'utf8').catch(() => null);
@@ -75,13 +75,13 @@ export async function keyCommand(projectDir: string, rest: string[]): Promise<vo
 
 	const managed = await readManagedConfig(projectDir);
 	if (!managed) {
-		throw new UserError('This directory is not initialized.', 'Run `cloudflarebase init` first.');
+		throw new UserError('This directory is not initialized.', 'Run `frostbase init` first.');
 	}
 	const config = await loadConfig();
 	if (config.origin !== managed.origin) {
 		throw new UserError(
 			`This directory is linked to ${managed.origin}, but you are signed in to ${config.origin}.`,
-			`Run \`cloudflarebase login ${managed.origin}\` first.`
+			`Run \`frostbase login ${managed.origin}\` first.`
 		);
 	}
 
@@ -97,7 +97,7 @@ export async function keyCommand(projectDir: string, rest: string[]): Promise<vo
 		blank();
 		if (!keys.length) {
 			info(`No service keys on ${bold(target)}.`);
-			info(dim('Create one with `cloudflarebase key create <name>`.'));
+			info(dim('Create one with `frostbase key create <name>`.'));
 			return;
 		}
 		info(`Service keys on ${bold(target)}:`);

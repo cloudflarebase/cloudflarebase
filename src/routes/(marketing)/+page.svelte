@@ -164,7 +164,7 @@
 		},
 		{
 			q: 'Can I run it on my own Cloudflare account?',
-			a: 'Yes - it is open source under Apache-2.0 at github.com/cloudflarebase/cloudflarebase. It is four Workers deployed in order with one command (npm run deploy:all), and the README walks through it for your own account. No secrets are required: each project generates its own signing key.'
+			a: 'Yes - it is open source under Apache-2.0 at github.com/frostbase-dev/frostbase. It is four Workers deployed in order with one command (npm run deploy:all), and the README walks through it for your own account. No secrets are required: each project generates its own signing key.'
 		},
 		{
 			q: 'Is this production-ready?',
@@ -346,17 +346,17 @@
 </script>
 
 <svelte:head>
-	<title>Cloudflarebase - The open-source Firebase for Cloudflare</title>
+	<title>Frostbase - The open-source Firebase for Cloudflare</title>
 	<meta
 		name="description"
 		content="The open-source Firebase for Cloudflare: auth, realtime database, and SQL tables with an AI copilot over your backend - globally replicated, no egress fees, self-hosted in your own Cloudflare account."
 	/>
-	<meta property="og:title" content="Cloudflarebase - The open-source Firebase for Cloudflare" />
+	<meta property="og:title" content="Frostbase - The open-source Firebase for Cloudflare" />
 	<meta
 		property="og:description"
 		content="The open-source Firebase for Cloudflare - auth, realtime data, and SQL with replication by default, whole-backend branching, and an AI copilot. Yours to keep."
 	/>
-	<meta name="twitter:title" content="Cloudflarebase - The open-source Firebase for Cloudflare" />
+	<meta name="twitter:title" content="Frostbase - The open-source Firebase for Cloudflare" />
 	<meta
 		name="twitter:description"
 		content="The open-source Firebase for Cloudflare - auth, realtime data, and SQL with replication by default, whole-backend branching, and an AI copilot. Yours to keep."
@@ -389,7 +389,7 @@
 					<div class="hero-stagger text-center sm:mx-auto lg:mt-0 lg:mr-auto">
 						<div>
 							<a
-								href="https://github.com/cloudflarebase/cloudflarebase"
+								href="https://github.com/frostbase-dev/frostbase"
 								target="_blank"
 								rel="noreferrer"
 								class="mx-auto flex w-fit items-center gap-4 rounded-full border bg-muted p-1 pl-4 shadow-md shadow-zinc-950/5 transition-colors hover:bg-muted/70 dark:border-t-white/5 dark:shadow-zinc-950"
@@ -434,7 +434,7 @@
 								size="lg"
 								variant="ghost"
 								class="rounded-xl px-5"
-								href="https://github.com/cloudflarebase/cloudflarebase"
+								href="https://github.com/frostbase-dev/frostbase"
 								target="_blank"
 								rel="noreferrer"
 							>
@@ -778,8 +778,8 @@
 						Our price: <span class="text-primary">$0</span>
 					</h2>
 					<p class="mt-3 text-muted-foreground">
-						Cloudflarebase is open source and runs on your own Cloudflare account - there is no
-						middleman bill, and Durable Objects sit on the
+						Frostbase is open source and runs on your own Cloudflare account - there is no middleman
+						bill, and Durable Objects sit on the
 						<a
 							class="underline underline-offset-2 hover:text-foreground"
 							href="https://developers.cloudflare.com/durable-objects/platform/pricing/"
@@ -816,7 +816,7 @@
 								<th class="p-4 font-medium text-muted-foreground">Capability</th>
 								<th class="bg-primary/[0.06] p-4">
 									<span class="flex items-center gap-2 font-semibold">
-										<img src="/brand/mark.svg" alt="" class="h-4 w-4" /> Cloudflarebase
+										<img src="/brand/mark.svg" alt="" class="h-4 w-4" /> Frostbase
 									</span>
 								</th>
 								<th class="p-4 font-medium text-muted-foreground">Firebase</th>
@@ -875,8 +875,7 @@
 					<p class="mt-4 text-muted-foreground">
 						Point <code class="font-mono">fetch</code> at your project's endpoint and you're
 						integrated - this is the exact API the demo dashboard uses. When you want types, the
-						Better Auth client and <code class="font-mono">@cloudflarebase/db/client</code> wrap the same
-						routes.
+						Better Auth client and <code class="font-mono">@frostbase/db/client</code> wrap the same routes.
 					</p>
 					<ul class="mt-6 space-y-3 text-sm">
 						<li class="flex gap-2.5">
@@ -1088,7 +1087,7 @@
 				<Button
 					size="lg"
 					variant="outline"
-					href="https://github.com/cloudflarebase/cloudflarebase"
+					href="https://github.com/frostbase-dev/frostbase"
 					target="_blank"
 					rel="noreferrer"
 				>
@@ -1106,7 +1105,7 @@
 				<div>
 					<div class="flex items-center gap-2 text-lg font-bold">
 						<img src="/brand/mark.svg" alt="" class="h-5 w-5" />
-						Cloudflarebase
+						Frostbase
 					</div>
 					<p class="mt-2.5 max-w-[240px] text-sm text-muted-foreground/70">
 						The product layer for Cloudflare's developer platform. Open source, shipped one
@@ -1135,7 +1134,7 @@
 							Resources
 						</h4>
 						<a
-							href="https://github.com/cloudflarebase/cloudflarebase"
+							href="https://github.com/frostbase-dev/frostbase"
 							target="_blank"
 							rel="noreferrer"
 							class="mb-2.5 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
@@ -1152,7 +1151,7 @@
 			<div
 				class="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-6 text-xs text-muted-foreground/70"
 			>
-				<span>© 2026 Cloudflarebase</span>
+				<span>© 2026 Frostbase</span>
 				<div class="flex gap-4">
 					<a href={resolve('/pricing')} class="hover:text-foreground">Pricing</a>
 					<a href={resolve('/privacy')} class="hover:text-foreground">Privacy</a>
@@ -1160,8 +1159,8 @@
 				</div>
 			</div>
 			<p class="mt-4 text-xs text-muted-foreground/70">
-				Built on the Cloudflare Developer Platform. Cloudflarebase is an independent open-source
-				project and is not affiliated with, endorsed by, or sponsored by Cloudflare, Inc.
+				Built on the Cloudflare Developer Platform. Frostbase is an independent open-source project
+				and is not affiliated with, endorsed by, or sponsored by Cloudflare, Inc.
 			</p>
 		</div>
 	</footer>
@@ -1194,7 +1193,7 @@
 							class="flex items-center gap-2 text-lg font-bold"
 						>
 							<img src="/brand/mark.svg" alt="" class="h-[22px] w-[22px]" />
-							Cloudflarebase
+							Frostbase
 						</a>
 
 						<div class="flex items-center gap-1 lg:hidden">

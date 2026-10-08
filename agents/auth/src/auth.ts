@@ -109,7 +109,7 @@ export async function ensureConsoleAdmin(db: AuthDatabase): Promise<void> {
 }
 
 export interface ProjectAuthConfig {
-	/** Cloudflarebase project id - one AuthAgent (and one auth database) per project. */
+	/** Frostbase project id - one AuthAgent (and one auth database) per project. */
 	projectId: string;
 	/** Drizzle handle over the Durable Object's embedded SQLite database. */
 	db: AuthDatabase;
@@ -262,7 +262,7 @@ export function createProjectAuth(config: ProjectAuthConfig) {
 			anonymous(),
 			bearer(),
 			// Teams for every project (and the console is the first user of its
-			// own feature: cloudflarebase orgs are rows in the console instance).
+			// own feature: frostbase orgs are rows in the console instance).
 			organization({
 				// Guests can hold sessions but never own teams.
 				allowUserToCreateOrganization: (user) =>

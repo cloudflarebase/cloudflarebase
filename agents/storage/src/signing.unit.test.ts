@@ -373,9 +373,12 @@ test('part counts never round down, and never reach zero', () => {
 test('a serving domain is only advertised once it is routed', () => {
 	// Set but not routed: the shape local dev and the e2e stack run in, and
 	// the shape production ran in until the custom domain was attached.
-	assert.equal(publicServeOrigin({ STORAGE_SERVE_DOMAIN: 'cdn.cfbase.test' }), null);
+	assert.equal(publicServeOrigin({ STORAGE_SERVE_DOMAIN: 'cdn.frostbase.test' }), null);
 	assert.equal(
-		publicServeOrigin({ STORAGE_SERVE_DOMAIN: 'cdn.cfbase.test', STORAGE_SERVE_DOMAIN_ROUTED: '' }),
+		publicServeOrigin({
+			STORAGE_SERVE_DOMAIN: 'cdn.frostbase.test',
+			STORAGE_SERVE_DOMAIN_ROUTED: '',
+		}),
 		null,
 	);
 	// Only the exact string - a truthy-looking value is not a promise that DNS

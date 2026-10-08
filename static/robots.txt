@@ -20,4 +20,4 @@ Disallow: /api/
 Disallow: /agents/
 Disallow: /cli-auth
 
-Sitemap: https://cloudflarebase.com/sitemap.xml
+Sitemap: https://frostbase.dev/sitemap.xml

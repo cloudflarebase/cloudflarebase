@@ -76,7 +76,7 @@
 	/**
 	 * No secret has to be set for this Worker to work.
 	 *
-	 * Self-hosted defaults. cloudflarebase.com's own values are in
+	 * Self-hosted defaults. frostbase.dev's own values are in
 	 * env.production - the top level must be deployable by someone who does
 	 * not own this project's domain.
 	 *
@@ -133,7 +133,7 @@
 
 	"env": {
 		/**
-		 * cloudflarebase.com's own agent. The name is pinned rather than derived
+		 * frostbase.dev's own agent. The name is pinned rather than derived
 		 * so it stays `db-agent`, which is what the dashboard Worker's DB_AGENT
 		 * service binding resolves. Wrangler does not inherit top-level
 		 * configuration into an environment, so this repeats it.
@@ -176,7 +176,7 @@
 				// (root wrangler.jsonc and the auth agent share it too).
 				"SENTRY_DSN": "https://50ed6e26b886124ac39e983efb72144d@o4510375271530496.ingest.de.sentry.io/4511764380778576",
 				"SENTRY_ENV": "production",
-				"TRUSTED_ORIGINS": "https://cloudflarebase.com",
+				"TRUSTED_ORIGINS": "https://frostbase.dev,https://cloudflarebase.com",
 			},
 
 			"analytics_engine_datasets": [

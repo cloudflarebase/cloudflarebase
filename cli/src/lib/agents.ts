@@ -14,39 +14,39 @@ import { parseJsonc, type WranglerFragment } from './wrangler-config.js';
 export interface AgentSpec {
 	/** npm package installed into the user's project. */
 	packageName: string;
-	/** One-line description for `cloudflarebase add` with no arguments. */
+	/** One-line description for `frostbase add` with no arguments. */
 	description: string;
 }
 
 /**
  * Everything beyond the package name - Durable Object classes, the entrypoint
  * export lines, the binding contract - comes from the package's own
- * cloudflarebase.agent.json at add time (see manifest.ts), so a registry
+ * frostbase.agent.json at add time (see manifest.ts), so a registry
  * entry is genuinely just a name.
  */
 export const AGENTS: Record<string, AgentSpec> = {
 	auth: {
-		packageName: '@cloudflarebase/auth',
+		packageName: '@frostbase/auth',
 		description: 'Better Auth on a Durable Object - one isolated instance per project'
 	},
 	db: {
-		packageName: '@cloudflarebase/db',
+		packageName: '@frostbase/db',
 		description: 'Firestore-style documents with live queries - one Durable Object per collection'
 	},
 	storage: {
-		packageName: '@cloudflarebase/storage',
+		packageName: '@frostbase/storage',
 		description: 'Object storage on R2 - buckets of files with per-bucket access modes'
 	}
 };
 
 /**
  * What `npm install` is actually given. Normally the package name, resolving
- * to the latest release; `CLOUDFLAREBASE_<AGENT>_SPEC` overrides it for
+ * to the latest release; `FROSTBASE_<AGENT>_SPEC` overrides it for
  * pinning a prerelease - or, in this repository's own e2e tests, a packed
  * tarball that has never been published.
  */
 export function installSpec(agentName: string, spec: AgentSpec): string {
-	return process.env[`CLOUDFLAREBASE_${agentName.toUpperCase()}_SPEC`] ?? spec.packageName;
+	return process.env[`FROSTBASE_${agentName.toUpperCase()}_SPEC`] ?? spec.packageName;
 }
 
 export function resolveAgent(name: string): AgentSpec {

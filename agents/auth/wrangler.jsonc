@@ -58,7 +58,7 @@
 	 * CF_ANALYTICS_API_TOKEN (Analytics Engine SQL reads - writes need no
 	 * credentials).
 	 *
-	 * Self-hosted defaults. cloudflarebase.com's own values are in
+	 * Self-hosted defaults. frostbase.dev's own values are in
 	 * env.production - the top level must be deployable by someone who does
 	 * not own this project's domain or mail sender.
 	 *
@@ -127,13 +127,13 @@
 	 *   ],
 	 *   "vars": { "WAE_DATASET": "cloudflarebase_auth_events" }
 	 *
-	 * Every environment below is cloudflarebase.com's own and declares it: those
+	 * Every environment below is frostbase.dev's own and declares it: those
 	 * accounts have it enabled.
 	 */
 
 	"env": {
 		/**
-		 * cloudflarebase.com's own agent. The name is pinned rather than derived
+		 * frostbase.dev's own agent. The name is pinned rather than derived
 		 * so it stays `auth-agent`, which is what the dashboard Worker's
 		 * AUTH_AGENT service binding resolves. Wrangler does not inherit
 		 * top-level configuration into an environment, so this repeats it.
@@ -168,11 +168,11 @@
 				"CONSOLE_SIGNUPS": "open",
 				"DEMO_MODE": "true",
 				"DEMO_TTL_HOURS": "720",
-				// Committed on purpose: env.production is cloudflarebase.com's own
+				// Committed on purpose: env.production is frostbase.dev's own
 				// block (forks deploy the top level, whose DSN stays empty).
 				"SENTRY_DSN": "https://50ed6e26b886124ac39e983efb72144d@o4510375271530496.ingest.de.sentry.io/4511764380778576",
 				"SENTRY_ENV": "production",
-				"TRUSTED_ORIGINS": "https://cloudflarebase.com",
+				"TRUSTED_ORIGINS": "https://frostbase.dev,https://cloudflarebase.com",
 				"WAE_DATASET": "cloudflarebase_auth_events",
 				"EXPOSE_OPERATOR_API": "true",
 				"EMAIL_FROM": "auth@notifications.cloudflarebase.com",
@@ -267,7 +267,7 @@
 				// Pinned so a reused local stack keeps sessions valid across restarts;
 				// unset, each project would generate its own. Test-only, worthless
 				// elsewhere.
-				"BETTER_AUTH_SECRET": "cloudflarebase-e2e-test-secret-at-least-32-chars-long",
+				"BETTER_AUTH_SECRET": "frostbase-e2e-test-secret-at-least-32-chars-long",
 				"DISABLE_RATE_LIMIT": "true",
 				"CHAT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
 				// DEMO_MODE is deliberately NOT set on the agent here, while the web

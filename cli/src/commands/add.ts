@@ -8,7 +8,7 @@ import { assertSafeArg, run, runOrFail } from '../lib/run.js';
 import { mergeWranglerConfig, parseJsonc, type WranglerFragment } from '../lib/wrangler-config.js';
 
 /**
- * `cloudflarebase add <agent>` - install an agent into an existing Worker.
+ * `frostbase add <agent>` - install an agent into an existing Worker.
  *
  * Four steps, in dependency order, each idempotent so a failed run can simply
  * be re-run: install the package, merge its wrangler fragment, wire the
@@ -23,7 +23,7 @@ export async function addCommand(projectDir: string, args: string[]): Promise<vo
 			info(`  ${key.padEnd(8)} ${dim(spec.description)}`);
 		}
 		blank();
-		info('Usage: cloudflarebase add <agent>');
+		info('Usage: frostbase add <agent>');
 		return;
 	}
 
@@ -80,7 +80,7 @@ export async function addCommand(projectDir: string, args: string[]): Promise<vo
 
 	blank();
 	success(`${spec.packageName} is installed.`);
-	info(`  Deploy with ${dim('cloudflarebase deploy')} - it works right after.`);
+	info(`  Deploy with ${dim('frostbase deploy')} - it works right after.`);
 }
 
 /**
@@ -104,13 +104,13 @@ async function findWranglerConfig(projectDir: string): Promise<string> {
 		throw new UserError(
 			'This project uses wrangler.toml, which this CLI does not edit.',
 			'Convert it to wrangler.jsonc (same keys, JSONC syntax), or merge node_modules/' +
-				'@cloudflarebase/auth/template/wrangler-fragment.jsonc into it by hand.'
+				'@frostbase/auth/template/wrangler-fragment.jsonc into it by hand.'
 		);
 	} catch (cause) {
 		if (cause instanceof UserError) throw cause;
 	}
 	throw new UserError(
 		'No wrangler.jsonc found - this does not look like a Worker project.',
-		'Run `cloudflarebase init <name>` to scaffold one.'
+		'Run `frostbase init <name>` to scaffold one.'
 	);
 }

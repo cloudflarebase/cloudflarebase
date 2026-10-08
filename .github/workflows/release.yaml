@@ -21,7 +21,7 @@ name: Release
 # `release` environment - no npm token exists anywhere, so there is nothing to
 # steal or rotate. After this repository's supply-chain incident, that is the
 # point. One-time setup per package on npmjs.com (package settings → Trusted
-# Publisher): repository cloudflarebase/cloudflarebase, workflow release.yaml,
+# Publisher): repository frostbase-dev/frostbase, workflow release.yaml,
 # environment release. If npm will not accept a trusted publisher for a
 # package that has never been published, publish the first version locally
 # with `npm publish` and configure it after.
@@ -65,10 +65,10 @@ jobs:
           node <<'EOF' >> "$GITHUB_OUTPUT"
           const { execSync } = require('child_process');
           const packages = [
-            { name: '@cloudflarebase/auth', dir: 'agents/auth', prefix: 'auth-v' },
-            { name: '@cloudflarebase/db', dir: 'agents/db', prefix: 'db-v' },
-            { name: '@cloudflarebase/storage', dir: 'agents/storage', prefix: 'storage-v' },
-            { name: '@cloudflarebase/cli', dir: 'cli', prefix: 'cli-v' },
+            { name: '@frostbase/auth', dir: 'agents/auth', prefix: 'auth-v' },
+            { name: '@frostbase/db', dir: 'agents/db', prefix: 'db-v' },
+            { name: '@frostbase/storage', dir: 'agents/storage', prefix: 'storage-v' },
+            { name: '@frostbase/cli', dir: 'cli', prefix: 'cli-v' },
           ];
           const refType = process.env.GITHUB_REF_TYPE;
           const refName = process.env.GITHUB_REF_NAME;

@@ -5,10 +5,10 @@
 </script>
 
 <svelte:head>
-	<title>Pricing · Cloudflarebase</title>
+	<title>Pricing · Frostbase</title>
 	<meta
 		name="description"
-		content="Cloudflarebase is free and open source. Estimate what your workload costs on your own Cloudflare account - next to the same app on Firebase and Supabase."
+		content="Frostbase is free and open source. Estimate what your workload costs on your own Cloudflare account - next to the same app on Firebase and Supabase."
 	/>
 </svelte:head>
 
@@ -17,7 +17,7 @@
 		<div class="mx-auto flex max-w-6xl items-center justify-between py-4">
 			<a href={resolve('/')} aria-label="home" class="flex items-center gap-2 text-lg font-bold">
 				<img src="/brand/mark.svg" alt="" class="h-5 w-5" />
-				Cloudflarebase
+				Frostbase
 			</a>
 			<div class="flex items-center gap-3">
 				<a href={resolve('/')} class="text-sm text-muted-foreground hover:text-foreground">
@@ -35,8 +35,8 @@
 					Our price: <span class="text-primary">$0</span>
 				</h1>
 				<p class="mt-3 text-muted-foreground">
-					Cloudflarebase is open source and runs on your own Cloudflare account - there is no
-					middleman bill, and Durable Objects sit on the
+					Frostbase is open source and runs on your own Cloudflare account - there is no middleman
+					bill, and Durable Objects sit on the
 					<a
 						class="underline underline-offset-2 hover:text-foreground"
 						href="https://developers.cloudflare.com/durable-objects/platform/pricing/"
@@ -54,7 +54,7 @@
 		<div
 			class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground/70"
 		>
-			<span>&copy; 2026 Cloudflarebase</span>
+			<span>&copy; 2026 Frostbase</span>
 			<nav class="flex gap-4">
 				<a href={resolve('/privacy')} class="hover:text-foreground">Privacy</a>
 				<a href={resolve('/terms')} class="hover:text-foreground">Terms</a>

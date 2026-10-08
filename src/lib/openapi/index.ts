@@ -61,7 +61,7 @@ export function buildOpenApiDocument({ projectId, origin }: OpenApiOptions) {
 	return {
 		openapi: '3.1.0',
 		info: {
-			title: `Cloudflarebase - ${projectId}`,
+			title: `Frostbase - ${projectId}`,
 			version: '1.0.0',
 			description: [
 				`API for the \`${projectId}\` project.`,
@@ -94,7 +94,7 @@ export function buildOpenApiDocument({ projectId, origin }: OpenApiOptions) {
 					type: 'http',
 					scheme: 'bearer',
 					description:
-						'A project service key (`cfbs_...`), minted on the project Settings page and shown once. ' +
+						'A project service key (`fsb_...`), minted on the project Settings page and shown once. ' +
 						'The credential a SERVER holds when there is no signed-in user to relay - a cron, a queue ' +
 						'consumer, a webhook handler, a seed script. Admin-grade on this project’s data plane: ' +
 						'it bypasses access modes, document validators, and permission keys exactly as an operator ' +
