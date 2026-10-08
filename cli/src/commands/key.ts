@@ -2,7 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { loadConfig } from '../lib/config.js';
 import { blank, bold, dim, info, success, UserError, warn } from '../lib/log.js';
-import { hostingFetch, readManagedConfig, targetProjectId } from '../lib/managed.js';
+import { projectFetch, readManagedConfig, targetProjectId } from '../lib/managed.js';
 
 /**
  * `cloudflarebase key create|list|revoke` - project service keys.
@@ -15,8 +15,8 @@ import { hostingFetch, readManagedConfig, targetProjectId } from '../lib/managed
  * service keys, or it could grow and outlive itself. So this command needs
  * `cloudflarebase login`, exactly like `secret put`.
  *
- * Keys are scoped to ONE project - never a root and its branches, the way
- * deploy tokens are - because for data the branch IS the isolation boundary.
+ * Keys are scoped to ONE project - never a root and its branches - because
+ * for data the branch IS the isolation boundary.
  * `--branch` therefore targets a specific registry row rather than a family.
  */
 
@@ -85,14 +85,13 @@ export async function keyCommand(projectDir: string, rest: string[]): Promise<vo
 		);
 	}
 
-	// No git-branch inference here, deliberately. `deploy` infers because you
-	// deploy the branch you are on; a key is a credential you paste somewhere
-	// and keep, so it targets the root unless you say otherwise.
+	// No git-branch inference here, deliberately: a key is a credential you
+	// paste somewhere and keep, so it targets the root unless you say otherwise.
 	const target = targetProjectId(managed.project, branchFlag ?? null);
 	const route = `/api/projects/${target}/keys`;
 
 	if (subcommand === 'list') {
-		const response = await hostingFetch(managed.origin, config.token, route);
+		const response = await projectFetch(managed.origin, config.token, route);
 		if (!response.ok) throw await failure(response, 'Listing service keys failed');
 		const { keys } = (await response.json()) as { keys: KeySummary[] };
 		blank();
@@ -112,7 +111,7 @@ export async function keyCommand(projectDir: string, rest: string[]): Promise<vo
 	if (subcommand === 'revoke') {
 		const [id] = positional;
 		if (!id) usage();
-		const response = await hostingFetch(managed.origin, config.token, `${route}/${id}`, {
+		const response = await projectFetch(managed.origin, config.token, `${route}/${id}`, {
 			method: 'DELETE'
 		});
 		if (!response.ok) throw await failure(response, 'Revoking the service key failed');
@@ -124,7 +123,7 @@ export async function keyCommand(projectDir: string, rest: string[]): Promise<vo
 	const [name] = positional;
 	if (!name) usage();
 
-	const response = await hostingFetch(managed.origin, config.token, route, {
+	const response = await projectFetch(managed.origin, config.token, route, {
 		method: 'POST',
 		headers: { 'content-type': 'application/json' },
 		body: JSON.stringify({ name })

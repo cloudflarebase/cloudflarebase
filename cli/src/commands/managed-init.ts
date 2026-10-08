@@ -2,23 +2,18 @@ import readline from 'node:readline/promises';
 import { loadConfig } from '../lib/config.js';
 import { consoleFetch, errorText } from '../lib/console-api.js';
 import { blank, bold, dim, info, success, UserError } from '../lib/log.js';
-import { APP_NAME, writeManagedConfig } from '../lib/managed.js';
+import { writeManagedConfig } from '../lib/managed.js';
 
 /**
- * Bare `cloudflarebase init` - connect the CURRENT directory to a managed
- * console project (Phase B). `init <name>`
- * stays the self-hosted scaffold; the wrangler/Netlify-style bare form is
- * "initialize cloudflarebase here": pick (or create) a project, claim an app
- * subdomain - showing the auto-numbered suggestion first when the wanted
- * name is taken, because collisions never fail - and write
- * `cloudflarebase.json`, which is what flips `cloudflarebase deploy` into
- * managed mode.
+ * Bare `cloudflarebase init` - connect the CURRENT directory to a project on a
+ * managed console. `init <name>` stays the self-hosted scaffold; the
+ * wrangler-style bare form is "initialize cloudflarebase here": pick (or
+ * create) a project and write `cloudflarebase.json`, which is what `key`
+ * reads to know which project it acts on.
  */
 
 interface Flags {
 	project?: string;
-	app?: string;
-	yes?: boolean;
 }
 
 function parseFlags(rest: string[]): Flags {
@@ -26,8 +21,6 @@ function parseFlags(rest: string[]): Flags {
 	for (let i = 0; i < rest.length; i += 1) {
 		const arg = rest[i];
 		if (arg === '--project') flags.project = rest[++i];
-		else if (arg === '--app') flags.app = rest[++i];
-		else if (arg === '--yes' || arg === '-y') flags.yes = true;
 		else throw new UserError(`Unknown flag "${arg}".`);
 	}
 	return flags;
@@ -45,7 +38,7 @@ export async function managedInitCommand(projectDir: string, rest: string[]): Pr
 
 	const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 	try {
-		// 1. Pick or create the ROOT project (branches are decided per deploy).
+		// Pick or create the ROOT project; commands take --branch for branches.
 		let projectId = flags.project;
 		if (!projectId) {
 			const response = await consoleFetch(config, '/api/registry/projects');
@@ -83,69 +76,20 @@ export async function managedInitCommand(projectDir: string, rest: string[]): Pr
 			}
 		}
 		if (projectId.includes('--')) {
-			throw new UserError('Initialize against the ROOT project - branches are decided per deploy.');
-		}
-
-		// 2. Choose the app name, defaulting to the project id.
-		let appName = flags.app;
-		if (!appName) {
-			const suggestion = APP_NAME.test(projectId) ? projectId : undefined;
-			const answer = (
-				await rl.question(`App name${suggestion ? ` [${suggestion}]` : ''}: `)
-			).trim();
-			appName = answer || suggestion || '';
-		}
-		if (!APP_NAME.test(appName) || appName.includes('--')) {
 			throw new UserError(
-				`"${appName}" is not a valid app name.`,
-				'Use 3-48 lowercase letters, numbers, and hyphens (no "--").'
+				'Initialize against the ROOT project - commands take --branch for branches.'
 			);
 		}
 
-		// 3. Preview the claim, then take it. Taken names auto-number rather
-		// than fail, so the preview is what makes the numbering consensual in
-		// an interactive session - CI deploys just take it.
-		const preview = await consoleFetch(config, `/api/projects/${projectId}/hosting/claims`, {
-			method: 'POST',
-			body: JSON.stringify({ app: appName, dry: true })
-		});
-		if (!preview.ok) {
-			throw new UserError(`Could not claim "${appName}": ${await errorText(preview)}`);
-		}
-		const suggested = (await preview.json()) as { subdomain: string };
-		if (suggested.subdomain !== appName) {
-			info(`${bold(appName)} is taken - the next free subdomain is ${bold(suggested.subdomain)}.`);
-		}
-		if (!flags.yes) {
-			const confirm = (
-				await rl.question(`Claim ${bold(suggested.subdomain)}.cfbase.dev? [Y/n] `)
-			).trim();
-			if (confirm && !/^y(es)?$/i.test(confirm)) {
-				throw new UserError('Nothing claimed.');
-			}
-		}
-		const claim = await consoleFetch(config, `/api/projects/${projectId}/hosting/claims`, {
-			method: 'POST',
-			body: JSON.stringify({ app: appName })
-		});
-		if (!claim.ok) {
-			throw new UserError(`Could not claim "${appName}": ${await errorText(claim)}`);
-		}
-		const claimed = (await claim.json()) as { subdomain: string };
-
-		// 4. Write the marker that flips `deploy` into managed mode.
 		const file = await writeManagedConfig(projectDir, {
 			project: projectId,
-			app: appName,
 			origin: config.origin
 		});
 
 		blank();
-		success(`Initialized: ${bold(projectId)} as ${bold(claimed.subdomain)}`);
-		info(`  ${dim('·')} ${file} written - commit it; \`cloudflarebase deploy\` is now managed.`);
-		info(
-			`  ${dim('·')} Root deploys serve at ${bold(`${claimed.subdomain}.cfbase.dev`)}; a branch <b> serves at ${claimed.subdomain}-<b>.cfbase.dev.`
-		);
+		success(`Initialized: ${bold(projectId)} on ${config.origin}`);
+		info(`  ${dim('·')} ${file} written - commit it.`);
+		info(`  ${dim('·')} Next: \`cloudflarebase key create <name> --env-file\` mints a server key.`);
 	} finally {
 		rl.close();
 	}

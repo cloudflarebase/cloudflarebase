@@ -33,10 +33,6 @@ export const AGENTS: Record<string, AgentSpec> = {
 		packageName: '@cloudflarebase/db',
 		description: 'Firestore-style documents with live queries - one Durable Object per collection'
 	},
-	hosting: {
-		packageName: '@cloudflarebase/hosting',
-		description: 'Apps and functions on Workers for Platforms - assets and code in one deploy'
-	},
 	storage: {
 		packageName: '@cloudflarebase/storage',
 		description: 'Object storage on R2 - buckets of files with per-bucket access modes'

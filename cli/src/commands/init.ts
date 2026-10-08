@@ -15,10 +15,10 @@ import { runOrFail } from '../lib/run.js';
  * agent package's own fragment, so there is exactly one definition of a
  * working configuration and `init` can never drift from it.
  *
- * BARE `cloudflarebase init` (no name) is the managed-hosting setup instead:
- * wrangler/Netlify vocabulary for "initialize cloudflarebase in the current
- * directory" - it connects this app to a console project and writes
- * cloudflarebase.json (managed-init.ts).
+ * BARE `cloudflarebase init` (no name) is the managed setup instead: wrangler
+ * vocabulary for "initialize cloudflarebase in the current directory" - it
+ * connects this directory to a console project and writes cloudflarebase.json
+ * (managed-init.ts).
  */
 export async function initCommand(cwd: string, args: string[]): Promise<void> {
 	const name = args[0];

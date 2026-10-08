@@ -9,7 +9,6 @@ import { keyCommand } from './commands/key.js';
 import { loginCommand } from './commands/login.js';
 import { logoutCommand } from './commands/logout.js';
 import { schemaCommand } from './commands/schema.js';
-import { secretCommand } from './commands/secret.js';
 import { blank, bold, dim, error, info, UserError } from './lib/log.js';
 
 const usage = (): void => {
@@ -21,12 +20,7 @@ const usage = (): void => {
 		`  cloudflarebase init           ${dim('connect this directory to a managed console project')}`
 	);
 	info(`  cloudflarebase add <agent>    ${dim('install an agent into an existing Worker')}`);
-	info(
-		`  cloudflarebase deploy         ${dim('deploy - managed once initialized, wrangler otherwise')}`
-	);
-	info(
-		`  cloudflarebase secret <cmd>   ${dim('put | list | delete a secret on the deployed app')}`
-	);
+	info(`  cloudflarebase deploy         ${dim('deploy this Worker with wrangler')}`);
 	info(`  cloudflarebase key <cmd>      ${dim('create | list | revoke a project service key')}`);
 	info(
 		`  cloudflarebase login <url>    ${dim('authenticate against a console (browser approval)')}`
@@ -58,9 +52,6 @@ async function main(): Promise<void> {
 			return;
 		case 'deploy':
 			await deployCommand(cwd, rest);
-			return;
-		case 'secret':
-			await secretCommand(cwd, rest);
 			return;
 		case 'key':
 			await keyCommand(cwd, rest);
