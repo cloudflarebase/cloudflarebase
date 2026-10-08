@@ -1,5 +1,5 @@
 /**
- * Wrangler configuration for a Worker that hosts `@frostbase/db`.
+ * Wrangler configuration for a Worker that hosts `@frostbase-dev/db`.
  *
  * Merge this into your own `wrangler.jsonc`, then run `npx wrangler types` so
  * the generated `Env` carries these bindings. The agent reads `Env` from your
@@ -71,7 +71,7 @@
 	],
 
 	/**
-	 * NOT included: an AUTH_AGENT service binding. If `@frostbase/auth`
+	 * NOT included: an AUTH_AGENT service binding. If `@frostbase-dev/auth`
 	 * lives in this same Worker (the normal `frostbase add auth` setup),
 	 * the db agent finds its AuthAgent Durable Object binding automatically
 	 * and token-verified collections just work. A service binding is only for

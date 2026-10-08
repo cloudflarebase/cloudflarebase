@@ -65,10 +65,10 @@ jobs:
           node <<'EOF' >> "$GITHUB_OUTPUT"
           const { execSync } = require('child_process');
           const packages = [
-            { name: '@frostbase/auth', dir: 'agents/auth', prefix: 'auth-v' },
-            { name: '@frostbase/db', dir: 'agents/db', prefix: 'db-v' },
-            { name: '@frostbase/storage', dir: 'agents/storage', prefix: 'storage-v' },
-            { name: '@frostbase/cli', dir: 'cli', prefix: 'cli-v' },
+            { name: '@frostbase-dev/auth', dir: 'agents/auth', prefix: 'auth-v' },
+            { name: '@frostbase-dev/db', dir: 'agents/db', prefix: 'db-v' },
+            { name: '@frostbase-dev/storage', dir: 'agents/storage', prefix: 'storage-v' },
+            { name: '@frostbase-dev/cli', dir: 'cli', prefix: 'cli-v' },
           ];
           const refType = process.env.GITHUB_REF_TYPE;
           const refName = process.env.GITHUB_REF_NAME;

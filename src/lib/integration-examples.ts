@@ -132,7 +132,7 @@ curl ${url}/get-session \\
 						id: 'service-key',
 						label: 'Admin service key',
 						lang: 'typescript',
-						code: `import { createAuthAdmin } from '@frostbase/auth/admin';
+						code: `import { createAuthAdmin } from '@frostbase-dev/auth/admin';
 
 // SERVER ONLY. An admin service key can read, create, re-role, and delete
 // every account in this project. Mint one under Settings - it is shown once
@@ -205,7 +205,7 @@ const { docs } = await (await fetch('${url}/collections/posts/query', {
 			id: 'db-sdk',
 			label: 'Client SDK',
 			lang: 'typescript',
-			code: `import { createDbClient } from '@frostbase/db/client';
+			code: `import { createDbClient } from '@frostbase-dev/db/client';
 
 const db = createDbClient({
   baseUrl: '${url}',
@@ -227,7 +227,7 @@ const unsubscribe = posts.subscribe(
 			id: 'db-tables',
 			label: 'SQL tables',
 			lang: 'typescript',
-			code: `import { createDbClient } from '@frostbase/db/client';
+			code: `import { createDbClient } from '@frostbase-dev/db/client';
 
 const db = createDbClient({ baseUrl: '${url}', getToken });
 
@@ -245,7 +245,7 @@ todos.subscribe(
 			id: 'db-drizzle',
 			label: 'Drizzle',
 			lang: 'typescript',
-			code: `import { drizzleTable } from '@frostbase/db/drizzle';
+			code: `import { drizzleTable } from '@frostbase-dev/db/drizzle';
 import { desc } from 'drizzle-orm';
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 
@@ -292,7 +292,7 @@ export function buildRemoteConfigIntegrationExamples(url: string): CodeExample[]
 			id: 'config-sdk',
 			label: 'Client SDK',
 			lang: 'typescript',
-			code: `import { createDbClient } from '@frostbase/db/client';
+			code: `import { createDbClient } from '@frostbase-dev/db/client';
 
 // getToken is optional - a signed-in user's project JWT is what enables
 // role and permission targeting. Anonymous callers just omit it.
@@ -376,7 +376,7 @@ export function buildStorageIntegrationExamples(
 			id: 'storage-sdk',
 			label: 'Client SDK',
 			lang: 'typescript',
-			code: `import { createStorageClient } from '@frostbase/storage/client';
+			code: `import { createStorageClient } from '@frostbase-dev/storage/client';
 
 const storage = createStorageClient({
   baseUrl: '${agentBase}',${
@@ -462,7 +462,7 @@ const blob = await response.blob();`
 			id: 'storage-server',
 			label: 'Admin service key',
 			lang: 'typescript',
-			code: `import { createStorageAdmin } from '@frostbase/storage/admin';
+			code: `import { createStorageAdmin } from '@frostbase-dev/storage/admin';
 
 // SERVER ONLY. An admin service key is admin-grade over this project's
 // storage: it bypasses bucket access modes, exactly like the operator session

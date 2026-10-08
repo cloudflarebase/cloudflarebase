@@ -1,4 +1,4 @@
-# @frostbase/auth
+# @frostbase-dev/auth
 
 Better Auth on a Cloudflare Durable Object. One isolated instance per project,
 each with its own embedded SQLite database, in your account. This is the auth
@@ -14,7 +14,7 @@ dashboards; and opt-in auth events into Workers Analytics Engine.
 The easy way is the CLI, which does all of the wiring below:
 
 ```bash
-npx @frostbase/cli add auth
+npx @frostbase-dev/cli add auth
 ```
 
 By hand: install the package, re-export the agent from your Worker entrypoint
@@ -24,11 +24,11 @@ your `wrangler.jsonc`, and regenerate types.
 
 ```ts
 // src/index.ts
-export { AuthAgent, default } from '@frostbase/auth';
+export { AuthAgent, default } from '@frostbase-dev/auth';
 ```
 
 ```bash
-npm install @frostbase/auth
+npm install @frostbase-dev/auth
 npx wrangler types
 npx wrangler deploy
 ```
@@ -43,7 +43,7 @@ catch a missing binding at compile time instead of on the first request, add
 one line anywhere in your Worker:
 
 ```ts
-import type { AssertAuthAgentEnv } from '@frostbase/auth';
+import type { AssertAuthAgentEnv } from '@frostbase-dev/auth';
 export type _AuthAgentBindings = AssertAuthAgentEnv<Env>;
 ```
 

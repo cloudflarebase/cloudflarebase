@@ -1,4 +1,4 @@
-# @frostbase/db
+# @frostbase-dev/db
 
 Documents with live queries and schema-first SQL tables, one Durable Object per
 collection or table. The largest agent in the repo and the one with the most

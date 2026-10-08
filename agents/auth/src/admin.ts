@@ -1,8 +1,8 @@
 /**
- * The ADMIN client for `@frostbase/auth` - user and session management
+ * The ADMIN client for `@frostbase-dev/auth` - user and session management
  * from a server.
  *
- * The twin of `@frostbase/db/admin`, and the same three properties hold:
+ * The twin of `@frostbase-dev/db/admin`, and the same three properties hold:
  * it targets the CONSOLE (a `cfbs_` service key is verified in the console
  * guard and never reaches this agent as a bearer), it is admin-grade, and it
  * is server-only.
@@ -51,7 +51,7 @@ export class AuthAdminError extends Error {
 export class AuthAgentTooOldError extends Error {
 	constructor(path: string) {
 		super(
-			`the auth agent did not recognise ${path}. Deploy @frostbase/auth 0.7.0 or newer ` +
+			`the auth agent did not recognise ${path}. Deploy @frostbase-dev/auth 0.7.0 or newer ` +
 				`before calling this - an older agent answers a 404 that looks like a missing user.`,
 		);
 		this.name = 'AuthAgentTooOldError';
@@ -74,7 +74,7 @@ function assertServerOnly(): void {
 	// which declare no DOM, and a Worker has no document either.
 	if (typeof (globalThis as { document?: unknown }).document !== 'undefined') {
 		throw new Error(
-			'@frostbase/auth/admin is server-only: it carries a service key, which can read and ' +
+			'@frostbase-dev/auth/admin is server-only: it carries a service key, which can read and ' +
 				'delete every account in your project. Never import it into browser code. Use ' +
 				'better-auth/client with the signed-in user’s own session instead.',
 		);
@@ -98,7 +98,7 @@ function resolve(
 		if (value) return value;
 	}
 	throw new Error(
-		`@frostbase/auth/admin needs ${label}: pass it explicitly, or set ${names.join(' or ')}. ` +
+		`@frostbase-dev/auth/admin needs ${label}: pass it explicitly, or set ${names.join(' or ')}. ` +
 			`Inside a Worker, secrets live on \`env\` rather than a global process - pass \`{ env }\`.`,
 	);
 }

@@ -1,5 +1,5 @@
 /**
- * The binding contract for a Worker hosting `@frostbase/storage`.
+ * The binding contract for a Worker hosting `@frostbase-dev/storage`.
  *
  * `AssertStorageAgentEnv<Env>` is an identity type whose CONSTRAINT does the
  * checking: the consumer's entrypoint template instantiates it with their

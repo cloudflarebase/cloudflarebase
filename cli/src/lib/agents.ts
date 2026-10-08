@@ -26,15 +26,15 @@ export interface AgentSpec {
  */
 export const AGENTS: Record<string, AgentSpec> = {
 	auth: {
-		packageName: '@frostbase/auth',
+		packageName: '@frostbase-dev/auth',
 		description: 'Better Auth on a Durable Object - one isolated instance per project'
 	},
 	db: {
-		packageName: '@frostbase/db',
+		packageName: '@frostbase-dev/db',
 		description: 'Firestore-style documents with live queries - one Durable Object per collection'
 	},
 	storage: {
-		packageName: '@frostbase/storage',
+		packageName: '@frostbase-dev/storage',
 		description: 'Object storage on R2 - buckets of files with per-bucket access modes'
 	}
 };

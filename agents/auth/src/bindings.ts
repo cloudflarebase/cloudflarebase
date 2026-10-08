@@ -1,5 +1,5 @@
 /**
- * The binding contract for consumers of `@frostbase/auth`.
+ * The binding contract for consumers of `@frostbase-dev/auth`.
  *
  * The Agents SDK constrains `Agent<Env, State>` against `Cloudflare.Env`, which
  * is an empty declaration-merge target that `wrangler types` fills in from your
@@ -144,7 +144,7 @@ export interface AuthAgentBindings {
  * on first request. Use it once, anywhere in your Worker:
  *
  * ```ts
- * import type { AssertAuthAgentEnv } from '@frostbase/auth';
+ * import type { AssertAuthAgentEnv } from '@frostbase-dev/auth';
  * type _AuthBindings = AssertAuthAgentEnv<Env>;
  * ```
  */

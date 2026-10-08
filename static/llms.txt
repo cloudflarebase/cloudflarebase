@@ -13,9 +13,9 @@ Frostbase is agent-first: every backend primitive ships as a versioned npm packa
 ## Source
 
 - [GitHub](https://github.com/frostbase-dev/frostbase): the whole repository, including both agents and the CLI.
-- [@frostbase/auth](https://www.npmjs.com/package/@frostbase/auth): Better Auth in a per-project Durable Object.
-- [@frostbase/db](https://www.npmjs.com/package/@frostbase/db): documents and typed SQL tables, both with live queries.
-- [@frostbase/cli](https://www.npmjs.com/package/@frostbase/cli): `init`, `add <agent>`, `deploy`, `schema`.
+- [@frostbase-dev/auth](https://www.npmjs.com/package/@frostbase-dev/auth): Better Auth in a per-project Durable Object.
+- [@frostbase-dev/db](https://www.npmjs.com/package/@frostbase-dev/db): documents and typed SQL tables, both with live queries.
+- [@frostbase-dev/cli](https://www.npmjs.com/package/@frostbase-dev/cli): `init`, `add <agent>`, `deploy`, `schema`.
 
 ## Optional
 

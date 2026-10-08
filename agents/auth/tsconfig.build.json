@@ -1,5 +1,5 @@
 /**
- * Publish build for `@frostbase/auth`.
+ * Publish build for `@frostbase-dev/auth`.
  *
  * Emits `dist/` from `src/` only. Two things are deliberately left out of the
  * published package:
