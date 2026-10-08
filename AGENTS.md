@@ -142,10 +142,7 @@ These are expensive to rediscover.
 - **`cloudflarebase` survives in names that hold state, on purpose.** The
   project was Cloudflarebase until October 2026. D1 database names
   (`cloudflarebase-control-plane*`), Analytics Engine datasets
-  (`cloudflarebase_*_events`), the deployed console workers
-  (`cloudflarebase-com`, `cloudflarebase-com-preview`, connected to Workers
-  Builds - so preview serves at
-  `cloudflarebase-com-preview.frostbase.workers.dev`), the JWT issuer
+  (`cloudflarebase_*_events`), the JWT issuer
   (`cloudflarebase:<project>`) and the mail sender keep the old spelling,
   because renaming them orphans data or invalidates live tokens. Legacy
   inputs are still accepted: `cfbs_` service keys, `CLOUDFLAREBASE_*` env

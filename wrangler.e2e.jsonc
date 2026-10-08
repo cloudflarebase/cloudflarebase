@@ -1,6 +1,6 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "cloudflarebase-com-test",
+	"name": "console-test",
 	"main": ".svelte-kit-e2e/cloudflare/_worker.js",
 	"compatibility_date": "2026-07-10",
 	"compatibility_flags": ["nodejs_compat", "nodejs_als"],
