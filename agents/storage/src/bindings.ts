@@ -1,5 +1,5 @@
 /**
- * The binding contract for a Worker hosting `@cloudflarebase/storage`.
+ * The binding contract for a Worker hosting `@frostbase/storage`.
  *
  * `AssertStorageAgentEnv<Env>` is an identity type whose CONSTRAINT does the
  * checking: the consumer's entrypoint template instantiates it with their
@@ -49,12 +49,18 @@ export interface StorageAgentBindings {
 	 * Deliberately a second fact, not folded into the first. A domain can be
 	 * SET without being routed, which is what local dev and the e2e stack do:
 	 * they name a host that resolves nowhere and reach the serving path through
-	 * the `x-cfbase-host` stand-in. Advertising that host would mint URLs that
+	 * the `x-frostbase-host` stand-in. Advertising that host would mint URLs that
 	 * resolve to nothing - the exact bug that made signed URLs build on the
 	 * request's origin in the first place. Unset means "serve on it if a
 	 * request somehow arrives, but never speak its name".
 	 */
 	STORAGE_SERVE_DOMAIN_ROUTED?: string;
+	/**
+	 * Comma-separated hostnames served exactly like `STORAGE_SERVE_DOMAIN` but
+	 * never handed out in URLs - a domain the deployment moved away from, kept
+	 * so object URLs already stored in apps keep resolving.
+	 */
+	STORAGE_SERVE_DOMAIN_ALIASES?: string;
 	SENTRY_DSN?: string;
 	SENTRY_ENV?: string;
 

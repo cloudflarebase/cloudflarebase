@@ -5,7 +5,7 @@
  * only place that can see EVERY agent) and answers from live project data by
  * calling the auth and db agents over their service bindings. Conversation
  * history lives in the CONSOLE project's own db agent (`./copilot-store`) -
- * Cloudflarebase's dashboard eating its own database, the way it already eats
+ * Frostbase's dashboard eating its own database, the way it already eats
  * its own auth.
  *
  * The response contract mirrors the auth agent's retired /chat surface
@@ -360,7 +360,7 @@ async function executeToolCall(call: NormalizedToolCall, ctx: ToolContext): Prom
 
 function systemPrompt(projectId: string): string {
 	return (
-		`You are the Cloudflarebase copilot for project "${projectId}" - the operator's assistant inside the project dashboard. ` +
+		`You are the Frostbase copilot for project "${projectId}" - the operator's assistant inside the project dashboard. ` +
 		'Use the provided tools to read live project data: auth_overview and auth_analytics for users, sessions, and activity; db_overview for collections, SQL tables, and their declared column schemas; db_query for actual documents or rows. ' +
 		'Answer only from tool results - never invent metrics or documents, and say when there is not enough data. ' +
 		'Be concise, and explain useful ratios or trends when the data supports them. ' +

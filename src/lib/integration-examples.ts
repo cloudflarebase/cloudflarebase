@@ -132,7 +132,7 @@ curl ${url}/get-session \\
 						id: 'service-key',
 						label: 'Admin service key',
 						lang: 'typescript',
-						code: `import { createAuthAdmin } from '@cloudflarebase/auth/admin';
+						code: `import { createAuthAdmin } from '@frostbase/auth/admin';
 
 // SERVER ONLY. An admin service key can read, create, re-role, and delete
 // every account in this project. Mint one under Settings - it is shown once
@@ -145,7 +145,7 @@ curl ${url}/get-session \\
 const auth = createAuthAdmin({
 	url: '${origin}',
 	projectId: '${projectId}',
-	key: process.env.CLOUDFLAREBASE_SERVICE_KEY
+	key: process.env.FROSTBASE_SERVICE_KEY
 });
 
 // Seed accounts, or migrate them off another provider: this bypasses the
@@ -166,8 +166,8 @@ await auth.setPassword(user.id, 'a-new-password');
 
 const { users } = await auth.listUsers({ limit: 50 });
 
-// url, projectId, and key fall back to CLOUDFLAREBASE_URL /
-// CLOUDFLAREBASE_PROJECT / CLOUDFLAREBASE_SERVICE_KEY, so on a server that
+// url, projectId, and key fall back to FROSTBASE_URL /
+// FROSTBASE_PROJECT / FROSTBASE_SERVICE_KEY, so on a server that
 // already has them this is just createAuthAdmin(). Inside a Worker there is
 // no global process - secrets arrive on env: createAuthAdmin({ env }).`
 					}
@@ -205,7 +205,7 @@ const { docs } = await (await fetch('${url}/collections/posts/query', {
 			id: 'db-sdk',
 			label: 'Client SDK',
 			lang: 'typescript',
-			code: `import { createDbClient } from '@cloudflarebase/db/client';
+			code: `import { createDbClient } from '@frostbase/db/client';
 
 const db = createDbClient({
   baseUrl: '${url}',
@@ -227,7 +227,7 @@ const unsubscribe = posts.subscribe(
 			id: 'db-tables',
 			label: 'SQL tables',
 			lang: 'typescript',
-			code: `import { createDbClient } from '@cloudflarebase/db/client';
+			code: `import { createDbClient } from '@frostbase/db/client';
 
 const db = createDbClient({ baseUrl: '${url}', getToken });
 
@@ -245,11 +245,11 @@ todos.subscribe(
 			id: 'db-drizzle',
 			label: 'Drizzle',
 			lang: 'typescript',
-			code: `import { drizzleTable } from '@cloudflarebase/db/drizzle';
+			code: `import { drizzleTable } from '@frostbase/db/drizzle';
 import { desc } from 'drizzle-orm';
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 
-// \`cloudflarebase schema generate\` emits this from your declared columns.
+// \`frostbase schema generate\` emits this from your declared columns.
 const todos = sqliteTable('todos', {
   id: text('id').primaryKey(),
   title: text('title').notNull(),
@@ -292,7 +292,7 @@ export function buildRemoteConfigIntegrationExamples(url: string): CodeExample[]
 			id: 'config-sdk',
 			label: 'Client SDK',
 			lang: 'typescript',
-			code: `import { createDbClient } from '@cloudflarebase/db/client';
+			code: `import { createDbClient } from '@frostbase/db/client';
 
 // getToken is optional - a signed-in user's project JWT is what enables
 // role and permission targeting. Anonymous callers just omit it.
@@ -376,7 +376,7 @@ export function buildStorageIntegrationExamples(
 			id: 'storage-sdk',
 			label: 'Client SDK',
 			lang: 'typescript',
-			code: `import { createStorageClient } from '@cloudflarebase/storage/client';
+			code: `import { createStorageClient } from '@frostbase/storage/client';
 
 const storage = createStorageClient({
   baseUrl: '${agentBase}',${
@@ -462,7 +462,7 @@ const blob = await response.blob();`
 			id: 'storage-server',
 			label: 'Admin service key',
 			lang: 'typescript',
-			code: `import { createStorageAdmin } from '@cloudflarebase/storage/admin';
+			code: `import { createStorageAdmin } from '@frostbase/storage/admin';
 
 // SERVER ONLY. An admin service key is admin-grade over this project's
 // storage: it bypasses bucket access modes, exactly like the operator session
@@ -476,7 +476,7 @@ const blob = await response.blob();`
 const storage = createStorageAdmin({
   url: '${origin}',
   projectId: '${projectId}',
-  key: process.env.CLOUDFLAREBASE_SERVICE_KEY // { env } inside a Worker
+  key: process.env.FROSTBASE_SERVICE_KEY // { env } inside a Worker
 });
 
 const files = storage.bucket('${bucket}');

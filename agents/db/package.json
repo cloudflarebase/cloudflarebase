@@ -1,16 +1,16 @@
 ﻿{
-	"name": "@cloudflarebase/db",
+	"name": "@frostbase/db",
 	"version": "0.7.0",
-	"description": "Documents with live queries and schema-first SQL tables on Cloudflare Durable Objects, one isolated instance per collection or table - the database primitive behind Cloudflarebase.",
+	"description": "Documents with live queries and schema-first SQL tables on Cloudflare Durable Objects, one isolated instance per collection or table - the database primitive behind Frostbase.",
 	"license": "Apache-2.0",
 	"type": "module",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/cloudflarebase/cloudflarebase.git",
+		"url": "git+https://github.com/frostbase-dev/frostbase.git",
 		"directory": "agents/db"
 	},
-	"homepage": "https://github.com/cloudflarebase/cloudflarebase/tree/main/agents/db#readme",
-	"bugs": "https://github.com/cloudflarebase/cloudflarebase/issues",
+	"homepage": "https://github.com/frostbase-dev/frostbase/tree/main/agents/db#readme",
+	"bugs": "https://github.com/frostbase-dev/frostbase/issues",
 	"keywords": [
 		"cloudflare",
 		"workers",
@@ -19,7 +19,7 @@
 		"realtime",
 		"live-queries",
 		"agents",
-		"cloudflarebase"
+		"frostbase"
 	],
 	"publishConfig": {
 		"access": "public"
@@ -44,14 +44,14 @@
 			"default": "./dist/drizzle.js"
 		},
 		"./wrangler-fragment.jsonc": "./template/wrangler-fragment.jsonc",
-		"./cloudflarebase.agent.json": "./cloudflarebase.agent.json",
+		"./frostbase.agent.json": "./frostbase.agent.json",
 		"./package.json": "./package.json"
 	},
 	"files": [
 		"dist",
 		"template",
 		"NOTICE",
-		"cloudflarebase.agent.json"
+		"frostbase.agent.json"
 	],
 	"scripts": {
 		"build": "tsc -p tsconfig.build.json",

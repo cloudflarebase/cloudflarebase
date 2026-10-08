@@ -40,7 +40,7 @@ jobs:
           workingDirectory: 'agents/storage'
           packageManager: npm
           # The top level of wrangler.jsonc is the self-hosted default (no
-          # BUCKET binding at all); cloudflarebase.com's own configuration
+          # BUCKET binding at all); frostbase.dev's own configuration
           # lives in env.production, which pins the Worker name back to
           # `storage-agent` and declares the shared R2 bucket. This deploy
           # needs the auth worker to exist first for its AUTH_AGENT service

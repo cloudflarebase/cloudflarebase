@@ -160,7 +160,7 @@
 	<div class="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-3">
 		<Card.Root class="border-primary/40" data-testid="pricing-cloudflare">
 			<Card.Header>
-				<Card.Description>Cloudflarebase on your Cloudflare account</Card.Description>
+				<Card.Description>Frostbase on your Cloudflare account</Card.Description>
 				<Card.Title class="text-4xl tabular-nums" data-testid="pricing-total-cf">
 					{formatUsd(cf.totalUsd)}<span class="text-base font-normal text-muted-foreground">
 						/month</span
@@ -325,7 +325,7 @@
 				CPU, ~5ms DO time); a read touches ~{MODEL.rowsPerRead} SQLite rows and a write ~{MODEL.rowsPerWrite};
 				each realtime connection receives ~{MODEL.messagesPerConnectionMonth / 30} pushed updates a day;
 				daily free-tier allowances are folded to months assuming steady traffic. Idle WebSockets hibernate
-				and cost nothing while quiet. MAU is an auth headcount only - Cloudflarebase has no per-user charge
+				and cost nothing while quiet. MAU is an auth headcount only - Frostbase has no per-user charge
 				(auth requests are ordinary requests), while Firebase and Supabase bill MAU directly past their
 				free allowances. Supabase's compute sizing, egress, Workers AI (the copilot), and multi-region
 				read replicas are not modeled.

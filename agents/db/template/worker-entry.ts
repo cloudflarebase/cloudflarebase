@@ -1,5 +1,5 @@
 /**
- * Worker entrypoint for a Worker that hosts `@cloudflarebase/db`.
+ * Worker entrypoint for a Worker that hosts `@frostbase/db`.
  *
  * Copy this to the file your `wrangler.jsonc` names as `main`.
  *
@@ -8,13 +8,13 @@
  * how the bindings resolve. The default export is the fetch handler that
  * routes `/agents/db-agent/<projectId>/...` to the right instances.
  *
- * Already have a default export (for example from `@cloudflarebase/auth`)?
+ * Already have a default export (for example from `@frostbase/auth`)?
  * Re-export only the classes - the existing agent handler routes to any
  * Durable Object binding by name:
  *
- *   export { DbAgent, DbCollection } from '@cloudflarebase/db';
+ *   export { DbAgent, DbCollection } from '@frostbase/db';
  */
-export { DbAgent, DbCollection, default } from '@cloudflarebase/db';
+export { DbAgent, DbCollection, default } from '@frostbase/db';
 
 /**
  * Compile-time check that your generated `Env` carries the bindings the agent
@@ -23,5 +23,5 @@ export { DbAgent, DbCollection, default } from '@cloudflarebase/db';
  *
  * Run `npx wrangler types` after editing `wrangler.jsonc` to regenerate `Env`.
  */
-import type { AssertDbAgentEnv } from '@cloudflarebase/db';
+import type { AssertDbAgentEnv } from '@frostbase/db';
 export type _DbAgentBindings = AssertDbAgentEnv<Env>;

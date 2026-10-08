@@ -91,13 +91,6 @@ export default defineConfig({
 				},
 				{
 					command:
-						'node scripts/kill-port.mjs 8800 && node scripts/clean-dir.mjs .wrangler/test-state/hosting-agent && npm run dev:test --prefix agents/hosting',
-					url: 'http://localhost:8800/health',
-					reuseExistingServer: !process.env.CI,
-					timeout: 120_000
-				},
-				{
-					command:
 						'node scripts/kill-port.mjs 8801 && node scripts/clean-dir.mjs .wrangler/test-state/storage-agent && npm run dev:test --prefix agents/storage',
 					url: 'http://localhost:8801/health',
 					reuseExistingServer: !process.env.CI,

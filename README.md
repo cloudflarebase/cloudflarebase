@@ -1,10 +1,10 @@
 <p align="center">
-  <img src="static/brand/github-header.png" alt="Cloudflarebase" width="100%" />
+  <img src="static/brand/github-header.png" alt="Frostbase" width="100%" />
 </p>
 
 <p align="center">
-  <a href="https://cloudflarebase.com"><strong>Hosted</strong></a> ·
-  <a href="https://cloudflarebase.com/dashboard">Live demo</a> ·
+  <a href="https://frostbase.dev"><strong>Hosted</strong></a> ·
+  <a href="https://frostbase.dev/dashboard">Live demo</a> ·
   <a href="#self-host">Self-host</a> ·
   <a href="CONTRIBUTING.md">Contributing</a>
 </p>
@@ -28,10 +28,8 @@ isolation by architecture, not by a `WHERE` clause.
   flipped without shipping a release.
 - **Storage** — buckets of files on R2: public/auth/owner access modes,
   signed URLs, multipart uploads, a file browser in the console.
-- **Hosting** — static sites and Workers at `<app>.cfbase.dev`, deployed from
-  the CLI or on every git push.
 
-Use it hosted at [cloudflarebase.com](https://cloudflarebase.com), or run the
+Use it hosted at [frostbase.dev](https://frostbase.dev), or run the
 whole stack on your own Cloudflare account. Same code either way.
 
 ## Hosted
@@ -39,31 +37,29 @@ whole stack on your own Cloudflare account. Same code either way.
 Sign up, create a project, point your app at its id:
 
 ```ts
-const baseUrl = 'https://cloudflarebase.com/api/projects/<project-id>';
+const baseUrl = 'https://frostbase.dev/api/projects/<project-id>';
 // auth -> `${baseUrl}/auth`   db -> `${baseUrl}/db`
 ```
 
 Add your app's origin under the project's **Settings** — that list is the CSRF
 allowlist, and an unlisted origin gets a 403.
 
-To host the front end too:
+For a server credential, from the CLI:
 
 ```bash
-npm install -g @cloudflarebase/cli
-cloudflarebase login
-cloudflarebase init      # links this directory to a project + app
-cloudflarebase deploy    # -> https://<app>.cfbase.dev
+npm install -g @frostbase/cli
+frostbase login
+frostbase init                              # links this directory to a project
+frostbase key create server --env-file      # writes a service key to .env.local
 ```
 
-Or connect the GitHub repo from the Hosting page and every push deploys.
-Branches serve at `<app>-<branch>.cfbase.dev`. Limits: 5 projects per org,
-5 branches per project, 10 apps per project.
+Limits: 5 projects per org, 5 branches per project.
 
 ## Self-host
 
 ```bash
-git clone https://github.com/cloudflarebase/cloudflarebase.git
-cd cloudflarebase && npm install
+git clone https://github.com/frostbase-dev/frostbase.git
+cd frostbase && npm install
 npm run dev          # localhost:5173/dashboard — no secrets, demo mode on
 ```
 
@@ -83,28 +79,26 @@ Everything else is optional and degrades cleanly when absent:
 
 - **Storage** needs R2 — create a bucket and add the `BUCKET` binding
   described in `agents/storage/wrangler.jsonc`.
-- **Hosting** needs Workers for Platforms (paid); deploys 503 without it.
 - **Auth-event charts** need Analytics Engine, a free dashboard toggle; then
   add the two lines shown in `agents/auth/wrangler.jsonc`.
 - Google/GitHub sign-in, email, and Sentry are opt-in secrets.
 
 Prefer buttons? One per Worker, same order as `deploy:all`:
-[auth](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflarebase/cloudflarebase/tree/main/agents/auth) ·
-[db](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflarebase/cloudflarebase/tree/main/agents/db) ·
-[storage](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflarebase/cloudflarebase/tree/main/agents/storage) ·
-[hosting](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflarebase/cloudflarebase/tree/main/agents/hosting) ·
-[dashboard](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflarebase/cloudflarebase)
+[auth](https://deploy.workers.cloudflare.com/?url=https://github.com/frostbase-dev/frostbase/tree/main/agents/auth) ·
+[db](https://deploy.workers.cloudflare.com/?url=https://github.com/frostbase-dev/frostbase/tree/main/agents/db) ·
+[storage](https://deploy.workers.cloudflare.com/?url=https://github.com/frostbase-dev/frostbase/tree/main/agents/storage) ·
+[dashboard](https://deploy.workers.cloudflare.com/?url=https://github.com/frostbase-dev/frostbase)
 
 ## Add the agents to a Worker you already have
 
 The console is optional — each agent is a normal npm package:
 
 ```bash
-cloudflarebase init my-backend   # scaffolds a Worker with auth
+frostbase init my-backend   # scaffolds a Worker with auth
 cd my-backend
-cloudflarebase add db            # documents + SQL tables, live queries on both
-cloudflarebase add storage       # buckets of files on R2
-cloudflarebase deploy
+frostbase add db            # documents + SQL tables, live queries on both
+frostbase add storage       # buckets of files on R2
+frostbase deploy
 ```
 
 `add` merges the agent's wrangler config into yours without overwriting
@@ -138,7 +132,7 @@ await posts.query({ orderBy: [{ field: 'votes', direction: 'desc' }], limit: 25 
 ```
 
 **Tables** are schema-first: declare typed columns once, then query them with
-real SQL through drizzle (`cloudflarebase schema generate` emits the schema):
+real SQL through drizzle (`frostbase schema generate` emits the schema):
 
 ```ts
 const sql = drizzleTable({ baseUrl: `${baseUrl}/db`, table: 'todos', getToken });
@@ -184,10 +178,10 @@ if (!config.get('signupsOpen')) {
 Buckets of files with per-bucket access modes:
 
 ```ts
-import { createStorageClient } from '@cloudflarebase/storage/client';
+import { createStorageClient } from '@frostbase/storage/client';
 
 const storage = createStorageClient({
-	baseUrl: 'https://cloudflarebase.com/agents/storage-agent/<project-id>',
+	baseUrl: 'https://frostbase.dev/agents/storage-agent/<project-id>',
 	getToken
 });
 
@@ -202,13 +196,13 @@ const { objects, folders } = await files.list({ prefix: '', folders: true });
 ### On a server
 
 With no user to relay — a cron, queue consumer, or webhook — mint a
-**service key** (`cloudflarebase key create`, or the project's Settings
+**service key** (`frostbase key create`, or the project's Settings
 page). Each agent ships an `./admin` client over it:
 
 ```ts
-import { createDbAdmin } from '@cloudflarebase/db/admin';
-import { createAuthAdmin } from '@cloudflarebase/auth/admin';
-import { createStorageAdmin } from '@cloudflarebase/storage/admin';
+import { createDbAdmin } from '@frostbase/db/admin';
+import { createAuthAdmin } from '@frostbase/auth/admin';
+import { createStorageAdmin } from '@frostbase/storage/admin';
 
 const db = createDbAdmin(); // url, project, and key from the environment
 const post = await db.collection('posts').get(id);
@@ -239,5 +233,5 @@ Report vulnerabilities privately via [SECURITY.md](SECURITY.md). Keep
 
 ## License
 
-[Apache-2.0](LICENSE). Cloudflarebase is an independent project, not affiliated
+[Apache-2.0](LICENSE). Frostbase is an independent project, not affiliated
 with or endorsed by Cloudflare, Inc. See [NOTICE](NOTICE).

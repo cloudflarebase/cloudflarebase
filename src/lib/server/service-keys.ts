@@ -23,9 +23,10 @@ import { serviceKey } from './db/schema';
  * Object.
  */
 
-/** `cfbs_` + 32 random bytes hex. Distinct prefix from `cfbd_` deploy tokens
- * so the two can never be confused at a glance or by a regex. */
-export const SERVICE_KEY_PATTERN = /^cfbs_[0-9a-f]{64}$/;
+/** `fsb_` + 32 random bytes hex. Keys minted before the Frostbase rename carry
+ * `cfbs_` and stay valid: the stored digest covers the whole string, prefix
+ * included, so they verify exactly as they always did. */
+export const SERVICE_KEY_PATTERN = /^(?:fsb|cfbs)_[0-9a-f]{64}$/;
 
 export const MAX_SERVICE_KEYS_PER_PROJECT = 5;
 
@@ -45,8 +46,7 @@ async function sha256Hex(value: string): Promise<string> {
  * its own included), `/api/console/**` and `/api/cli/**` (no minting other
  * credentials, no touching operator accounts), and `/api/projects/<id>/keys`
  * itself (a key cannot mint or revoke keys - it must not be able to grow or
- * outlive itself). Hosting stays out too: deploying is what deploy tokens are
- * for, and the two blast radii stay separate on purpose.
+ * outlive itself).
  *
  * The containment property: a service key reads and writes ITS project's
  * data, and nothing else.
@@ -105,7 +105,7 @@ const LAST_USED_DEBOUNCE_MS = 60_000;
 const lastUsedStamped = new Map<string, number>();
 
 /**
- * Verifies a `cfbs_` bearer. Null on any failure - the guard turns that into a
+ * Verifies a service-key bearer. Null on any failure - the guard turns that into a
  * plain 401, never a session fallback.
  */
 export async function verifyServiceKey(
@@ -173,7 +173,7 @@ export async function mintServiceKey(
 	}
 
 	const bytes = crypto.getRandomValues(new Uint8Array(32));
-	const secret = `cfbs_${[...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('')}`;
+	const secret = `fsb_${[...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('')}`;
 	const [created] = await db
 		.insert(serviceKey)
 		.values({

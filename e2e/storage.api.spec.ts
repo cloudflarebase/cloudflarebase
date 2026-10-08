@@ -686,7 +686,7 @@ test.describe('storage agent (S1)', () => {
 	});
 
 	/**
-	 * The stack SERVES on cdn.cfbase.test (via the x-cfbase-host stand-in) but
+	 * The stack SERVES on cdn.frostbase.test (via the x-frostbase-host stand-in) but
 	 * that host resolves nowhere, so it must never appear in anything handed to
 	 * a caller. This is the e2e half of the routed-vs-set rule; the unit tests
 	 * cover the routed branch, which no environment here can honestly stand up.
@@ -712,7 +712,7 @@ test.describe('storage agent (S1)', () => {
 		});
 		expect(minted.ok(), await minted.text()).toBeTruthy();
 		const { signedUrl } = (await minted.json()) as { signedUrl: string };
-		expect(signedUrl).not.toContain('cdn.cfbase.test');
+		expect(signedUrl).not.toContain('cdn.frostbase.test');
 
 		// The proof that matters: the URL actually resolves and serves.
 		const fetched = await request.get(signedUrl);
@@ -741,7 +741,7 @@ test.describe('storage agent (S1)', () => {
 			extraHTTPHeaders: {}
 		});
 		try {
-			const host = { 'x-cfbase-host': 'cdn.cfbase.test' };
+			const host = { 'x-frostbase-host': 'cdn.frostbase.test' };
 			const get = await cdn.get(`/${STORAGE_PROJECT}/spec-public/${run}/cdn.txt`, {
 				headers: host
 			});

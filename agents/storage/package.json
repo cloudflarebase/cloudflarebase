@@ -1,16 +1,16 @@
 ﻿{
-	"name": "@cloudflarebase/storage",
+	"name": "@frostbase/storage",
 	"version": "0.4.0",
-	"description": "Object storage on Cloudflare R2 - buckets of files with per-bucket access modes, an object index with keyset paging, one Durable Object orchestrator per project - the storage primitive behind Cloudflarebase.",
+	"description": "Object storage on Cloudflare R2 - buckets of files with per-bucket access modes, an object index with keyset paging, one Durable Object orchestrator per project - the storage primitive behind Frostbase.",
 	"license": "Apache-2.0",
 	"type": "module",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/cloudflarebase/cloudflarebase.git",
+		"url": "git+https://github.com/frostbase-dev/frostbase.git",
 		"directory": "agents/storage"
 	},
-	"homepage": "https://github.com/cloudflarebase/cloudflarebase/tree/main/agents/storage#readme",
-	"bugs": "https://github.com/cloudflarebase/cloudflarebase/issues",
+	"homepage": "https://github.com/frostbase-dev/frostbase/tree/main/agents/storage#readme",
+	"bugs": "https://github.com/frostbase-dev/frostbase/issues",
 	"keywords": [
 		"cloudflare",
 		"workers",
@@ -19,7 +19,7 @@
 		"durable-objects",
 		"storage",
 		"agents",
-		"cloudflarebase"
+		"frostbase"
 	],
 	"publishConfig": {
 		"access": "public"
@@ -40,14 +40,14 @@
 			"default": "./dist/admin.js"
 		},
 		"./wrangler-fragment.jsonc": "./template/wrangler-fragment.jsonc",
-		"./cloudflarebase.agent.json": "./cloudflarebase.agent.json",
+		"./frostbase.agent.json": "./frostbase.agent.json",
 		"./package.json": "./package.json"
 	},
 	"files": [
 		"dist",
 		"template",
 		"NOTICE",
-		"cloudflarebase.agent.json"
+		"frostbase.agent.json"
 	],
 	"scripts": {
 		"build": "tsc -p tsconfig.build.json",

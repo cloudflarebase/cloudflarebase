@@ -1,12 +1,12 @@
 /**
- * Wrangler fragment for the Cloudflarebase storage agent.
+ * Wrangler fragment for the Frostbase storage agent.
  *
- * `cloudflarebase add storage` merges these keys into your wrangler.jsonc:
+ * `frostbase add storage` merges these keys into your wrangler.jsonc:
  * comments survive, your existing values are never overwritten, and Durable
  * Object migrations append under your next free tag.
  *
  * The `migrations` block below is a FRESH v1 declaring the StorageAgent and
- * StorageBucket classes. Do not copy the tag history from the Cloudflarebase
+ * StorageBucket classes. Do not copy the tag history from the Frostbase
  * repository.
  *
  * R2 is an account-level opt-in behind a dashboard checkout, and this

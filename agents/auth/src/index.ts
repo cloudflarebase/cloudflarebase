@@ -28,7 +28,7 @@ const sentryOptions = (env: Env) => ({
 export const AuthAgent = Sentry.instrumentDurableObjectWithSentry(sentryOptions, AuthAgentBase);
 
 /**
- * Auth service for Cloudflarebase. Each project gets its own AuthAgent - a
+ * Auth service for Frostbase. Each project gets its own AuthAgent - a
  * SQLite-backed Durable Object running Better Auth with realtime state sync.
  *
  * Reached two ways:

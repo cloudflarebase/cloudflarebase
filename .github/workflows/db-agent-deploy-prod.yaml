@@ -40,6 +40,6 @@ jobs:
           workingDirectory: 'agents/db'
           packageManager: npm
           # The top level of wrangler.jsonc is the self-hosted default;
-          # cloudflarebase.com's own configuration lives in env.production,
+          # frostbase.dev's own configuration lives in env.production,
           # which pins the Worker name back to `db-agent`.
           environment: production

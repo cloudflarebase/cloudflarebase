@@ -28,7 +28,7 @@ export async function patchEntrypoint(
 		if ((cause as NodeJS.ErrnoException).code === 'ENOENT') {
 			throw new UserError(
 				`The Worker entrypoint ${entrypointPath} does not exist.`,
-				'Check the `main` field in wrangler.jsonc, or run `cloudflarebase init` in an empty directory instead.'
+				'Check the `main` field in wrangler.jsonc, or run `frostbase init` in an empty directory instead.'
 			);
 		}
 		throw cause;
@@ -40,7 +40,7 @@ export async function patchEntrypoint(
 
 	/*
 	 * A Worker can only have one default export. When the existing one came
-	 * from another cloudflarebase agent, its handler routes to ANY Durable
+	 * from another frostbase agent, its handler routes to ANY Durable
 	 * Object binding in Env by kebab-cased name (routeAgentRequest), so
 	 * re-exporting just the classes is enough - this is how the second `add`
 	 * composes instead of failing. A default export the user wrote themselves
@@ -49,7 +49,7 @@ export async function patchEntrypoint(
 	 */
 	let exportLine = lines.full;
 	if (/export\s+default|export\s*\{[^}]*\bdefault\b/.test(source)) {
-		if (!source.includes('@cloudflarebase/')) {
+		if (!source.includes('@frostbase/')) {
 			throw new UserError(
 				`${entrypointPath} already has a default export.`,
 				`Export the agent classes yourself and route to them from your fetch handler:\n` +

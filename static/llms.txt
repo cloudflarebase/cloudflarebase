@@ -1,23 +1,23 @@
-# Cloudflarebase
+# Frostbase
 
 > The open-source Firebase for Cloudflare: auth, a realtime document database, and SQL tables, each running as a Cloudflare Agent with one Durable Object per project. Globally replicated by default, no egress fees, self-hosted in your own Cloudflare account.
 
-Cloudflarebase is agent-first: every backend primitive ships as a versioned npm package you add to your own Worker with the `cloudflarebase` CLI, not a service you rent. Projects support whole-backend branching, and cloudflarebase.com runs a live demo that needs no account.
+Frostbase is agent-first: every backend primitive ships as a versioned npm package you add to your own Worker with the `frostbase` CLI, not a service you rent. Projects support whole-backend branching, and frostbase.dev runs a live demo that needs no account.
 
 ## Site
 
-- [Home](https://cloudflarebase.com/): what it is, how it compares to Firebase and Supabase, architecture, and roadmap.
-- [Pricing](https://cloudflarebase.com/pricing): the same workload priced on Cloudflare, Firebase, and Supabase, with dated sources.
-- [Live demo](https://cloudflarebase.com/dashboard): an ephemeral throwaway project, no sign-up.
+- [Home](https://frostbase.dev/): what it is, how it compares to Firebase and Supabase, architecture, and roadmap.
+- [Pricing](https://frostbase.dev/pricing): the same workload priced on Cloudflare, Firebase, and Supabase, with dated sources.
+- [Live demo](https://frostbase.dev/dashboard): an ephemeral throwaway project, no sign-up.
 
 ## Source
 
-- [GitHub](https://github.com/cloudflarebase/cloudflarebase): the whole repository, including both agents and the CLI.
-- [@cloudflarebase/auth](https://www.npmjs.com/package/@cloudflarebase/auth): Better Auth in a per-project Durable Object.
-- [@cloudflarebase/db](https://www.npmjs.com/package/@cloudflarebase/db): documents and typed SQL tables, both with live queries.
-- [@cloudflarebase/cli](https://www.npmjs.com/package/@cloudflarebase/cli): `init`, `add <agent>`, `deploy`, `schema`.
+- [GitHub](https://github.com/frostbase-dev/frostbase): the whole repository, including both agents and the CLI.
+- [@frostbase/auth](https://www.npmjs.com/package/@frostbase/auth): Better Auth in a per-project Durable Object.
+- [@frostbase/db](https://www.npmjs.com/package/@frostbase/db): documents and typed SQL tables, both with live queries.
+- [@frostbase/cli](https://www.npmjs.com/package/@frostbase/cli): `init`, `add <agent>`, `deploy`, `schema`.
 
 ## Optional
 
-- [Privacy](https://cloudflarebase.com/privacy)
-- [Terms](https://cloudflarebase.com/terms)
+- [Privacy](https://frostbase.dev/privacy)
+- [Terms](https://frostbase.dev/terms)

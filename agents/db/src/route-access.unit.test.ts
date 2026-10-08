@@ -17,7 +17,7 @@ const manifest = JSON.parse(
 	// not assignable to node:fs's PathOrFileDescriptor, and a bare pathname
 	// would lose the drive letter on Windows.
 	readFileSync(
-		fileURLToPath(new URL('../cloudflarebase.agent.json', import.meta.url).href),
+		fileURLToPath(new URL('../frostbase.agent.json', import.meta.url).href),
 		'utf8',
 	).replace(/^\uFEFF/, ''),
 ) as { routes: { path: string; access: string }[] };

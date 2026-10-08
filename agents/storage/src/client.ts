@@ -15,7 +15,7 @@ import { SIGNED_URL_MAX_TTL_SECONDS, type SignedMethod } from './signing';
  * This is the END-USER client: it speaks the public object paths with a
  * project JWT, so every call is subject to the bucket's access modes, owner
  * scoping, and permission keys. The server-side counterpart is
- * `@cloudflarebase/storage/admin`, which bypasses modes over a service key and
+ * `@frostbase/storage/admin`, which bypasses modes over a service key and
  * REFUSES to construct in a browser.
  *
  * Bytes go straight to the agent, never through a JSON proxy: uploads and

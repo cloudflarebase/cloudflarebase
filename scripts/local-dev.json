@@ -12,16 +12,12 @@
 			"command": "npm run dev --prefix ./agents/db"
 		},
 		{
-			"name": "hosting-agent",
-			"command": "npm run dev --prefix ./agents/hosting"
-		},
-		{
 			"name": "storage-agent",
 			"command": "npm run dev --prefix ./agents/storage"
 		},
 		{
 			"name": "web",
-			"command": "wait-on tcp:localhost:8788 tcp:localhost:8789 tcp:localhost:8790 tcp:localhost:8791 && vite dev --port 5173 --open --host"
+			"command": "wait-on tcp:localhost:8788 tcp:localhost:8789 tcp:localhost:8791 && vite dev --port 5173 --open --host"
 		}
 	]
 }

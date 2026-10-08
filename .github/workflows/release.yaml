@@ -13,7 +13,7 @@ name: Release
 # for an approval click.
 #
 # Tags remain the manual escape hatch: pushing auth-v1.2.3, db-v1.2.3,
-# storage-v1.2.3, hosting-v1.2.3, or cli-v1.2.3 publishes that one package,
+# storage-v1.2.3, or cli-v1.2.3 publishes that one package,
 # refusing a tag whose version does not match the package.json it points at.
 #
 # Publishing uses npm trusted publishing (OIDC): npmjs.com is configured to
@@ -21,7 +21,7 @@ name: Release
 # `release` environment - no npm token exists anywhere, so there is nothing to
 # steal or rotate. After this repository's supply-chain incident, that is the
 # point. One-time setup per package on npmjs.com (package settings → Trusted
-# Publisher): repository cloudflarebase/cloudflarebase, workflow release.yaml,
+# Publisher): repository frostbase-dev/frostbase, workflow release.yaml,
 # environment release. If npm will not accept a trusted publisher for a
 # package that has never been published, publish the first version locally
 # with `npm publish` and configure it after.
@@ -38,7 +38,6 @@ on:
       - 'auth-v*.*.*'
       - 'db-v*.*.*'
       - 'storage-v*.*.*'
-      - 'hosting-v*.*.*'
       - 'cli-v*.*.*'
 
 permissions:
@@ -66,11 +65,10 @@ jobs:
           node <<'EOF' >> "$GITHUB_OUTPUT"
           const { execSync } = require('child_process');
           const packages = [
-            { name: '@cloudflarebase/auth', dir: 'agents/auth', prefix: 'auth-v' },
-            { name: '@cloudflarebase/db', dir: 'agents/db', prefix: 'db-v' },
-            { name: '@cloudflarebase/storage', dir: 'agents/storage', prefix: 'storage-v' },
-            { name: '@cloudflarebase/hosting', dir: 'agents/hosting', prefix: 'hosting-v' },
-            { name: '@cloudflarebase/cli', dir: 'cli', prefix: 'cli-v' },
+            { name: '@frostbase/auth', dir: 'agents/auth', prefix: 'auth-v' },
+            { name: '@frostbase/db', dir: 'agents/db', prefix: 'db-v' },
+            { name: '@frostbase/storage', dir: 'agents/storage', prefix: 'storage-v' },
+            { name: '@frostbase/cli', dir: 'cli', prefix: 'cli-v' },
           ];
           const refType = process.env.GITHUB_REF_TYPE;
           const refName = process.env.GITHUB_REF_NAME;

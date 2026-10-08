@@ -7,7 +7,7 @@ export type { ConsoleIdentity } from '$lib/console';
 
 /**
  * The console authenticates its operators against a dedicated AuthAgent - the
- * same stack every customer project runs. Cloudflarebase's own dashboard is
+ * same stack every customer project runs. Frostbase's own dashboard is
  * therefore its first customer.
  *
  * The instance is addressed by a reserved project id, so the registry must
@@ -16,7 +16,7 @@ export type { ConsoleIdentity } from '$lib/console';
 export { CONSOLE_PROJECT_ID, RESERVED_PROJECT_IDS, isDemoProjectId } from '$lib/console';
 
 /**
- * Demo mode is what keeps cloudflarebase.com open to the public while every
+ * Demo mode is what keeps frostbase.dev open to the public while every
  * self-hosted install is closed by default. It is opt-in: an unset DEMO_MODE
  * means a private console, which is the safe default for someone who just
  * deployed this to their own account.

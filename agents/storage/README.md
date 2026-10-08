@@ -1,9 +1,9 @@
-# @cloudflarebase/storage
+# @frostbase/storage
 
 Object storage on Cloudflare R2 - buckets of files with per-bucket access
 modes, served through your worker with a sorted, pageable index. The storage
 primitive behind
-[Cloudflarebase](https://github.com/cloudflarebase/cloudflarebase).
+[Frostbase](https://github.com/frostbase-dev/frostbase).
 
 One `StorageAgent` Durable Object per project holds the bucket registry and
 access config; one `StorageBucket` per bucket holds the object index (keyset
@@ -14,7 +14,7 @@ serves downloads with `Range`, conditional requests, and edge caching.
 ## Install
 
 ```sh
-npx @cloudflarebase/cli add storage
+npx @frostbase/cli add storage
 ```
 
 The CLI installs this package, merges `template/wrangler-fragment.jsonc` into

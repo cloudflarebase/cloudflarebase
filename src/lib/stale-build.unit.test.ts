@@ -6,12 +6,12 @@ import { isStaleModuleError } from './stale-build';
 // one is verbatim from the production Sentry event that prompted this
 // (`_app/immutable/nodes/6.BqGzww-R.js`, 404 after a deploy).
 const REAL_MESSAGES = [
-	'Failed to fetch dynamically imported module: https://cloudflarebase.com/_app/immutable/nodes/6.BqGzww-R.js',
-	'error loading dynamically imported module: https://cloudflarebase.com/_app/immutable/nodes/6.BqGzww-R.js',
+	'Failed to fetch dynamically imported module: https://frostbase.dev/_app/immutable/nodes/6.BqGzww-R.js',
+	'error loading dynamically imported module: https://frostbase.dev/_app/immutable/nodes/6.BqGzww-R.js',
 	'Importing a module script failed.',
 	'Unable to preload CSS for /_app/immutable/assets/0.D1VY6a1a.css',
 	'Failed to load module script: Expected a JavaScript module script but the server responded with a MIME type of "text/html".',
-	'Loading module from “https://cloudflarebase.com/_app/immutable/nodes/6.js” was blocked because of a disallowed MIME type (“text/html”).'
+	'Loading module from “https://frostbase.dev/_app/immutable/nodes/6.js” was blocked because of a disallowed MIME type (“text/html”).'
 ];
 
 test('every browser wording for a missing chunk is recognised', () => {

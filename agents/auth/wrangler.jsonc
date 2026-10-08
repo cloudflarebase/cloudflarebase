@@ -58,7 +58,7 @@
 	 * CF_ANALYTICS_API_TOKEN (Analytics Engine SQL reads - writes need no
 	 * credentials).
 	 *
-	 * Self-hosted defaults. cloudflarebase.com's own values are in
+	 * Self-hosted defaults. frostbase.dev's own values are in
 	 * env.production - the top level must be deployable by someone who does
 	 * not own this project's domain or mail sender.
 	 *
@@ -127,13 +127,13 @@
 	 *   ],
 	 *   "vars": { "WAE_DATASET": "cloudflarebase_auth_events" }
 	 *
-	 * Every environment below is cloudflarebase.com's own and declares it: those
+	 * Every environment below is frostbase.dev's own and declares it: those
 	 * accounts have it enabled.
 	 */
 
 	"env": {
 		/**
-		 * cloudflarebase.com's own agent. The name is pinned rather than derived
+		 * frostbase.dev's own agent. The name is pinned rather than derived
 		 * so it stays `auth-agent`, which is what the dashboard Worker's
 		 * AUTH_AGENT service binding resolves. Wrangler does not inherit
 		 * top-level configuration into an environment, so this repeats it.
@@ -158,7 +158,7 @@
 				// verification, the same configuration preview rehearses. It took
 				// effect the moment this agent deployed, which is safe because the
 				// ownership-aware web worker was already live (its OpenAPI serves
-				// /branches and /hosting/*) - a stranger who registers gets their
+				// /branches) - a stranger who registers gets their
 				// own personal org and sees nothing else. Mail (the EMAIL binding
 				// + EMAIL_FROM below) is what makes "open" effective; without it
 				// the agent reports "claimed" and 503s sign-up rather than
@@ -168,14 +168,14 @@
 				"CONSOLE_SIGNUPS": "open",
 				"DEMO_MODE": "true",
 				"DEMO_TTL_HOURS": "720",
-				// Committed on purpose: env.production is cloudflarebase.com's own
+				// Committed on purpose: env.production is frostbase.dev's own
 				// block (forks deploy the top level, whose DSN stays empty).
 				"SENTRY_DSN": "https://50ed6e26b886124ac39e983efb72144d@o4510375271530496.ingest.de.sentry.io/4511764380778576",
 				"SENTRY_ENV": "production",
-				"TRUSTED_ORIGINS": "https://cloudflarebase.com",
+				"TRUSTED_ORIGINS": "https://frostbase.dev,https://cloudflarebase.com",
 				"WAE_DATASET": "cloudflarebase_auth_events",
 				"EXPOSE_OPERATOR_API": "true",
-				"EMAIL_FROM": "auth@notifications.cloudflarebase.com",
+				"EMAIL_FROM": "auth@notifications.frostbase.dev",
 			},
 
 			"analytics_engine_datasets": [
@@ -267,7 +267,7 @@
 				// Pinned so a reused local stack keeps sessions valid across restarts;
 				// unset, each project would generate its own. Test-only, worthless
 				// elsewhere.
-				"BETTER_AUTH_SECRET": "cloudflarebase-e2e-test-secret-at-least-32-chars-long",
+				"BETTER_AUTH_SECRET": "frostbase-e2e-test-secret-at-least-32-chars-long",
 				"DISABLE_RATE_LIMIT": "true",
 				"CHAT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
 				// DEMO_MODE is deliberately NOT set on the agent here, while the web
@@ -316,16 +316,16 @@
 				"CHAT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
 				// Preview IS the launch rehearsal: open sign-ups + demos, the
 				// managed configuration. Safe here because the preview web Worker
-				// (cloudflarebase-com-preview, deployed by Workers Builds from the
+				// (frostbase-dev-preview, deployed by Workers Builds from the
 				// preview branch) already carries the ownership guard
 				//.
 				"CONSOLE_SIGNUPS": "open",
 				"DEMO_MODE": "true",
 				"DEMO_TTL_HOURS": "720",
-				"EMAIL_FROM": "auth@notifications.cloudflarebase.com",
+				"EMAIL_FROM": "auth@notifications.frostbase.dev",
 				"SENTRY_DSN": "https://093f7505d223a871223f9a15130ef116@o4510375271530496.ingest.de.sentry.io/4511764377043024",
 				"SENTRY_ENV": "preview",
-				"TRUSTED_ORIGINS": "https://cloudflarebase-com-preview.cloudflarebase.workers.dev",
+				"TRUSTED_ORIGINS": "https://frostbase-dev-preview.frostbase.workers.dev",
 				"WAE_DATASET": "cloudflarebase_auth_events_preview",
 				"EXPOSE_OPERATOR_API": "true",
 			},

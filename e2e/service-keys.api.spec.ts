@@ -23,7 +23,7 @@ import {
  * 2. it must not reach another project - a sibling branch included, because
  *    for data the branch IS the isolation boundary;
  * 3. it must not escalate: no registry (so it cannot delete its own project),
- *    no console, no CLI, no hosting, and no minting or revoking keys;
+ *    no console, no CLI, and no minting or revoking keys;
  * 4. revocation must bite immediately.
  *
  * The suite's stored operator session is what mints keys, so the key-using
@@ -72,7 +72,7 @@ test.describe('service keys', () => {
 			});
 			expect(minted.status(), await minted.text()).toBe(201);
 			const body = await minted.json();
-			expect(body.key).toMatch(/^cfbs_[0-9a-f]{64}$/);
+			expect(body.key).toMatch(/^fsb_[0-9a-f]{64}$/);
 			key = body.key;
 			keyId = body.id;
 
@@ -570,7 +570,6 @@ test.describe('service keys', () => {
 				['GET', `/api/registry/projects`],
 				['DELETE', `/api/registry/projects/${KEY_PROJECT}`],
 				['POST', `/api/projects/${KEY_PROJECT}/branches`],
-				['GET', `/api/projects/${KEY_PROJECT}/hosting/apps`],
 				['POST', `/api/cli/token`]
 			];
 			for (const [method, path] of escalations) {
@@ -609,11 +608,15 @@ test.describe('service keys', () => {
 			});
 			expect(before.ok(), await before.text()).toBeTruthy();
 
-			const garbage = await server.post(`/api/projects/${KEY_PROJECT}/db/admin/query`, {
-				headers: { authorization: `Bearer cfbs_${'0'.repeat(64)}` },
-				data: { collection: 'anything', query: { limit: 1 } }
-			});
-			expect(garbage.status()).toBe(401);
+			// Both prefixes - current `fsb_` and pre-rename `cfbs_` - reach the
+			// verifier, so a well-formed key that matches no digest must 401 on each.
+			for (const prefix of ['fsb_', 'cfbs_']) {
+				const garbage = await server.post(`/api/projects/${KEY_PROJECT}/db/admin/query`, {
+					headers: { authorization: `Bearer ${prefix}${'0'.repeat(64)}` },
+					data: { collection: 'anything', query: { limit: 1 } }
+				});
+				expect(garbage.status(), prefix).toBe(401);
+			}
 
 			const operator = await playwrightRequest.newContext({
 				baseURL: base(baseURL),

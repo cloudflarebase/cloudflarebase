@@ -1000,7 +1000,7 @@ export type JwtClaims = z.infer<typeof jwtClaimsSchema>;
 /**
  * The platform's own namespace inside a project's shard registry.
  *
- * A shard whose name starts with this is created and owned by a Cloudflarebase
+ * A shard whose name starts with this is created and owned by a Frostbase
  * feature, not by the operator: the generic table and collection routes refuse
  * to create, reconfigure, or drop one, so nobody can open Remote Config's
  * parameter table to public writes from the Tables page and quietly hand every

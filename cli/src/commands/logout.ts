@@ -1,7 +1,7 @@
 import { deleteConfig, loadConfig } from '../lib/config.js';
 import { success } from '../lib/log.js';
 
-/** `cloudflarebase logout` - revoke the stored session and forget it. */
+/** `frostbase logout` - revoke the stored session and forget it. */
 export async function logoutCommand(): Promise<void> {
 	let hadSession = false;
 	try {

@@ -1,5 +1,5 @@
 name: Feature request
-description: Suggest something Cloudflarebase should do
+description: Suggest something Frostbase should do
 labels: ['enhancement']
 body:
   - type: textarea
@@ -8,7 +8,7 @@ body:
       label: What are you trying to do
       description: >
         Describe the problem rather than the solution. What are you building,
-        and where does Cloudflarebase get in the way?
+        and where does Frostbase get in the way?
     validations:
       required: true
 

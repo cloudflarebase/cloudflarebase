@@ -44,23 +44,6 @@ const SCHEMA_STATEMENTS = [
 		created_at integer DEFAULT (unixepoch() * 1000) NOT NULL
 	)`,
 	`CREATE INDEX IF NOT EXISTS chat_message_thread ON chat_message (project_id, client_key, created_at)`,
-	`CREATE TABLE IF NOT EXISTS app (
-		subdomain text PRIMARY KEY NOT NULL,
-		project_id text NOT NULL,
-		app_name text NOT NULL,
-		created_at integer DEFAULT (unixepoch() * 1000) NOT NULL
-	)`,
-	`CREATE INDEX IF NOT EXISTS app_project ON app (project_id, app_name)`,
-	`CREATE TABLE IF NOT EXISTS deploy_token (
-		id text PRIMARY KEY NOT NULL,
-		project_id text NOT NULL,
-		name text NOT NULL,
-		token_hash text NOT NULL,
-		created_at integer DEFAULT (unixepoch() * 1000) NOT NULL,
-		last_used_at integer
-	)`,
-	`CREATE INDEX IF NOT EXISTS deploy_token_project ON deploy_token (project_id)`,
-	`CREATE INDEX IF NOT EXISTS deploy_token_hash ON deploy_token (token_hash)`,
 	`CREATE TABLE IF NOT EXISTS service_key (
 		id text PRIMARY KEY NOT NULL,
 		project_id text NOT NULL,
@@ -71,37 +54,7 @@ const SCHEMA_STATEMENTS = [
 		last_used_at integer
 	)`,
 	`CREATE INDEX IF NOT EXISTS service_key_project ON service_key (project_id)`,
-	`CREATE INDEX IF NOT EXISTS service_key_hash ON service_key (key_hash)`,
-	`CREATE TABLE IF NOT EXISTS github_installation (
-		id integer PRIMARY KEY NOT NULL,
-		org_id text,
-		account_login text NOT NULL,
-		installed_by text NOT NULL,
-		created_at integer DEFAULT (unixepoch() * 1000) NOT NULL
-	)`,
-	`CREATE INDEX IF NOT EXISTS github_installation_org ON github_installation (org_id)`,
-	`CREATE TABLE IF NOT EXISTS github_connection (
-		id text PRIMARY KEY NOT NULL,
-		project_id text NOT NULL,
-		app_name text NOT NULL,
-		installation_id integer NOT NULL,
-		repo_id integer NOT NULL,
-		repo_full_name text NOT NULL,
-		default_branch text NOT NULL,
-		mode text NOT NULL,
-		assets_dir text,
-		build_command text,
-		root_dir text,
-		production_branch text,
-		ignored_branches text,
-		workflow_path text,
-		package_manager text,
-		created_at integer DEFAULT (unixepoch() * 1000) NOT NULL,
-		last_event_at integer
-	)`,
-	`CREATE UNIQUE INDEX IF NOT EXISTS github_connection_app ON github_connection (project_id, app_name)`,
-	`CREATE INDEX IF NOT EXISTS github_connection_repo ON github_connection (repo_id)`,
-	`CREATE INDEX IF NOT EXISTS github_connection_installation ON github_connection (installation_id)`
+	`CREATE INDEX IF NOT EXISTS service_key_hash ON service_key (key_hash)`
 ];
 
 /**
@@ -115,12 +68,6 @@ const UPGRADE_STATEMENTS = [
 	`ALTER TABLE project ADD COLUMN parent_id text`,
 	`ALTER TABLE project ADD COLUMN branch_name text`,
 	`ALTER TABLE project ADD COLUMN org_id text`,
-	`ALTER TABLE github_connection ADD COLUMN build_command text`,
-	`ALTER TABLE github_connection ADD COLUMN root_dir text`,
-	`ALTER TABLE github_connection ADD COLUMN production_branch text`,
-	`ALTER TABLE github_connection ADD COLUMN ignored_branches text`,
-	`ALTER TABLE github_connection ADD COLUMN workflow_path text`,
-	`ALTER TABLE github_connection ADD COLUMN package_manager text`,
 	`CREATE INDEX IF NOT EXISTS project_parent ON project (parent_id)`,
 	`CREATE INDEX IF NOT EXISTS project_org ON project (org_id)`
 ];

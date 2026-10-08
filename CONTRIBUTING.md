@@ -52,19 +52,19 @@ cd agents/db && npx tsc --noEmit && npm run test:unit
 Separate npm projects with separate Wrangler configs and separate generated
 `Env` types:
 
-| Path          | Worker       | What it is                                          |
-| ------------- | ------------ | --------------------------------------------------- |
-| `/`           | web          | SvelteKit dashboard and marketing site              |
-| `agents/auth` | `auth-agent` | `AuthAgent` DO - Better Auth per project            |
-| `agents/db`   | `db-agent`   | `DbAgent` + `DbCollection` DOs - documents          |
-| `cli`         | none         | `@cloudflarebase/cli`, runs on a consumer's machine |
+| Path          | Worker       | What it is                                     |
+| ------------- | ------------ | ---------------------------------------------- |
+| `/`           | web          | SvelteKit dashboard and marketing site         |
+| `agents/auth` | `auth-agent` | `AuthAgent` DO - Better Auth per project       |
+| `agents/db`   | `db-agent`   | `DbAgent` + `DbCollection` DOs - documents     |
+| `cli`         | none         | `@frostbase/cli`, runs on a consumer's machine |
 
 **Never import runtime code or generated Worker types across those
 boundaries.** Shared DTOs are deliberately copied - `src/lib/agents.ts`
 mirrors `agents/auth/src/{agent,fleet}.ts` and `agents/db/src/{agent,schemas}.ts`,
 and `src/lib/ulid.ts` mirrors `agents/db/src/ulid.ts`. If you change one side,
 change the other in the same PR. (Agent manifests are the one exception: the
-app imports each `cloudflarebase.agent.json` directly, on purpose, so the
+app imports each `frostbase.agent.json` directly, on purpose, so the
 console guard can never drift from what the package declares.)
 
 Installation-wide state - the project registry - is D1 on the dashboard
@@ -81,7 +81,7 @@ Miniflare service bindings need `binding.fetch(url, init)` rather than a
 completed operation look like a failure.
 
 New primitives follow the agent contract in [AGENTS.md](AGENTS.md): a new
-agent is its own npm project shipping a `cloudflarebase.agent.json`, plus one
+agent is its own npm project shipping a `frostbase.agent.json`, plus one
 entry in `src/lib/agent-registry.ts` (which drives the console guard,
 dispatch, proxies, sidebar, and delete fan-out) and one in
 `cli/src/lib/agents.ts`.

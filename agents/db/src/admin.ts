@@ -8,7 +8,7 @@ import type { Typed } from './client';
  *
  * Distinct from `./client` in three ways that matter:
  *
- * - **It targets the CONSOLE, never an agent.** A `cfbs_` service key is
+ * - **It targets the CONSOLE, never an agent.** A service key (`fsb_`, or a legacy `cfbs_`) is
  *   verified in the console guard and travels to the agent over a service
  *   binding the console already authorized; the agent worker never sees the
  *   bearer, and a key does not work on `/agents/*` at all. So `url` here is the
@@ -28,16 +28,16 @@ import type { Typed } from './client';
  */
 
 export interface DbAdminOptions {
-	/** The console origin - e.g. `https://cloudflarebase.com`. NOT an agent base.
-	 * Falls back to `CLOUDFLAREBASE_URL` / `CFBASE_URL`. */
+	/** The console origin - e.g. `https://frostbase.dev`. NOT an agent base.
+	 * Falls back to `FROSTBASE_URL` / `CLOUDFLAREBASE_URL`. */
 	url?: string;
 	/** The project this key belongs to. Keys are scoped to ONE registry row,
 	 * never to a root's branches: for data the branch IS the isolation boundary.
-	 * Falls back to `CLOUDFLAREBASE_PROJECT` / `CFBASE_PROJECT`. */
+	 * Falls back to `FROSTBASE_PROJECT` / `CLOUDFLAREBASE_PROJECT`. */
 	projectId?: string;
-	/** A `cfbs_` service key. An operator session bearer also works, but a key
+	/** A service key (`fsb_`, or a legacy `cfbs_`). An operator session bearer also works, but a key
 	 * is what belongs in an environment variable. Falls back to
-	 * `CLOUDFLAREBASE_SERVICE_KEY` / `CFBASE_SERVICE_KEY`. */
+	 * `FROSTBASE_SERVICE_KEY` / `CLOUDFLAREBASE_SERVICE_KEY`. */
 	key?: string;
 	/** Override the fetch implementation (tests, instrumented clients). */
 	fetch?: typeof fetch;
@@ -51,10 +51,8 @@ export interface DbAdminOptions {
  * alike: an explicit option wins, then the passed `env`, then the ambient
  * process environment.
  *
- * `CLOUDFLAREBASE_*` is canonical (it is what `CLOUDFLAREBASE_DEPLOY_TOKEN`,
- * the sibling credential, already uses); the shorter `CFBASE_*` spellings are
- * accepted because they match the `cfbs_`/`cfbd_` token prefixes and people
- * write them.
+ * `FROSTBASE_*` is canonical; the `CLOUDFLAREBASE_*` and `CFBASE_*` spellings
+ * from before the rename are still read so existing deployments keep working.
  */
 function resolve(
 	options: DbAdminOptions,
@@ -70,7 +68,7 @@ function resolve(
 		if (value) return value;
 	}
 	throw new Error(
-		`@cloudflarebase/db/admin needs ${label}: pass it explicitly, or set ${names.join(' or ')}. ` +
+		`@frostbase/db/admin needs ${label}: pass it explicitly, or set ${names.join(' or ')}. ` +
 			`Inside a Worker, secrets live on \`env\` rather than a global process - pass \`{ env }\`.`,
 	);
 }
@@ -98,7 +96,7 @@ export class DbAdminError extends Error {
 export class DbAgentTooOldError extends Error {
 	constructor(path: string) {
 		super(
-			`the db agent did not recognise ${path}. Deploy @cloudflarebase/db 0.6.0 or newer ` +
+			`the db agent did not recognise ${path}. Deploy @frostbase/db 0.6.0 or newer ` +
 				`before calling this - an older agent answers a 404 that looks like a missing record.`,
 		);
 		this.name = 'DbAgentTooOldError';
@@ -121,8 +119,8 @@ function assertServerOnly(): void {
 	// test anyway, since a Worker has neither.
 	if (typeof (globalThis as { document?: unknown }).document !== 'undefined') {
 		throw new Error(
-			'@cloudflarebase/db/admin is server-only: it carries a service key, which is admin-grade ' +
-				'over your whole project. Never import it into browser code. Use @cloudflarebase/db/client ' +
+			'@frostbase/db/admin is server-only: it carries a service key, which is admin-grade ' +
+				'over your whole project. Never import it into browser code. Use @frostbase/db/client ' +
 				'with the signed-in user’s project JWT instead.',
 		);
 	}
@@ -130,17 +128,22 @@ function assertServerOnly(): void {
 
 export function createDbAdmin(options: DbAdminOptions = {}) {
 	assertServerOnly();
-	const url = resolve(options, options.url, ['CLOUDFLAREBASE_URL', 'CFBASE_URL'], 'a console URL');
+	const url = resolve(
+		options,
+		options.url,
+		['FROSTBASE_URL', 'CLOUDFLAREBASE_URL', 'CFBASE_URL'],
+		'a console URL',
+	);
 	const projectId = resolve(
 		options,
 		options.projectId,
-		['CLOUDFLAREBASE_PROJECT', 'CFBASE_PROJECT'],
+		['FROSTBASE_PROJECT', 'CLOUDFLAREBASE_PROJECT', 'CFBASE_PROJECT'],
 		'a project id',
 	);
 	const key = resolve(
 		options,
 		options.key,
-		['CLOUDFLAREBASE_SERVICE_KEY', 'CFBASE_SERVICE_KEY'],
+		['FROSTBASE_SERVICE_KEY', 'CLOUDFLAREBASE_SERVICE_KEY', 'CFBASE_SERVICE_KEY'],
 		'a service key',
 	);
 

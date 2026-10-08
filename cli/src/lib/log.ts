@@ -22,7 +22,7 @@ export const success = (message: string): void => console.log(`${green('✓')} $
 export const warn = (message: string): void => console.warn(`${yellow('!')} ${message}`);
 export const blank = (): void => console.log('');
 
-/** Written to stderr so `cloudflarebase ... > file` still shows failures. */
+/** Written to stderr so `frostbase ... > file` still shows failures. */
 export const error = (message: string): void => console.error(`${red('✗')} ${message}`);
 
 /**

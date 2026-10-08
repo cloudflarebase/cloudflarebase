@@ -2,10 +2,10 @@ import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { loadConfig } from '../lib/config.js';
 import { blank, bold, dim, info, success, UserError, warn } from '../lib/log.js';
-import { hostingFetch, readManagedConfig, targetProjectId } from '../lib/managed.js';
+import { projectFetch, readManagedConfig, targetProjectId } from '../lib/managed.js';
 
 /**
- * `cloudflarebase key create|list|revoke` - project service keys.
+ * `frostbase key create|list|revoke` - project service keys.
  *
  * The credential a SERVER holds when there is no signed-in user to relay. The
  * console can mint one too; this exists so the whole loop - link a directory,
@@ -13,14 +13,14 @@ import { hostingFetch, readManagedConfig, targetProjectId } from '../lib/managed
  *
  * OPERATOR SESSIONS ONLY, by the guard: a service key cannot mint or revoke
  * service keys, or it could grow and outlive itself. So this command needs
- * `cloudflarebase login`, exactly like `secret put`.
+ * `frostbase login`, exactly like `secret put`.
  *
- * Keys are scoped to ONE project - never a root and its branches, the way
- * deploy tokens are - because for data the branch IS the isolation boundary.
+ * Keys are scoped to ONE project - never a root and its branches - because
+ * for data the branch IS the isolation boundary.
  * `--branch` therefore targets a specific registry row rather than a family.
  */
 
-const ENV_VAR = 'CLOUDFLAREBASE_SERVICE_KEY';
+const ENV_VAR = 'FROSTBASE_SERVICE_KEY';
 
 interface KeySummary {
 	id: string;
@@ -31,13 +31,13 @@ interface KeySummary {
 
 function usage(): never {
 	throw new UserError(
-		'Usage: cloudflarebase key create <name> [--env-file [path]] [--branch <name>]\n' +
-			'       cloudflarebase key list [--branch <name>]\n' +
-			'       cloudflarebase key revoke <id> [--branch <name>]'
+		'Usage: frostbase key create <name> [--env-file [path]] [--branch <name>]\n' +
+			'       frostbase key list [--branch <name>]\n' +
+			'       frostbase key revoke <id> [--branch <name>]'
 	);
 }
 
-/** Upsert `CLOUDFLAREBASE_SERVICE_KEY=` into a dotenv file, replacing any
+/** Upsert `FROSTBASE_SERVICE_KEY=` into a dotenv file, replacing any
  * existing line rather than appending a second one that the last read wins. */
 async function writeEnvFile(file: string, secret: string): Promise<'created' | 'updated'> {
 	const existing = await readFile(file, 'utf8').catch(() => null);
@@ -75,30 +75,29 @@ export async function keyCommand(projectDir: string, rest: string[]): Promise<vo
 
 	const managed = await readManagedConfig(projectDir);
 	if (!managed) {
-		throw new UserError('This directory is not initialized.', 'Run `cloudflarebase init` first.');
+		throw new UserError('This directory is not initialized.', 'Run `frostbase init` first.');
 	}
 	const config = await loadConfig();
 	if (config.origin !== managed.origin) {
 		throw new UserError(
 			`This directory is linked to ${managed.origin}, but you are signed in to ${config.origin}.`,
-			`Run \`cloudflarebase login ${managed.origin}\` first.`
+			`Run \`frostbase login ${managed.origin}\` first.`
 		);
 	}
 
-	// No git-branch inference here, deliberately. `deploy` infers because you
-	// deploy the branch you are on; a key is a credential you paste somewhere
-	// and keep, so it targets the root unless you say otherwise.
+	// No git-branch inference here, deliberately: a key is a credential you
+	// paste somewhere and keep, so it targets the root unless you say otherwise.
 	const target = targetProjectId(managed.project, branchFlag ?? null);
 	const route = `/api/projects/${target}/keys`;
 
 	if (subcommand === 'list') {
-		const response = await hostingFetch(managed.origin, config.token, route);
+		const response = await projectFetch(managed.origin, config.token, route);
 		if (!response.ok) throw await failure(response, 'Listing service keys failed');
 		const { keys } = (await response.json()) as { keys: KeySummary[] };
 		blank();
 		if (!keys.length) {
 			info(`No service keys on ${bold(target)}.`);
-			info(dim('Create one with `cloudflarebase key create <name>`.'));
+			info(dim('Create one with `frostbase key create <name>`.'));
 			return;
 		}
 		info(`Service keys on ${bold(target)}:`);
@@ -112,7 +111,7 @@ export async function keyCommand(projectDir: string, rest: string[]): Promise<vo
 	if (subcommand === 'revoke') {
 		const [id] = positional;
 		if (!id) usage();
-		const response = await hostingFetch(managed.origin, config.token, `${route}/${id}`, {
+		const response = await projectFetch(managed.origin, config.token, `${route}/${id}`, {
 			method: 'DELETE'
 		});
 		if (!response.ok) throw await failure(response, 'Revoking the service key failed');
@@ -124,7 +123,7 @@ export async function keyCommand(projectDir: string, rest: string[]): Promise<vo
 	const [name] = positional;
 	if (!name) usage();
 
-	const response = await hostingFetch(managed.origin, config.token, route, {
+	const response = await projectFetch(managed.origin, config.token, route, {
 		method: 'POST',
 		headers: { 'content-type': 'application/json' },
 		body: JSON.stringify({ name })

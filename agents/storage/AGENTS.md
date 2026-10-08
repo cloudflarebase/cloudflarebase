@@ -1,4 +1,4 @@
-# @cloudflarebase/storage
+# @frostbase/storage
 
 Buckets of files on R2. The bytes live in R2, the *index* lives in Durable
 Objects, and the data plane is the **worker** — bytes never enter a DO.

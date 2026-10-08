@@ -18,19 +18,7 @@ declare global {
 			/** Whether this deployment runs as a public demo (DEMO_MODE=true). */
 			demoMode: boolean;
 			/**
-			 * Deploy-token grant when the request authenticated with a `cfbd_`
-			 * bearer (Phase B). Only ever set on
-			 * the deploy and branch-create endpoints; never a session.
-			 */
-			deployToken: import('$lib/server/hosting').DeployTokenGrant | null;
-			/**
-			 * Grant when the request authenticated with a GitHub Actions OIDC
-			 * token from a `build`-mode connection - the credential-less CI path.
-			 * Set on exactly the same surfaces as `deployToken`, never a session.
-			 */
-			githubDeploy: import('$lib/server/github-connect').GithubDeployGrant | null;
-			/**
-			 * Grant when the request authenticated with a `cfbs_` service key
+			 * Grant when the request authenticated with a service key
 			 *. Set only on its own project's DATA
 			 * plane, and only when the request carried no `Origin` - a service
 			 * key is a server credential and must never work from a browser.
@@ -44,8 +32,6 @@ declare global {
 				AUTH_AGENT: Fetcher;
 				/** Service binding to the db-agent worker (fetch-only interface). */
 				DB_AGENT: Fetcher;
-				/** Service binding to the hosting-agent worker (fetch-only interface). */
-				HOSTING_AGENT: Fetcher;
 				/**
 				 * Optional per-tenant ceiling overrides (registry.ts defaults both
 				 * to 5). Not in any deployed config's vars, so they are typed here
@@ -54,19 +40,6 @@ declare global {
 				 */
 				MAX_PROJECTS_PER_ORG?: string;
 				MAX_BRANCHES_PER_ROOT?: string;
-				/**
-				 * GitHub App credentials for push-to-deploy (server/github.ts).
-				 * Optional secrets - typed here rather than in the generated
-				 * worker-configuration.d.ts because no deployed config declares
-				 * them. All four together or the App reads as unconfigured, which
-				 * is the self-hosted default: the Hosting page then offers the
-				 * manual deploy-token flow and nothing GitHub-side is reachable.
-				 * The private key may be either PEM encoding GitHub hands out.
-				 */
-				GITHUB_APP_ID?: string;
-				GITHUB_APP_SLUG?: string;
-				GITHUB_APP_PRIVATE_KEY?: string;
-				GITHUB_APP_WEBHOOK_SECRET?: string;
 			};
 			cf: CfProperties;
 			ctx: ExecutionContext;

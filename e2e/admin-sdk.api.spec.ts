@@ -46,7 +46,7 @@ test.describe('admin clients', () => {
 		}
 	});
 
-	test('db: collections and tables through @cloudflarebase/db/admin', async () => {
+	test('db: collections and tables through @frostbase/db/admin', async () => {
 		const db = createDbAdmin({ url, projectId: SDK_PROJECT, key });
 
 		const posts = db.collection<{ title: string; votes: number }>(`posts-${run}`);
@@ -90,7 +90,7 @@ test.describe('admin clients', () => {
 		await expect(posts.get('one')).rejects.toThrow(/no such/i);
 	});
 
-	test('auth: user lifecycle through @cloudflarebase/auth/admin', async () => {
+	test('auth: user lifecycle through @frostbase/auth/admin', async () => {
 		const auth = createAuthAdmin({ url, projectId: SDK_PROJECT, key });
 		const email = `sdk-${run}@example.com`;
 
@@ -129,7 +129,7 @@ test.describe('admin clients', () => {
 		await expect(auth.getUser(created.id)).rejects.toThrow(/not found/i);
 	});
 
-	test('storage: bucket and object bytes through @cloudflarebase/storage/admin', async () => {
+	test('storage: bucket and object bytes through @frostbase/storage/admin', async () => {
 		const storage = createStorageAdmin({ url, projectId: SDK_PROJECT, key });
 		const bucket = storage.bucket('sdk-files');
 		await bucket.configure({});
@@ -241,15 +241,15 @@ test.describe('admin clients', () => {
 	test('resolves url, project, and key from the environment', async () => {
 		const db = createDbAdmin({
 			env: {
-				CLOUDFLAREBASE_URL: url,
-				CLOUDFLAREBASE_PROJECT: SDK_PROJECT,
-				CLOUDFLAREBASE_SERVICE_KEY: key
+				FROSTBASE_URL: url,
+				FROSTBASE_PROJECT: SDK_PROJECT,
+				FROSTBASE_SERVICE_KEY: key
 			}
 		});
 		expect(await db.collection(`posts-${run}`).count()).toBeGreaterThanOrEqual(0);
 
 		// And a missing one names the variable rather than failing at the first
 		// request with a 401.
-		expect(() => createDbAdmin({ env: {} })).toThrow(/CLOUDFLAREBASE_URL/);
+		expect(() => createDbAdmin({ env: {} })).toThrow(/FROSTBASE_URL/);
 	});
 });

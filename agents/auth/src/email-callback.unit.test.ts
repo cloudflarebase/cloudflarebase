@@ -9,7 +9,7 @@ import { resolveEmailCallback } from './email-callback';
  * is ever used, and only a path that cannot re-anchor the URL is rewritten.
  */
 
-const API = 'https://cloudflarebase.com';
+const API = 'https://frostbase.dev';
 const APP = 'https://app.example.com';
 const TRUSTED = [APP, 'http://localhost:3000'];
 

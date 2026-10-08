@@ -84,7 +84,7 @@
 		<Card.Description>
 			SELECT, INSERT, UPDATE, and DELETE against one declared table. DDL never runs here - declare
 			and evolve schemas on the Tables page or with <span class="font-mono"
-				>cloudflarebase schema apply</span
+				>frostbase schema apply</span
 			>.
 		</Card.Description>
 	</Card.Header>

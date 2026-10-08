@@ -1,4 +1,4 @@
-# Cloudflarebase
+# Frostbase
 
 The open-source Firebase alternative on Cloudflare. Every project gets its own
 Durable Objects, so one tenant's data is physically separate from the next —
@@ -9,24 +9,23 @@ that only matter inside it. Read that one before changing an agent.
 
 ## Repository shape
 
-Six separate npm projects, separate Wrangler configs, separate generated `Env`
+Five separate npm projects, separate Wrangler configs, separate generated `Env`
 types.
 
 | Path             | Worker          | Durable Objects                                    |
 | ---------------- | --------------- | -------------------------------------------------- |
-| `/`              | `cloudflarebase` | none — SvelteKit console + marketing, D1 registry   |
+| `/`              | `frostbase` | none — SvelteKit console + marketing, D1 registry   |
 | `agents/auth`    | `auth-agent`    | `AuthAgent`                                          |
 | `agents/db`      | `db-agent`      | `DbAgent` `DbCollection` `DbTable` `DbGateway` `DbView` |
 | `agents/storage` | `storage-agent` | `StorageAgent` `StorageBucket`                       |
-| `agents/hosting` | `hosting-agent` | `HostingAgent` (+ an outbound worker)                |
-| `cli`            | none            | `@cloudflarebase/cli`, runs on a consumer's machine  |
+| `cli`            | none            | `@frostbase/cli`, runs on a consumer's machine  |
 
 **Never import runtime code or generated Worker types across those
 boundaries.** Shared DTOs are deliberately copied — `src/lib/agents.ts` mirrors
 the agents' exported types, and `agents/storage/src/access.ts` is a copy of the
 db agent's gate. Change one side, change the other in the same commit.
 
-The one exception is `cloudflarebase.agent.json`: the app imports each manifest
+The one exception is `frostbase.agent.json`: the app imports each manifest
 **directly** from `agents/<name>/`, because the console guard is generated from
 its `routes` block and a stale copy would silently open or close the wrong
 surface. The CLI keeps its own schema copy and reads manifests from the
@@ -38,7 +37,7 @@ project's Durable Objects.
 
 ## The agent contract
 
-Each agent package ships a `cloudflarebase.agent.json` declaring what it is and
+Each agent package ships a `frostbase.agent.json` declaring what it is and
 what the platform must do to host it: worker name, DO classes and their scope,
 bindings, secrets, vars, the route table, the console proxy prefix, permission
 keys, and its sidebar pages.
@@ -79,22 +78,22 @@ should be open — a loud, testable failure — never open something that should
 closed. The refusal is the ordinary 404 byte for byte, so a closed surface is
 not enumerable.
 
-Service keys (`cfbs_`) are an **authentication** change, not an authorization
+Service keys (`fsb_`, legacy `cfbs_`) are an **authentication** change, not an authorization
 one: they are verified in the console guard and travel to the agent over a
 service binding the console already authorized. No agent ever sees the bearer.
 
 ## Commands
 
 ```bash
-npm run dev      # auth :8788, db :8789, hosting :8790, storage :8791, web :5173
+npm run dev      # auth :8788, db :8789, storage :8791, web :5173
 npm run check    # svelte-check
 npm run lint     # prettier + eslint
 npm test         # full Playwright suite against real workerd
 ```
 
 All three checks run in CI and all three must pass. The e2e suite boots a
-production-mirroring stack — the built SvelteKit worker on `:8797` plus the four
-agents on `:8798`–`:8801`, real service bindings, real DO SQLite. It is the
+production-mirroring stack — the built SvelteKit worker on `:8797` plus the three
+agents on `:8798`, `:8799` and `:8801`, real service bindings, real DO SQLite. It is the
 check that actually catches things.
 
 Each agent is its own TypeScript project with its own unit tests:
@@ -140,6 +139,16 @@ cd agents/db && npx tsc --noEmit && npm run test:unit
 
 These are expensive to rediscover.
 
+- **`cloudflarebase` survives in names that hold state, on purpose.** The
+  project was Cloudflarebase until October 2026. D1 database names
+  (`cloudflarebase-control-plane*`), Analytics Engine datasets
+  (`cloudflarebase_*_events`) and the JWT issuer
+  (`cloudflarebase:<project>`) keep the old spelling,
+  because renaming them orphans data or invalidates live tokens. Legacy
+  inputs are still accepted: `cfbs_` service keys, `CLOUDFLAREBASE_*` env
+  vars, `cloudflarebase.json`, `~/.cloudflarebase`. cloudflarebase.com stays
+  attached to the console: pages 301 to frostbase.dev, the API keeps
+  answering.
 - **Durable Object SQLite refuses `pragma_table_info()`** (SQLITE_AUTH) and
   explicit transactions. The applied schema is *our* record, never
   introspection.

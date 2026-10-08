@@ -1,5 +1,5 @@
 /**
- * Cloudflarebase storage agent - object storage on R2.
+ * Frostbase storage agent - object storage on R2.
  *
  * The TOP LEVEL is the self-hosted default, deployable by someone who does
  * not own this project's Cloudflare account. R2 is an account-level opt-in
@@ -8,7 +8,7 @@
  * would fail a fresh clone's zero-config deploy (the AUTH_EVENTS lesson).
  * Without it the agent reports `configured: false` and answers object
  * requests with a 503 pointing at the setup steps; bucket metadata and
- * everything else in the install keep working. cloudflarebase.com's own
+ * everything else in the install keep working. frostbase.dev's own
  * values live in env.production / env.preview.
  *
  * HARD INVARIANT: the PRODUCTION bucket must never have r2.dev enabled or a
@@ -107,7 +107,7 @@
 				"TRUSTED_ORIGINS": "http://localhost:5173",
 				// Local workerd is dialled by port; the header override lets the
 				// dev loop exercise the serving-domain path.
-				"STORAGE_SERVE_DOMAIN": "cdn.cfbase.test",
+				"STORAGE_SERVE_DOMAIN": "cdn.frostbase.test",
 				"STORAGE_SERVE_HOST_HEADER": "true",
 				"SENTRY_DSN": "",
 				"SENTRY_ENV": "development",
@@ -128,7 +128,7 @@
 				"TRUSTED_ORIGINS": "",
 				// The e2e suite proves the serving-domain path with the header
 				// stand-in (Playwright dials the worker by port).
-				"STORAGE_SERVE_DOMAIN": "cdn.cfbase.test",
+				"STORAGE_SERVE_DOMAIN": "cdn.frostbase.test",
 				"STORAGE_SERVE_HOST_HEADER": "true",
 				"SENTRY_DSN": "",
 				"SENTRY_ENV": "test",
@@ -136,7 +136,7 @@
 		},
 		"production": {
 			// Pinned name: the web Worker's STORAGE_AGENT service binding
-			// resolves `storage-agent`, the auth/db/hosting precedent.
+			// resolves `storage-agent`, the auth/db precedent.
 			"name": "storage-agent",
 			"workers_dev": false,
 			"preview_urls": false,
@@ -163,20 +163,27 @@
 			// custom domain conflicts on deploy. A custom domain owns the record
 			// and the hostname outright, which is what a dedicated serving
 			// hostname wants.
-			"routes": [{ "pattern": "cdn.cloudflarebase.com", "custom_domain": true }],
+			// cdn.cloudflarebase.com is the pre-rename hostname: still attached so
+			// object URLs already stored in apps keep resolving (see
+			// STORAGE_SERVE_DOMAIN_ALIASES), never minted on.
+			"routes": [
+				{ "pattern": "cdn.frostbase.dev", "custom_domain": true },
+				{ "pattern": "cdn.cloudflarebase.com", "custom_domain": true },
+			],
 			"vars": {
 				"EXPOSE_OPERATOR_API": "true",
 				"TRUSTED_ORIGINS": "",
-				// cloudflarebase.com's dedicated object-serving hostname, routed
+				// frostbase.dev's dedicated object-serving hostname, routed
 				// above. GET/HEAD only, at /<projectId>/<bucket>/<key> - note the
 				// shape differs from the raw R2 key, which carries the `p/` prefix
 				// this worker composes itself.
-				"STORAGE_SERVE_DOMAIN": "cdn.cloudflarebase.com",
+				"STORAGE_SERVE_DOMAIN": "cdn.frostbase.dev",
 				// ...and it is genuinely reachable, so URLs may be handed out on it.
 				// Set ONLY where the custom domain above really exists: local and
 				// test name a host that resolves nowhere, so they leave this unset
 				// and keep minting on the request's origin.
 				"STORAGE_SERVE_DOMAIN_ROUTED": "true",
+				"STORAGE_SERVE_DOMAIN_ALIASES": "cdn.cloudflarebase.com",
 				// No DSN minted for this worker yet; add one alongside launch.
 				"SENTRY_DSN": "",
 				"SENTRY_ENV": "production",

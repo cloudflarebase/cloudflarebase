@@ -1,1 +1,0 @@
-ALTER TABLE `app_secrets` ADD `ciphertext` text;

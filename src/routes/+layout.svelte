@@ -7,7 +7,7 @@
 
 	let { children } = $props();
 
-	const SITE_URL = 'https://cloudflarebase.com';
+	const SITE_URL = 'https://frostbase.dev';
 
 	/**
 	 * The console describes itself as the PRODUCT, never as the page you happen
@@ -16,7 +16,7 @@
 	 * `noindex` covers search engines. It does nothing about link previews:
 	 * WhatsApp, iMessage, Slack and every other unfurler ignore robots
 	 * directives, and with no `og:title` here they fell back to the document
-	 * title - so sharing `cloudflarebase.com/dashboard` previewed as
+	 * title - so sharing `frostbase.dev/dashboard` previewed as
 	 * "demo-19a63aad9478 · Project Overview", naming a throwaway project that
 	 * the demo TTL erases days later. `<title>` stays project-specific, because
 	 * that is the browser tab and it is genuinely useful; what a stranger's chat
@@ -92,27 +92,27 @@
 	<link rel="manifest" href="/site.webmanifest" />
 	<meta name="theme-color" media="(prefers-color-scheme: light)" content="#faf7f1" />
 	<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0705" />
-	<meta property="og:site_name" content="Cloudflarebase" />
+	<meta property="og:site_name" content="Frostbase" />
 	<meta property="og:type" content="website" />
 	<meta property="og:url" content={shareUrl} />
 	{#if isPrivate}
-		<meta property="og:title" content="Cloudflarebase - The open-source Firebase for Cloudflare" />
+		<meta property="og:title" content="Frostbase - The open-source Firebase for Cloudflare" />
 		<meta
 			property="og:description"
-			content="Auth, database, storage, and hosting on your own Cloudflare account. Every project gets its own Durable Objects."
+			content="Auth, database, and storage on your own Cloudflare account. Every project gets its own Durable Objects."
 		/>
 		<meta
 			name="twitter:description"
-			content="Auth, database, storage, and hosting on your own Cloudflare account. Every project gets its own Durable Objects."
+			content="Auth, database, and storage on your own Cloudflare account. Every project gets its own Durable Objects."
 		/>
 	{/if}
-	<meta property="og:image" content="https://cloudflarebase.com/brand/github-header.png" />
+	<meta property="og:image" content="https://frostbase.dev/brand/github-header.png" />
 	<meta
 		property="og:image:alt"
-		content="Cloudflarebase - the open-source backend built for Cloudflare"
+		content="Frostbase - the open-source backend built for Cloudflare"
 	/>
 	<meta name="twitter:card" content="summary_large_image" />
-	<meta name="twitter:image" content="https://cloudflarebase.com/brand/github-header.png" />
+	<meta name="twitter:image" content="https://frostbase.dev/brand/github-header.png" />
 </svelte:head>
 <ModeWatcher />
 <div class="app-viewport">{@render children()}</div>

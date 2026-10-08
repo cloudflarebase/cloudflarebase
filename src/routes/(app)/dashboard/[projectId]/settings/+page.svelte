@@ -151,7 +151,7 @@
 </script>
 
 <svelte:head>
-	<title>Settings · {data.projectId} · Cloudflarebase</title>
+	<title>Settings · {data.projectId} · Frostbase</title>
 </svelte:head>
 
 <div class="mx-auto w-full max-w-3xl space-y-6 px-4 py-8 sm:px-8" data-testid="settings-page">
@@ -361,10 +361,10 @@
 									? 'a branch'
 									: 'a project'}.
 							{:else if isBranch}
-								Deleting this branch erases its users, data, and deploys. The root project is
+								Deleting this branch erases its users, data, and files. The root project is
 								untouched.
 							{:else}
-								Deleting this project erases its users, data, and deploys in every agent - branches
+								Deleting this project erases its users, data, and files in every agent - branches
 								included.
 							{/if}
 						</p>

@@ -3,10 +3,10 @@
 </script>
 
 <svelte:head>
-	<title>Privacy Policy · Cloudflarebase</title>
+	<title>Privacy Policy · Frostbase</title>
 	<meta
 		name="description"
-		content="What the hosted service at cloudflarebase.com collects, why, and how long it keeps it."
+		content="What the hosted service at frostbase.dev collects, why, and how long it keeps it."
 	/>
 </svelte:head>
 
@@ -14,17 +14,16 @@
 <p class="lead">Effective July 29, 2026</p>
 
 <p>
-	This policy describes what the hosted service at cloudflarebase.com collects and why.
-	Cloudflarebase is an independent open-source project and is not affiliated with Cloudflare, Inc.
-	If you run Cloudflarebase yourself, your deployment is operated by you — this policy covers only
-	cloudflarebase.com.
+	This policy describes what the hosted service at frostbase.dev collects and why. Frostbase is an
+	independent open-source project and is not affiliated with Cloudflare, Inc. If you run Frostbase
+	yourself, your deployment is operated by you — this policy covers only frostbase.dev.
 </p>
 
 <h2>What we collect</h2>
 
 <p>
-	<strong>No accounts.</strong> cloudflarebase.com has no sign-up. The demo is anonymous, so we never
-	collect your email address, your name, or a password.
+	<strong>No accounts.</strong> frostbase.dev has no sign-up. The demo is anonymous, so we never collect
+	your email address, your name, or a password.
 </p>
 
 <p>
@@ -87,13 +86,13 @@
 
 <p>
 	To request access to or deletion of your data, open a
-	<a href="https://github.com/cloudflarebase/cloudflarebase/issues" target="_blank" rel="noreferrer"
+	<a href="https://github.com/frostbase-dev/frostbase/issues" target="_blank" rel="noreferrer"
 		>GitHub issue</a
 	>
 	and we will arrange a private channel — please don't post personal details in the public issue. For
 	security vulnerabilities, follow our
 	<a
-		href="https://github.com/cloudflarebase/cloudflarebase/blob/main/SECURITY.md"
+		href="https://github.com/frostbase-dev/frostbase/blob/main/SECURITY.md"
 		target="_blank"
 		rel="noreferrer">security policy</a
 	>.
@@ -114,7 +113,7 @@
 
 <p>
 	Questions about this policy: open a
-	<a href="https://github.com/cloudflarebase/cloudflarebase/issues" target="_blank" rel="noreferrer"
+	<a href="https://github.com/frostbase-dev/frostbase/issues" target="_blank" rel="noreferrer"
 		>GitHub issue</a
 	>. See also our <a href={resolve('/terms')}>Terms of Service</a>.
 </p>

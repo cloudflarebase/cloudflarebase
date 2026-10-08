@@ -110,7 +110,7 @@ const SUPABASE = {
  * - A read touches ~4 SQLite rows (document + config/subscription lookups);
  *   a write touches ~3.
  * - Each realtime connection receives ~50 pushed updates a day. On
- *   Cloudflarebase a pushed update is a WebSocket message (a DO request);
+ *   Frostbase a pushed update is a WebSocket message (a DO request);
  *   on Firebase every document a listener receives bills as a READ.
  */
 export const MODEL = {

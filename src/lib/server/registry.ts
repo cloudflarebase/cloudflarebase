@@ -9,8 +9,6 @@ import { AGENT_REGISTRY, type AppAgentEntry } from '$lib/agent-registry';
 import type { RegistryProject } from '$lib/agents';
 import { getDb } from '$lib/server/db';
 import { project, projectAgent } from '$lib/server/db/schema';
-import { releaseGithubRows } from '$lib/server/github-connect';
-import { releaseHostingRows } from '$lib/server/hosting';
 import { deleteProjectServiceKeys } from '$lib/server/service-keys';
 import { requireAgent } from '$lib/server/agents';
 import { projectIdSchema } from '$lib/schemas/auth';
@@ -410,8 +408,6 @@ export async function createBranch(
 			error: `this installation is limited to ${MAX_PROJECTS} projects`
 		};
 	}
-	// Deploy tokens can mint branches too (CI on a new git branch), so this
-	// also caps a runaway workflow, not just the dashboard dialog.
 	const limit = envLimit(platform, 'MAX_BRANCHES_PER_ROOT', DEFAULT_MAX_BRANCHES_PER_ROOT);
 	const siblings = await db
 		.select({ id: project.id })
@@ -616,12 +612,7 @@ export async function deleteProject(
 		return { ok: false, status: 404, error: 'no such project' };
 	}
 
-	// Release hosting claims, deploy tokens, and GitHub connections for the
-	// whole family - the subdomains return to the pool the moment the rows are
-	// gone, and a deleted project stops accepting pushes.
 	const family = [projectId, ...branches.map((branch) => branch.id)];
-	await releaseHostingRows(db, family);
-	await releaseGithubRows(db, family);
 	// Service keys die with their project - per member of the family, since a
 	// key is scoped to exactly one registry row rather than to a root.
 	for (const member of family) await deleteProjectServiceKeys(platform, member);

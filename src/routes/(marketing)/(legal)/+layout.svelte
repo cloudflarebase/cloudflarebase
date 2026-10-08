@@ -10,7 +10,7 @@
 		<div class="mx-auto flex max-w-3xl items-center justify-between py-4">
 			<a href={resolve('/')} aria-label="home" class="flex items-center gap-2 text-lg font-bold">
 				<img src="/brand/mark.svg" alt="" class="h-5 w-5" />
-				Cloudflarebase
+				Frostbase
 			</a>
 			<div class="flex items-center gap-3">
 				<a href={resolve('/')} class="text-sm text-muted-foreground hover:text-foreground">
@@ -31,7 +31,7 @@
 		<div
 			class="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground/70"
 		>
-			<span>&copy; 2026 Cloudflarebase</span>
+			<span>&copy; 2026 Frostbase</span>
 			<nav class="flex gap-4">
 				<a href={resolve('/privacy')} class="hover:text-foreground">Privacy</a>
 				<a href={resolve('/terms')} class="hover:text-foreground">Terms</a>

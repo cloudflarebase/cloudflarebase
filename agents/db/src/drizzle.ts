@@ -2,7 +2,7 @@ import { drizzle, type SqliteRemoteDatabase } from 'drizzle-orm/sqlite-proxy';
 import type { TableSqlResponse, TableSqlResult } from './schemas';
 
 /**
- * The official drizzle driver for Cloudflarebase SQL tables - a thin shim
+ * The official drizzle driver for Frostbase SQL tables - a thin shim
  * over the D1-shaped `/tables/<name>/sql` endpoint, exactly as designed
  * (db-table-design.md §10): the physical storage already matches what
  * drizzle emits, so the driver only moves statements and rows.
@@ -12,7 +12,7 @@ import type { TableSqlResponse, TableSqlResult } from './schemas';
  * SQL), so `getToken` is effectively mandatory outside operator tooling.
  *
  * ```ts
- * import { drizzleTable } from '@cloudflarebase/db/drizzle';
+ * import { drizzleTable } from '@frostbase/db/drizzle';
  * import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
  *
  * const todos = sqliteTable('todos', {

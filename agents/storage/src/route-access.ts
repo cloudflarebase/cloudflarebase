@@ -4,7 +4,7 @@
  * customer data paths: access modes, JWT, CORS. This is the coarser question
  * of which routes a deployment serves over HTTP at all.)
  *
- * On cloudflarebase.com the console guard IS the gate for the operator
+ * On frostbase.dev the console guard IS the gate for the operator
  * plane, and that is sound there: this worker has no public hostname
  * (`workers_dev` and `preview_urls` false), so the only way in is the
  * dashboard's service binding, and every request through it has already been
@@ -29,7 +29,7 @@
  * - The refusal is the ordinary 404, byte for byte, so a closed surface is
  *   not enumerable either.
  *
- * `ROUTES` mirrors `cloudflarebase.agent.json` and
+ * `ROUTES` mirrors `frostbase.agent.json` and
  * `route-access.unit.test.ts` fails if the two disagree, so the manifest
  * stays the single declaration. It is a copy rather than an import because
  * the JSON sits outside the build's `rootDir`, and the manifest has to stay
@@ -43,7 +43,7 @@ export interface RouteRule {
 	access: RouteAccess;
 }
 
-/** Mirrors the `routes` block of `cloudflarebase.agent.json`. */
+/** Mirrors the `routes` block of `frostbase.agent.json`. */
 export const ROUTES: readonly RouteRule[] = [
 	{ path: '/buckets/*', access: 'public' },
 	{ path: '/overview', access: 'operator' },

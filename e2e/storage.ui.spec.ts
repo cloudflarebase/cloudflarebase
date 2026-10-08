@@ -234,7 +234,7 @@ test.describe('storage console', () => {
 	test('the Integration page shows the client snippet', async ({ page }) => {
 		await page.goto(`/dashboard/${UI_PROJECT}/storage/integration`);
 		const panel = page.getByTestId('storage-integration');
-		await expect(panel).toContainText('@cloudflarebase/storage/client');
+		await expect(panel).toContainText('@frostbase/storage/client');
 		await expect(panel).toContainText('createSignedUrl');
 		// The shared code-sample component, so the snippets get the same tabs,
 		// copy button, and syntax highlighting every other Integration tab has.
@@ -242,7 +242,7 @@ test.describe('storage console', () => {
 		// One name for the server credential across all three agents' Integration
 		// tabs - it was 'Server' here and 'Service key' on auth and db.
 		await panel.getByRole('tab', { name: 'Admin service key' }).click();
-		await expect(panel).toContainText('@cloudflarebase/storage/admin');
+		await expect(panel).toContainText('@frostbase/storage/admin');
 		// And the page shape matches auth and db: base URL, samples, caveat.
 		await expect(panel).toContainText('Storage base URL');
 	});

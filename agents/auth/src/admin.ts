@@ -1,8 +1,8 @@
 /**
- * The ADMIN client for `@cloudflarebase/auth` - user and session management
+ * The ADMIN client for `@frostbase/auth` - user and session management
  * from a server.
  *
- * The twin of `@cloudflarebase/db/admin`, and the same three properties hold:
+ * The twin of `@frostbase/db/admin`, and the same three properties hold:
  * it targets the CONSOLE (a `cfbs_` service key is verified in the console
  * guard and never reaches this agent as a bearer), it is admin-grade, and it
  * is server-only.
@@ -18,13 +18,13 @@
  */
 
 export interface AuthAdminOptions {
-	/** The console origin - e.g. `https://cloudflarebase.com`.
-	 * Falls back to `CLOUDFLAREBASE_URL` / `CFBASE_URL`. */
+	/** The console origin - e.g. `https://frostbase.dev`.
+	 * Falls back to `FROSTBASE_URL` / `CLOUDFLAREBASE_URL`. */
 	url?: string;
-	/** Falls back to `CLOUDFLAREBASE_PROJECT` / `CFBASE_PROJECT`. */
+	/** Falls back to `FROSTBASE_PROJECT` / `CLOUDFLAREBASE_PROJECT`. */
 	projectId?: string;
-	/** A `cfbs_` service key. Falls back to `CLOUDFLAREBASE_SERVICE_KEY` /
-	 * `CFBASE_SERVICE_KEY`. */
+	/** A service key (`fsb_`, or a legacy `cfbs_`). Falls back to `FROSTBASE_SERVICE_KEY` /
+	 * `CLOUDFLAREBASE_SERVICE_KEY`. */
 	key?: string;
 	fetch?: typeof fetch;
 	/** Explicit environment, for Workers - where secrets arrive on `env`. */
@@ -51,7 +51,7 @@ export class AuthAdminError extends Error {
 export class AuthAgentTooOldError extends Error {
 	constructor(path: string) {
 		super(
-			`the auth agent did not recognise ${path}. Deploy @cloudflarebase/auth 0.7.0 or newer ` +
+			`the auth agent did not recognise ${path}. Deploy @frostbase/auth 0.7.0 or newer ` +
 				`before calling this - an older agent answers a 404 that looks like a missing user.`,
 		);
 		this.name = 'AuthAgentTooOldError';
@@ -74,16 +74,16 @@ function assertServerOnly(): void {
 	// which declare no DOM, and a Worker has no document either.
 	if (typeof (globalThis as { document?: unknown }).document !== 'undefined') {
 		throw new Error(
-			'@cloudflarebase/auth/admin is server-only: it carries a service key, which can read and ' +
+			'@frostbase/auth/admin is server-only: it carries a service key, which can read and ' +
 				'delete every account in your project. Never import it into browser code. Use ' +
 				'better-auth/client with the signed-in user’s own session instead.',
 		);
 	}
 }
 
-/** Most-explicit-first, the CLI's rule. `CLOUDFLAREBASE_*` is canonical - the
- * sibling credential is already `CLOUDFLAREBASE_DEPLOY_TOKEN` - and the shorter
- * `CFBASE_*` spellings are accepted because they match the token prefixes. */
+/** Most-explicit-first, the CLI's rule. `FROSTBASE_*` is canonical; the
+ * `CLOUDFLAREBASE_*` and `CFBASE_*` spellings from before the rename are still
+ * read so existing deployments keep working. */
 function resolve(
 	options: AuthAdminOptions,
 	explicit: string | undefined,
@@ -98,24 +98,29 @@ function resolve(
 		if (value) return value;
 	}
 	throw new Error(
-		`@cloudflarebase/auth/admin needs ${label}: pass it explicitly, or set ${names.join(' or ')}. ` +
+		`@frostbase/auth/admin needs ${label}: pass it explicitly, or set ${names.join(' or ')}. ` +
 			`Inside a Worker, secrets live on \`env\` rather than a global process - pass \`{ env }\`.`,
 	);
 }
 
 export function createAuthAdmin(options: AuthAdminOptions = {}) {
 	assertServerOnly();
-	const url = resolve(options, options.url, ['CLOUDFLAREBASE_URL', 'CFBASE_URL'], 'a console URL');
+	const url = resolve(
+		options,
+		options.url,
+		['FROSTBASE_URL', 'CLOUDFLAREBASE_URL', 'CFBASE_URL'],
+		'a console URL',
+	);
 	const projectId = resolve(
 		options,
 		options.projectId,
-		['CLOUDFLAREBASE_PROJECT', 'CFBASE_PROJECT'],
+		['FROSTBASE_PROJECT', 'CLOUDFLAREBASE_PROJECT', 'CFBASE_PROJECT'],
 		'a project id',
 	);
 	const key = resolve(
 		options,
 		options.key,
-		['CLOUDFLAREBASE_SERVICE_KEY', 'CFBASE_SERVICE_KEY'],
+		['FROSTBASE_SERVICE_KEY', 'CLOUDFLAREBASE_SERVICE_KEY', 'CFBASE_SERVICE_KEY'],
 		'a service key',
 	);
 

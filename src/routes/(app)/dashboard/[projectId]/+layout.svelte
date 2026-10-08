@@ -135,8 +135,7 @@
 	let comingSoonOpen = $state(true);
 
 	// Empty, and that is the point: every primitive this list ever advertised
-	// has shipped. Functions left when the hosting agent did (apps and
-	// functions are one artifact there), Realtime when the db gateway did, and
+	// has shipped. Realtime left when the db gateway did, and
 	// Storage when its console pages did - the registry emits that section
 	// itself the moment `console.pages` is non-empty, so leaving it here would
 	// list it twice. Cron & Queues was never scheduled work, only a card.
@@ -635,7 +634,7 @@
 			class="flex h-14 shrink-0 items-center gap-2 border-b border-border px-5 font-bold"
 		>
 			<img src="/brand/mark.svg" alt="" class="h-5 w-5" />
-			Cloudflarebase
+			Frostbase
 		</a>
 
 		<nav class="flex-1 space-y-5 overflow-y-auto px-3 py-4">
@@ -890,7 +889,7 @@
 					>
 						<Menu class="h-4 w-4" />
 					</Button>
-					<a href={resolve('/')} class="shrink-0 lg:hidden" aria-label="Cloudflarebase home">
+					<a href={resolve('/')} class="shrink-0 lg:hidden" aria-label="Frostbase home">
 						<img src="/brand/mark.svg" alt="" class="h-5 w-5" />
 					</a>
 					<span class="text-muted-foreground/40 select-none lg:hidden">/</span>

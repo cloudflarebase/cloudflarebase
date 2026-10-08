@@ -289,7 +289,7 @@
 				? 'Setup locked'
 				: claiming
 					? 'Set up your console'
-					: 'Sign in'} · Cloudflarebase</title
+					: 'Sign in'} · Frostbase</title
 	>
 	<meta name="robots" content="noindex" />
 </svelte:head>

@@ -1,5 +1,5 @@
 /**
- * Publish build for `@cloudflarebase/storage`.
+ * Publish build for `@frostbase/storage`.
  *
  * Emits `dist/` from `src/` only. Deliberately left out of the published
  * package:

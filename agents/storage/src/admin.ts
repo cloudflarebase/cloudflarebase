@@ -1,5 +1,5 @@
 /**
- * The ADMIN client for `@cloudflarebase/storage` - buckets and object bytes
+ * The ADMIN client for `@frostbase/storage` - buckets and object bytes
  * from a server.
  *
  * The twin of the db and auth admin clients: it targets the CONSOLE (a `cfbs_`
@@ -14,13 +14,13 @@
  */
 
 export interface StorageAdminOptions {
-	/** The console origin - e.g. `https://cloudflarebase.com`.
-	 * Falls back to `CLOUDFLAREBASE_URL` / `CFBASE_URL`. */
+	/** The console origin - e.g. `https://frostbase.dev`.
+	 * Falls back to `FROSTBASE_URL` / `CLOUDFLAREBASE_URL`. */
 	url?: string;
-	/** Falls back to `CLOUDFLAREBASE_PROJECT` / `CFBASE_PROJECT`. */
+	/** Falls back to `FROSTBASE_PROJECT` / `CLOUDFLAREBASE_PROJECT`. */
 	projectId?: string;
-	/** A `cfbs_` service key. Falls back to `CLOUDFLAREBASE_SERVICE_KEY` /
-	 * `CFBASE_SERVICE_KEY`. */
+	/** A service key (`fsb_`, or a legacy `cfbs_`). Falls back to `FROSTBASE_SERVICE_KEY` /
+	 * `CLOUDFLAREBASE_SERVICE_KEY`. */
 	key?: string;
 	fetch?: typeof fetch;
 	/** Explicit environment, for Workers - where secrets arrive on `env`. */
@@ -46,7 +46,7 @@ export class StorageAdminError extends Error {
 export class StorageAgentTooOldError extends Error {
 	constructor(path: string) {
 		super(
-			`the console did not recognise ${path}. Deploy a console (and @cloudflarebase/storage) that ` +
+			`the console did not recognise ${path}. Deploy a console (and @frostbase/storage) that ` +
 				`ships the storage object proxy before calling this - an older deployment answers a 404 ` +
 				`that looks like a missing object.`,
 		);
@@ -70,7 +70,7 @@ export interface StorageObjectSummary {
 function assertServerOnly(): void {
 	if (typeof (globalThis as { document?: unknown }).document !== 'undefined') {
 		throw new Error(
-			'@cloudflarebase/storage/admin is server-only: it carries a service key, which can read, ' +
+			'@frostbase/storage/admin is server-only: it carries a service key, which can read, ' +
 				'overwrite, and delete every object in your project regardless of bucket access modes. ' +
 				'Never import it into browser code - upload from the browser with the signed-in user’s ' +
 				'project JWT against the public object path instead.',
@@ -92,7 +92,7 @@ function resolve(
 		if (value) return value;
 	}
 	throw new Error(
-		`@cloudflarebase/storage/admin needs ${label}: pass it explicitly, or set ${names.join(' or ')}. ` +
+		`@frostbase/storage/admin needs ${label}: pass it explicitly, or set ${names.join(' or ')}. ` +
 			`Inside a Worker, secrets live on \`env\` rather than a global process - pass \`{ env }\`.`,
 	);
 }
@@ -109,17 +109,22 @@ function encodeKey(key: string): string {
 
 export function createStorageAdmin(options: StorageAdminOptions = {}) {
 	assertServerOnly();
-	const url = resolve(options, options.url, ['CLOUDFLAREBASE_URL', 'CFBASE_URL'], 'a console URL');
+	const url = resolve(
+		options,
+		options.url,
+		['FROSTBASE_URL', 'CLOUDFLAREBASE_URL', 'CFBASE_URL'],
+		'a console URL',
+	);
 	const projectId = resolve(
 		options,
 		options.projectId,
-		['CLOUDFLAREBASE_PROJECT', 'CFBASE_PROJECT'],
+		['FROSTBASE_PROJECT', 'CLOUDFLAREBASE_PROJECT', 'CFBASE_PROJECT'],
 		'a project id',
 	);
 	const key = resolve(
 		options,
 		options.key,
-		['CLOUDFLAREBASE_SERVICE_KEY', 'CFBASE_SERVICE_KEY'],
+		['FROSTBASE_SERVICE_KEY', 'CLOUDFLAREBASE_SERVICE_KEY', 'CFBASE_SERVICE_KEY'],
 		'a service key',
 	);
 

@@ -1,13 +1,12 @@
 import { z } from 'zod';
-import authManifestJson from '../../agents/auth/cloudflarebase.agent.json';
-import dbManifestJson from '../../agents/db/cloudflarebase.agent.json';
-import hostingManifestJson from '../../agents/hosting/cloudflarebase.agent.json';
-import storageManifestJson from '../../agents/storage/cloudflarebase.agent.json';
+import authManifestJson from '../../agents/auth/frostbase.agent.json';
+import dbManifestJson from '../../agents/db/frostbase.agent.json';
+import storageManifestJson from '../../agents/storage/frostbase.agent.json';
 
 /**
  * The agent manifest contract - see "The agent contract" in AGENTS.md.
  *
- * Each agent package ships a cloudflarebase.agent.json declaring what it is
+ * Each agent package ships a frostbase.agent.json declaring what it is
  * and what the platform must do to host it. The app imports those files
  * DIRECTLY from agents/<name>/ - static declarative data, deliberately not a
  * copy: the console guard is generated from `routes`, and a stale copy would
@@ -113,7 +112,7 @@ export type RouteAccess = z.infer<typeof routeAccessSchema>;
  */
 export interface AppAgentEntry {
 	manifest: AgentManifest;
-	binding: 'AUTH_AGENT' | 'DB_AGENT' | 'HOSTING_AGENT' | 'STORAGE_AGENT';
+	binding: 'AUTH_AGENT' | 'DB_AGENT' | 'STORAGE_AGENT';
 	devHost: string;
 }
 
@@ -129,11 +128,6 @@ export const AGENT_REGISTRY: Record<string, AppAgentEntry> = {
 		manifest: agentManifestSchema.parse(dbManifestJson),
 		binding: 'DB_AGENT',
 		devHost: 'localhost:8789'
-	},
-	hosting: {
-		manifest: agentManifestSchema.parse(hostingManifestJson),
-		binding: 'HOSTING_AGENT',
-		devHost: 'localhost:8790'
 	},
 	storage: {
 		manifest: agentManifestSchema.parse(storageManifestJson),

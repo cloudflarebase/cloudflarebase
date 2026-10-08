@@ -8,12 +8,12 @@
 	 * clone works, publishes to workers.dev, and leaves the console private
 	 * because DEMO_MODE is unset.
 	 *
-	 * cloudflarebase.com's own settings - its name, custom domain, and the
+	 * frostbase.dev's own settings - its name, custom domain, and the
 	 * public demo - live under env.production, so this project's deployment is
 	 * one environment among several rather than the thing everyone inherits.
 	 */
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "cloudflarebase",
+	"name": "frostbase",
 	"main": ".svelte-kit/cloudflare/_worker.js",
 	"compatibility_date": "2026-07-10",
 	"compatibility_flags": ["nodejs_compat", "nodejs_als"],
@@ -38,7 +38,7 @@
 
 	// DEMO_MODE is deliberately absent here. Setting it opens ephemeral
 	// demo-<hex> projects to anonymous visitors, which is what makes
-	// cloudflarebase.com playable and exactly what a private install must not
+	// frostbase.dev playable and exactly what a private install must not
 	// do. Unset means the console requires an operator session.
 	//
 	// PUBLIC_SENTRY_DSN covers server and browser reporting alike (a DSN is
@@ -79,7 +79,6 @@
 	"services": [
 		{ "binding": "AUTH_AGENT", "service": "auth-agent" },
 		{ "binding": "DB_AGENT", "service": "db-agent" },
-		{ "binding": "HOSTING_AGENT", "service": "hosting-agent" },
 		{ "binding": "STORAGE_AGENT", "service": "storage-agent" }
 	],
 
@@ -171,7 +170,6 @@
 			"services": [
 				{ "binding": "AUTH_AGENT", "service": "auth-agent-local" },
 				{ "binding": "DB_AGENT", "service": "db-agent-local" },
-				{ "binding": "HOSTING_AGENT", "service": "hosting-agent-local" },
 				{ "binding": "STORAGE_AGENT", "service": "storage-agent-local" }
 			],
 			"ratelimits": [
@@ -218,7 +216,6 @@
 			"services": [
 				{ "binding": "AUTH_AGENT", "service": "auth-agent-test" },
 				{ "binding": "DB_AGENT", "service": "db-agent-test" },
-				{ "binding": "HOSTING_AGENT", "service": "hosting-agent-test" },
 				{ "binding": "STORAGE_AGENT", "service": "storage-agent-test" }
 			],
 			"ratelimits": [
@@ -230,24 +227,33 @@
 			]
 		},
 
-		// cloudflarebase.com itself. Deployed with `npm run deploy:production`;
+		// frostbase.dev itself. Deployed with `npm run deploy:production`;
 		// nobody else needs this environment. Wrangler does not inherit
 		// top-level vars into an environment, so they are repeated in full.
 		"production": {
-			"name": "cloudflarebase-com",
+			"name": "frostbase-dev",
 			"workers_dev": false,
 			// Version preview URLs live on the preview Worker, not here.
 			"preview_urls": false,
+			// cloudflarebase.com stays attached after the move to frostbase.dev:
+			// its pages 301 to the same path here and its API keeps answering
+			// (domainMoveHandle in src/hooks.server.ts).
 			"routes": [
+				{
+					"pattern": "frostbase.dev",
+					"custom_domain": true
+				},
 				{
 					"pattern": "cloudflarebase.com",
 					"custom_domain": true
 				}
 			],
 			"vars": {
+				"CANONICAL_ORIGIN": "https://frostbase.dev",
 				"CHAT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
 				"DEMO_MODE": "true",
-				// Committed on purpose: env.production is cloudflarebase.com's own
+				"MOVED_FROM_HOSTS": "cloudflarebase.com",
+				// Committed on purpose: env.production is frostbase.dev's own
 				// block (forks deploy the top level, whose DSN stays empty), and a
 				// DSN is browser-visible by design anyway.
 				"PUBLIC_SENTRY_DSN": "https://50ed6e26b886124ac39e983efb72144d@o4510375271530496.ingest.de.sentry.io/4511764380778576",
@@ -265,7 +271,6 @@
 			"services": [
 				{ "binding": "AUTH_AGENT", "service": "auth-agent" },
 				{ "binding": "DB_AGENT", "service": "db-agent" },
-				{ "binding": "HOSTING_AGENT", "service": "hosting-agent" },
 				{ "binding": "STORAGE_AGENT", "service": "storage-agent" }
 			],
 			"ratelimits": [
@@ -278,21 +283,21 @@
 		},
 
 		// Preview is its OWN Worker (2026-08-18; it used to be preview versions
-		// of cloudflarebase-com): Workers Builds is connected to
-		// cloudflarebase-com-preview and deploys the preview branch with
+		// of frostbase-dev): Workers Builds is connected to
+		// frostbase-dev-preview and deploys the preview branch with
 		// `--env preview`, so the name here must match that connection or CI
 		// warns "Failed to match Worker name" and threatens a rename PR. It
 		// serves on workers.dev (no custom domain) at
-		// https://cloudflarebase-com-preview.cloudflarebase.workers.dev - the
+		// https://frostbase-dev-preview.frostbase.workers.dev - the
 		// origin the preview agents' TRUSTED_ORIGINS must name - and keeps
 		// preview_urls on for per-version URLs of other branches. The bindings
 		// are the point: AUTH_AGENT targets the preview agent and DB binds the
 		// preview control plane. A separate Worker is also a separate SECRET
 		// STORE - preview inherits nothing from production, so optional secrets
-		// (the GitHub App four, CONSOLE_SETUP_TOKEN) exist here only if put
+		// (CONSOLE_SETUP_TOKEN among them) exist here only if put
 		// here.
 		"preview": {
-			"name": "cloudflarebase-com-preview",
+			"name": "frostbase-dev-preview",
 			"workers_dev": true,
 			"preview_urls": true,
 			"routes": [],
@@ -326,7 +331,6 @@
 			"services": [
 				{ "binding": "AUTH_AGENT", "service": "auth-agent-preview" },
 				{ "binding": "DB_AGENT", "service": "db-agent-preview" },
-				{ "binding": "HOSTING_AGENT", "service": "hosting-agent-preview" },
 				{ "binding": "STORAGE_AGENT", "service": "storage-agent-preview" }
 			]
 		}

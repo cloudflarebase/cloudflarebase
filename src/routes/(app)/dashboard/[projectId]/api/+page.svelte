@@ -90,7 +90,7 @@
 </script>
 
 <svelte:head>
-	<title>API reference · {projectId} · Cloudflarebase</title>
+	<title>API reference · {projectId} · Frostbase</title>
 </svelte:head>
 
 <div class="h-full overflow-auto" data-testid="api-reference">

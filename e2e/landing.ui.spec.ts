@@ -19,7 +19,7 @@ test.describe('landing page (frontend)', () => {
 		// card is a signup someone regrets. Every primitive listed is live.
 		const primitives = page.locator('#roadmap');
 		await expect(primitives.getByText('Planned')).toHaveCount(0);
-		await expect(primitives.getByText('Live')).toHaveCount(5);
+		await expect(primitives.getByText('Live')).toHaveCount(4);
 		await expect(primitives).toContainText('Storage');
 
 		// The hero visual opens on the db agent and the tabs are real controls.
@@ -42,7 +42,7 @@ test.describe('landing page (frontend)', () => {
 		).toBeVisible();
 
 		const table = page.getByTestId('comparison-table');
-		for (const name of ['Cloudflarebase', 'Firebase', 'Supabase']) {
+		for (const name of ['Frostbase', 'Firebase', 'Supabase']) {
 			await expect(table.getByRole('columnheader', { name })).toBeVisible();
 		}
 		// The branching row is the pitch in one line.

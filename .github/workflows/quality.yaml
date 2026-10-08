@@ -63,15 +63,7 @@ jobs:
         run: npm run test:unit
         working-directory: agents/storage
 
-      - name: Typecheck the hosting agent
-        run: npx tsc --noEmit
-        working-directory: agents/hosting
-
-      - name: Unit-test the hosting agent
-        run: npm run test:unit
-        working-directory: agents/hosting
-
-      # The CLI is a fifth npm project; the root install does not cover it.
+      # The CLI is a fourth npm project; the root install does not cover it.
       - name: Install CLI dependencies
         run: npm ci
         working-directory: cli

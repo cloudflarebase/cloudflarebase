@@ -12,10 +12,6 @@
 			"command": "cd ./agents/db && npm install"
 		},
 		{
-			"name": "hosting-agent",
-			"command": "cd ./agents/hosting && npm install"
-		},
-		{
 			"name": "storage-agent",
 			"command": "cd ./agents/storage && npm install"
 		}

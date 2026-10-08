@@ -72,7 +72,7 @@ import {
  *   shares the console's origin, so an attacker-uploaded HTML file rendered
  *   inline would be stored XSS against every operator session.
  *
- * `STORAGE_SERVE_DOMAIN` (e.g. cdn.cloudflarebase.com) optionally serves
+ * `STORAGE_SERVE_DOMAIN` (e.g. cdn.frostbase.dev) optionally serves
  * GET/HEAD at `/<projectId>/<bucket>/<key>` on a dedicated hostname - a
  * WORKER route with identical enforcement. The R2 bucket itself must NEVER
  * carry r2.dev or a custom domain: that serves every tenant's keys raw.
@@ -307,18 +307,25 @@ class StorageService extends WorkerEntrypoint<Env> {
 	 * writes stay on the agent surface where the console guard and CORS
 	 * policy already apply.
 	 */
+	private serveDomainAliases(): string[] {
+		return (this.env.STORAGE_SERVE_DOMAIN_ALIASES ?? '')
+			.split(',')
+			.map((alias) => alias.trim().toLowerCase())
+			.filter(Boolean);
+	}
+
 	private serveDomainTarget(request: Request, url: URL): Promise<Response> | null {
 		const domain = this.env.STORAGE_SERVE_DOMAIN;
 		if (!domain) return null;
 		let host = url.hostname;
 		if (this.env.STORAGE_SERVE_HOST_HEADER === 'true') {
 			// Test-only: local workerd is dialled by port, not hostname, so the
-			// e2e stack stands the serving host in via a header (the hosting
-			// stub's x-cfbase-host idiom). Ignored everywhere else.
-			const override = request.headers.get('x-cfbase-host');
+			// e2e stack stands the serving host in via a header. Ignored
+			// everywhere else.
+			const override = request.headers.get('x-frostbase-host');
 			if (override) host = override.split(':')[0];
 		}
-		if (host !== domain) return null;
+		if (host !== domain && !this.serveDomainAliases().includes(host)) return null;
 		if (request.method !== 'GET' && request.method !== 'HEAD' && request.method !== 'OPTIONS') {
 			return Promise.resolve(
 				Response.json(
@@ -1028,9 +1035,9 @@ class StorageService extends WorkerEntrypoint<Env> {
 	 * configured, and that is wrong for a reason neither environment made
 	 * obvious until a signed URL was actually fetched: a serve domain being
 	 * SET does not mean it is ROUTED. Production carries
-	 * `cdn.cloudflarebase.com` with its worker route still commented out
+	 * `cdn.frostbase.dev` with its worker route still commented out
 	 * pending DNS, and the e2e stack points at a host that resolves nowhere
-	 * and is reached only through the `x-cfbase-host` stand-in. Minting on it
+	 * and is reached only through the `x-frostbase-host` stand-in. Minting on it
 	 * would hand out URLs that resolve to nothing, in both.
 	 *
 	 * The request's own origin has no such failure mode - the caller just
@@ -1512,9 +1519,10 @@ class StorageService extends WorkerEntrypoint<Env> {
 				// serveObjectPath, not a hand-built string: the purge spelling must
 				// be byte-identical to the spelling serve requests are cached under,
 				// or an overwrite keeps serving the old bytes until TTL.
-				await caches.default.delete(
-					`https://${domain}${serveObjectPath(target.projectId, target.bucket, key)}`,
-				);
+				const objectPath = serveObjectPath(target.projectId, target.bucket, key);
+				for (const host of [domain, ...this.serveDomainAliases()]) {
+					await caches.default.delete(`https://${host}${objectPath}`);
+				}
 			}
 		} catch {
 			// purging is best-effort; the short default TTL is the backstop
