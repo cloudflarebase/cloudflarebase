@@ -231,7 +231,7 @@
 		// nobody else needs this environment. Wrangler does not inherit
 		// top-level vars into an environment, so they are repeated in full.
 		"production": {
-			"name": "console",
+			"name": "frostbase-dev",
 			"workers_dev": false,
 			// Version preview URLs live on the preview Worker, not here.
 			"preview_urls": false,
@@ -283,12 +283,12 @@
 		},
 
 		// Preview is its OWN Worker (2026-08-18; it used to be preview versions
-		// of console): Workers Builds is connected to
-		// console-preview and deploys the preview branch with
+		// of frostbase-dev): Workers Builds is connected to
+		// frostbase-dev-preview and deploys the preview branch with
 		// `--env preview`, so the name here must match that connection or CI
 		// warns "Failed to match Worker name" and threatens a rename PR. It
 		// serves on workers.dev (no custom domain) at
-		// https://console-preview.frostbase.workers.dev - the
+		// https://frostbase-dev-preview.frostbase.workers.dev - the
 		// origin the preview agents' TRUSTED_ORIGINS must name - and keeps
 		// preview_urls on for per-version URLs of other branches. The bindings
 		// are the point: AUTH_AGENT targets the preview agent and DB binds the
@@ -297,7 +297,7 @@
 		// (CONSOLE_SETUP_TOKEN among them) exist here only if put
 		// here.
 		"preview": {
-			"name": "console-preview",
+			"name": "frostbase-dev-preview",
 			"workers_dev": true,
 			"preview_urls": true,
 			"routes": [],
