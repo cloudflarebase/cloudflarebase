@@ -10,13 +10,6 @@ import { projectIdSchema } from '$lib/schemas/auth';
 import { agentFetcher, agentUrl, serverError } from '$lib/server/agents';
 import { isDemoMode, isDemoProjectId, resolveConsoleIdentity } from '$lib/server/console';
 import { guardConsoleClaim } from '$lib/server/console-setup';
-import { verifyGithubDeployGrant } from '$lib/server/github-connect';
-import {
-	deployTokenCoversProject,
-	isBuildEnvSurface,
-	isDeployTokenSurface,
-	verifyDeployToken
-} from '$lib/server/hosting';
 import { isServiceKeySurface, verifyServiceKey } from '$lib/server/service-keys';
 import { getProjectOwnership, projectExists, type ProjectOwnership } from '$lib/server/registry';
 import { handleErrorWithSentry, initCloudflareSentryHandle, sentryHandle } from '@sentry/sveltekit';
@@ -254,30 +247,10 @@ function classifyAccess(pathname: string): Access {
 	// Everything under /api is operator surface unless published below, so a
 	// route added later is private until someone deliberately opens it.
 	if (segments[0] === 'api') {
-		// The two GitHub routes the guard cannot gate, both authenticated by an
-		// HMAC we control rather than by a session:
-		//
-		// - `webhook`: GitHub carries no session and never will. Its
-		//   X-Hub-Signature-256 is the credential, checked over the raw body.
-		// - `callback`: the return leg of an App install. It arrives as a
-		//   cross-site top-level navigation from github.com, where a session
-		//   cookie is not reliably present - requiring one stranded operators
-		//   mid-install. The signed install state IS the credential here: it is
-		//   minted only for a signed-in operator on a specific project, expires
-		//   in minutes, and cannot be forged without the webhook secret. The
-		//   route verifies it before writing anything, and still cross-checks a
-		//   session when the browser does send one.
-		if (
-			segments[1] === 'github' &&
-			segments.length === 3 &&
-			(segments[2] === 'webhook' || segments[2] === 'callback')
-		) {
-			return { scope: 'open' };
-		}
-		// The first-run setup unlock. Public for the same reason as the two
-		// above: an unclaimed console has no session to authenticate against,
-		// and CONSOLE_SETUP_TOKEN - writable only with Cloudflare account
-		// credentials - is the credential the route checks.
+		// The first-run setup unlock. Public because an unclaimed console has
+		// no session to authenticate against, and CONSOLE_SETUP_TOKEN - writable
+		// only with Cloudflare account credentials - is the credential the
+		// route checks.
 		if (segments[1] === 'console' && segments[2] === 'setup' && segments.length === 3) {
 			return { scope: 'open' };
 		}
@@ -398,8 +371,6 @@ const consoleGuardHandle: Handle = async ({ event, resolve }) => {
 	event.locals.demoMode = isDemoMode(event.platform);
 	event.locals.consoleUser = null;
 	event.locals.consoleIdentity = null;
-	event.locals.deployToken = null;
-	event.locals.githubDeploy = null;
 	event.locals.serviceKey = null;
 
 	const access = classifyAccess(event.url.pathname);
@@ -434,33 +405,6 @@ const consoleGuardHandle: Handle = async ({ event, resolve }) => {
 		return noSuchProject(access.kind);
 	}
 
-	// Deploy tokens (Phase B): a `cfbd_` bearer
-	// is CI's durable credential, accepted SOLELY on the deploy and
-	// branch-create endpoints for the token's root project and its branches.
-	// Any other use of one - wrong surface, wrong project, revoked - is a
-	// plain 401 here, never a fall-through to session resolution: a deploy
-	// token must never behave like a session.
-	const bearer = event.request.headers
-		.get('authorization')
-		?.match(/^Bearer\s+(cfbd_[0-9a-f]{64})$/i)?.[1];
-	if (bearer) {
-		if (
-			access.projectId &&
-			isDeployTokenSurface(event.url.pathname, event.request.method) &&
-			!isDemoProjectId(access.projectId)
-		) {
-			const grant = await verifyDeployToken(event.platform, bearer.toLowerCase());
-			if (
-				grant &&
-				(await deployTokenCoversProject(event.platform, grant.projectId, access.projectId))
-			) {
-				event.locals.deployToken = grant;
-				return resolve(event);
-			}
-		}
-		return Response.json({ error: 'invalid deploy token' }, { status: 401 });
-	}
-
 	// Service keys (SK1): a `cfbs_` bearer is the
 	// credential a SERVER holds for the cases with no user to relay - crons,
 	// queue consumers, webhook handlers, seed scripts. It reaches the DATA
@@ -476,8 +420,8 @@ const consoleGuardHandle: Handle = async ({ event, resolve }) => {
 	// A REQUEST CARRYING AN `Origin` IS REFUSED, whatever the key. Server
 	// fetches send no Origin and browsers always do, so a key pasted into
 	// frontend code fails immediately at the developer's desk instead of
-	// shipping inside a JS bundle on a CDN. Same all-or-nothing contract as a
-	// deploy token: never a fall-through to session resolution.
+	// shipping inside a JS bundle on a CDN. All or nothing: a key bearer never
+	// falls through to session resolution.
 	const serviceBearer = event.request.headers
 		.get('authorization')
 		?.match(/^Bearer\s+(cfbs_[0-9a-f]{64})$/i)?.[1];
@@ -513,40 +457,6 @@ const consoleGuardHandle: Handle = async ({ event, resolve }) => {
 			}
 		}
 		return Response.json({ error: 'invalid service key' }, { status: 401 });
-	}
-
-	// GitHub Actions OIDC (Phase B): a
-	// `build`-mode connection deploys with NO stored credential at all - the
-	// workflow presents a short-lived token GitHub signed, describing the
-	// repository it ran in, and the connection table says which project that
-	// repository may deploy to. Same surfaces and same all-or-nothing contract
-	// as a deploy token: never a fall-through to session resolution. The
-	// build-env GET is the one read the bearer also opens - the workflow
-	// fetches its build vars and secrets before the build step - and it is
-	// deliberately NOT a deploy-token surface (see isBuildEnvSurface).
-	//
-	// Only attempted on those surfaces, so a three-segment console session
-	// bearer on any other route still reaches the session path below.
-	const oidcBearer =
-		access.projectId &&
-		(isDeployTokenSurface(event.url.pathname, event.request.method) ||
-			isBuildEnvSurface(event.url.pathname, event.request.method))
-			? event.request.headers
-					.get('authorization')
-					?.match(/^Bearer\s+([\w-]+\.[\w-]+\.[\w-]+)$/)?.[1]
-			: undefined;
-	if (oidcBearer) {
-		const grant = await verifyGithubDeployGrant(
-			event.platform,
-			oidcBearer,
-			event.url.origin,
-			access.projectId!
-		);
-		if (grant) {
-			event.locals.githubDeploy = grant;
-			return resolve(event);
-		}
-		return Response.json({ error: 'invalid GitHub deploy token' }, { status: 401 });
 	}
 
 	// Public demo: anonymous visitors may drive ephemeral demo projects, whose
@@ -701,8 +611,7 @@ const cloudflareSentryHandle: Handle = async (input) => {
  * requests keep the full check.
  *
  * The skip is BEARER-shaped only, not any Authorization header: every
- * credential this app accepts is a bearer (session token, `cfbd_`, `cfbs_`,
- * OIDC), while `Basic` is one a browser CAN attach by itself (a
+ * credential this app accepts is a bearer (session token or `cfbs_`), while `Basic` is one a browser CAN attach by itself (a
  * `user:pass@host` top-level navigation), riding beside the victim's cookies
  * on a request the guard would then authenticate from those cookies. A
  * non-bearer Authorization therefore keeps the full check.

@@ -71,11 +71,11 @@
 			<div
 				class="dark space-y-1.5 rounded-lg border bg-card p-4 font-mono text-xs leading-relaxed text-foreground shadow-[0_10px_26px_-14px_oklch(0.1_0.01_60/60%)]"
 			>
-				<p><span class="text-primary">$</span> npx cloudflarebase init my-app</p>
-				<p><span class="text-primary">$</span> cloudflarebase deploy</p>
+				<p><span class="text-primary">$</span> npx cloudflarebase init</p>
+				<p><span class="text-primary">$</span> cloudflarebase key create server --env-file</p>
 				<p>
-					<span class="text-[oklch(0.72_0.15_150)]">✓</span> Deployed
-					<span class="text-muted-foreground">- my-app.cfbase.dev</span>
+					<span class="text-[oklch(0.72_0.15_150)]">✓</span> Key written
+					<span class="text-muted-foreground">- .env.local</span>
 				</p>
 			</div>
 

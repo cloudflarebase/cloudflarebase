@@ -361,10 +361,10 @@
 									? 'a branch'
 									: 'a project'}.
 							{:else if isBranch}
-								Deleting this branch erases its users, data, and deploys. The root project is
+								Deleting this branch erases its users, data, and files. The root project is
 								untouched.
 							{:else}
-								Deleting this project erases its users, data, and deploys in every agent - branches
+								Deleting this project erases its users, data, and files in every agent - branches
 								included.
 							{/if}
 						</p>

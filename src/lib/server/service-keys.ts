@@ -23,8 +23,7 @@ import { serviceKey } from './db/schema';
  * Object.
  */
 
-/** `cfbs_` + 32 random bytes hex. Distinct prefix from `cfbd_` deploy tokens
- * so the two can never be confused at a glance or by a regex. */
+/** `cfbs_` + 32 random bytes hex. */
 export const SERVICE_KEY_PATTERN = /^cfbs_[0-9a-f]{64}$/;
 
 export const MAX_SERVICE_KEYS_PER_PROJECT = 5;
@@ -45,8 +44,7 @@ async function sha256Hex(value: string): Promise<string> {
  * its own included), `/api/console/**` and `/api/cli/**` (no minting other
  * credentials, no touching operator accounts), and `/api/projects/<id>/keys`
  * itself (a key cannot mint or revoke keys - it must not be able to grow or
- * outlive itself). Hosting stays out too: deploying is what deploy tokens are
- * for, and the two blast radii stay separate on purpose.
+ * outlive itself).
  *
  * The containment property: a service key reads and writes ITS project's
  * data, and nothing else.

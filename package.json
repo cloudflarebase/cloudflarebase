@@ -15,11 +15,11 @@
 		"lint": "prettier --check --cache . && eslint --cache --cache-location node_modules/.cache/eslint/ .",
 		"format": "prettier --write --cache .",
 		"deploy": "npm run build && wrangler deploy",
-		"deploy:all": "npm --prefix agents/auth run deploy && npm --prefix agents/db run deploy && npm --prefix agents/storage run deploy && npm --prefix agents/hosting run deploy && npm run deploy",
+		"deploy:all": "npm --prefix agents/auth run deploy && npm --prefix agents/db run deploy && npm --prefix agents/storage run deploy && npm run deploy",
 		"cf-typegen": "wrangler types ./src/worker-configuration.d.ts",
 		"postinstall": "cross-env POSTINSTALL=true node scripts/dev.js",
 		"test": "playwright test",
-		"test:unit": "node --import tsx --test src/lib/server/frameworks.unit.test.ts src/lib/server/crawler.unit.test.ts src/lib/hosting-workflow.unit.test.ts src/lib/branch-match.unit.test.ts src/lib/stale-build.unit.test.ts",
+		"test:unit": "node --import tsx --test src/lib/server/crawler.unit.test.ts src/lib/stale-build.unit.test.ts",
 		"test:e2e": "playwright test",
 		"test:e2e:ui": "playwright test --ui",
 		"deploy:production": "npm run build && wrangler deploy --env production"

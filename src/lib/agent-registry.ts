@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import authManifestJson from '../../agents/auth/cloudflarebase.agent.json';
 import dbManifestJson from '../../agents/db/cloudflarebase.agent.json';
-import hostingManifestJson from '../../agents/hosting/cloudflarebase.agent.json';
 import storageManifestJson from '../../agents/storage/cloudflarebase.agent.json';
 
 /**
@@ -113,7 +112,7 @@ export type RouteAccess = z.infer<typeof routeAccessSchema>;
  */
 export interface AppAgentEntry {
 	manifest: AgentManifest;
-	binding: 'AUTH_AGENT' | 'DB_AGENT' | 'HOSTING_AGENT' | 'STORAGE_AGENT';
+	binding: 'AUTH_AGENT' | 'DB_AGENT' | 'STORAGE_AGENT';
 	devHost: string;
 }
 
@@ -129,11 +128,6 @@ export const AGENT_REGISTRY: Record<string, AppAgentEntry> = {
 		manifest: agentManifestSchema.parse(dbManifestJson),
 		binding: 'DB_AGENT',
 		devHost: 'localhost:8789'
-	},
-	hosting: {
-		manifest: agentManifestSchema.parse(hostingManifestJson),
-		binding: 'HOSTING_AGENT',
-		devHost: 'localhost:8790'
 	},
 	storage: {
 		manifest: agentManifestSchema.parse(storageManifestJson),

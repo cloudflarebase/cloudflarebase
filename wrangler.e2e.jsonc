@@ -25,7 +25,6 @@
 	"services": [
 		{ "binding": "AUTH_AGENT", "service": "auth-agent-test" },
 		{ "binding": "DB_AGENT", "service": "db-agent-test" },
-		{ "binding": "HOSTING_AGENT", "service": "hosting-agent-test" },
 		{ "binding": "STORAGE_AGENT", "service": "storage-agent-test" }
 	],
 	// DEMO_MODE mirrors env.test so dashboard specs can drive demo projects

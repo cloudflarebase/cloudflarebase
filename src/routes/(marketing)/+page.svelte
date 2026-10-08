@@ -27,7 +27,6 @@
 		Radio,
 		Star,
 		Boxes,
-		Zap,
 		HardDrive,
 		Minus
 	} from '@lucide/svelte';
@@ -145,14 +144,12 @@
 		}
 	];
 
-	// Every primitive here has shipped: Functions is hosting on Workers for
-	// Platforms, Realtime is the db gateway. Nothing on this page is a promise -
+	// Every primitive here has shipped: Realtime is the db gateway. Nothing on this page is a promise -
 	// an unbuilt card is a liability the moment someone signs up for it.
 	const roadmap = [
 		{ icon: KeyRound, name: 'Auth', live: true },
 		{ icon: Database, name: 'Database', live: true },
 		{ icon: HardDrive, name: 'Storage', live: true },
-		{ icon: Zap, name: 'Functions', live: true },
 		{ icon: Radio, name: 'Realtime', live: true }
 	];
 
@@ -167,7 +164,7 @@
 		},
 		{
 			q: 'Can I run it on my own Cloudflare account?',
-			a: 'Yes - it is open source under Apache-2.0 at github.com/cloudflarebase/cloudflarebase. It is three Workers deployed in order with one command (npm run deploy:all), and the README walks through it for your own account. No secrets are required: each project generates its own signing key.'
+			a: 'Yes - it is open source under Apache-2.0 at github.com/cloudflarebase/cloudflarebase. It is four Workers deployed in order with one command (npm run deploy:all), and the README walks through it for your own account. No secrets are required: each project generates its own signing key.'
 		},
 		{
 			q: 'Is this production-ready?',

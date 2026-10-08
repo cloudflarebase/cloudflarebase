@@ -62,7 +62,7 @@
 				><Card.Description
 					>{isDemo
 						? 'This unguessable project ID is saved in this browser for 30 days. Identity data is isolated in its own Durable Object.'
-						: 'Auth, database, and hosting run as agents owned by this project - each keeps its data in its own Durable Object.'}</Card.Description
+						: 'Auth, database, and storage run as agents owned by this project - each keeps its data in its own Durable Object.'}</Card.Description
 				></Card.Header
 			>
 			<Card.Content class="flex flex-wrap gap-2"

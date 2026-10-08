@@ -364,7 +364,7 @@
 		<Dialog.Header>
 			<Dialog.Title>Delete "{deleteTarget?.id}"?</Dialog.Title>
 			<Dialog.Description>
-				Deleting this branch erases its users, data, and deploys. The root project is untouched.
+				Deleting this branch erases its users, data, and files. The root project is untouched.
 			</Dialog.Description>
 		</Dialog.Header>
 		<div class="space-y-1.5">

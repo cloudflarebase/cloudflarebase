@@ -99,11 +99,11 @@
 		<meta property="og:title" content="Cloudflarebase - The open-source Firebase for Cloudflare" />
 		<meta
 			property="og:description"
-			content="Auth, database, storage, and hosting on your own Cloudflare account. Every project gets its own Durable Objects."
+			content="Auth, database, and storage on your own Cloudflare account. Every project gets its own Durable Objects."
 		/>
 		<meta
 			name="twitter:description"
-			content="Auth, database, storage, and hosting on your own Cloudflare account. Every project gets its own Durable Objects."
+			content="Auth, database, and storage on your own Cloudflare account. Every project gets its own Durable Objects."
 		/>
 	{/if}
 	<meta property="og:image" content="https://cloudflarebase.com/brand/github-header.png" />

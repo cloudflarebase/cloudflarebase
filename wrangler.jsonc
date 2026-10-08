@@ -79,7 +79,6 @@
 	"services": [
 		{ "binding": "AUTH_AGENT", "service": "auth-agent" },
 		{ "binding": "DB_AGENT", "service": "db-agent" },
-		{ "binding": "HOSTING_AGENT", "service": "hosting-agent" },
 		{ "binding": "STORAGE_AGENT", "service": "storage-agent" }
 	],
 
@@ -171,7 +170,6 @@
 			"services": [
 				{ "binding": "AUTH_AGENT", "service": "auth-agent-local" },
 				{ "binding": "DB_AGENT", "service": "db-agent-local" },
-				{ "binding": "HOSTING_AGENT", "service": "hosting-agent-local" },
 				{ "binding": "STORAGE_AGENT", "service": "storage-agent-local" }
 			],
 			"ratelimits": [
@@ -218,7 +216,6 @@
 			"services": [
 				{ "binding": "AUTH_AGENT", "service": "auth-agent-test" },
 				{ "binding": "DB_AGENT", "service": "db-agent-test" },
-				{ "binding": "HOSTING_AGENT", "service": "hosting-agent-test" },
 				{ "binding": "STORAGE_AGENT", "service": "storage-agent-test" }
 			],
 			"ratelimits": [
@@ -265,7 +262,6 @@
 			"services": [
 				{ "binding": "AUTH_AGENT", "service": "auth-agent" },
 				{ "binding": "DB_AGENT", "service": "db-agent" },
-				{ "binding": "HOSTING_AGENT", "service": "hosting-agent" },
 				{ "binding": "STORAGE_AGENT", "service": "storage-agent" }
 			],
 			"ratelimits": [
@@ -289,7 +285,7 @@
 		// are the point: AUTH_AGENT targets the preview agent and DB binds the
 		// preview control plane. A separate Worker is also a separate SECRET
 		// STORE - preview inherits nothing from production, so optional secrets
-		// (the GitHub App four, CONSOLE_SETUP_TOKEN) exist here only if put
+		// (CONSOLE_SETUP_TOKEN among them) exist here only if put
 		// here.
 		"preview": {
 			"name": "cloudflarebase-com-preview",
@@ -326,7 +322,6 @@
 			"services": [
 				{ "binding": "AUTH_AGENT", "service": "auth-agent-preview" },
 				{ "binding": "DB_AGENT", "service": "db-agent-preview" },
-				{ "binding": "HOSTING_AGENT", "service": "hosting-agent-preview" },
 				{ "binding": "STORAGE_AGENT", "service": "storage-agent-preview" }
 			]
 		}

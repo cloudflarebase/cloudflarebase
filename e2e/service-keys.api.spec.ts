@@ -23,7 +23,7 @@ import {
  * 2. it must not reach another project - a sibling branch included, because
  *    for data the branch IS the isolation boundary;
  * 3. it must not escalate: no registry (so it cannot delete its own project),
- *    no console, no CLI, no hosting, and no minting or revoking keys;
+ *    no console, no CLI, and no minting or revoking keys;
  * 4. revocation must bite immediately.
  *
  * The suite's stored operator session is what mints keys, so the key-using
@@ -570,7 +570,6 @@ test.describe('service keys', () => {
 				['GET', `/api/registry/projects`],
 				['DELETE', `/api/registry/projects/${KEY_PROJECT}`],
 				['POST', `/api/projects/${KEY_PROJECT}/branches`],
-				['GET', `/api/projects/${KEY_PROJECT}/hosting/apps`],
 				['POST', `/api/cli/token`]
 			];
 			for (const [method, path] of escalations) {
