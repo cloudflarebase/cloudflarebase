@@ -288,7 +288,7 @@
 		// `--env preview`, so the name here must match that connection or CI
 		// warns "Failed to match Worker name" and threatens a rename PR. It
 		// serves on workers.dev (no custom domain) at
-		// https://cloudflarebase-com-preview.cloudflarebase.workers.dev - the
+		// https://cloudflarebase-com-preview.frostbase.workers.dev - the
 		// origin the preview agents' TRUSTED_ORIGINS must name - and keeps
 		// preview_urls on for per-version URLs of other branches. The bindings
 		// are the point: AUTH_AGENT targets the preview agent and DB binds the

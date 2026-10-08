@@ -144,7 +144,8 @@ These are expensive to rediscover.
   (`cloudflarebase-control-plane*`), Analytics Engine datasets
   (`cloudflarebase_*_events`), the deployed console workers
   (`cloudflarebase-com`, `cloudflarebase-com-preview`, connected to Workers
-  Builds), the `cloudflarebase.workers.dev` subdomain, the JWT issuer
+  Builds - so preview serves at
+  `cloudflarebase-com-preview.frostbase.workers.dev`), the JWT issuer
   (`cloudflarebase:<project>`) and the mail sender keep the old spelling,
   because renaming them orphans data or invalidates live tokens. Legacy
   inputs are still accepted: `cfbs_` service keys, `CLOUDFLAREBASE_*` env

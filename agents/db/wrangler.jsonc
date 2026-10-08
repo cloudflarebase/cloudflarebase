@@ -354,7 +354,7 @@
 				// Same Sentry project as the rest of the preview deployment.
 				"SENTRY_DSN": "https://093f7505d223a871223f9a15130ef116@o4510375271530496.ingest.de.sentry.io/4511764377043024",
 				"SENTRY_ENV": "preview",
-				"TRUSTED_ORIGINS": "https://cloudflarebase-com-preview.cloudflarebase.workers.dev",
+				"TRUSTED_ORIGINS": "https://cloudflarebase-com-preview.frostbase.workers.dev",
 			},
 
 			"analytics_engine_datasets": [
